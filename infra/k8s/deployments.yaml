@@ -1,0 +1,179 @@
+# CREST — Kubernetes Deployments
+# Deploy to: Union Bank staging cluster (AWS EKS / GCP GKE)
+# Namespace: crest-prod
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crest-prod
+
+---
+# ── Shared ConfigMap ──────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crest-config
+  namespace: crest-prod
+data:
+  KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
+  KAFKA_GROUP_ID:          "crest-ingest-group"
+  EMBEDDING_MODE:          "openai"
+  CORS_ORIGINS:            "https://crest.unionbank.in"
+
+---
+# ── FastAPI Deployment ────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crest-api
+  namespace: crest-prod
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: crest-api }
+  template:
+    metadata:
+      labels: { app: crest-api }
+    spec:
+      containers:
+        - name: api
+          image: crest/api:latest
+          ports: [{ containerPort: 8000 }]
+          command: ["uvicorn", "backend.main:socket_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+          envFrom:
+            - configMapRef:  { name: crest-config }
+            - secretRef:     { name: crest-secrets }
+          resources:
+            requests: { cpu: "250m",  memory: "512Mi" }
+            limits:   { cpu: "1000m", memory: "1Gi"  }
+          readinessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crest-api-service
+  namespace: crest-prod
+spec:
+  selector: { app: crest-api }
+  ports: [{ port: 80, targetPort: 8000 }]
+  type: ClusterIP
+
+---
+# ── Celery Ingest Workers ─────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crest-worker-ingest
+  namespace: crest-prod
+spec:
+  replicas: 4          # Scale up during complaint surge
+  selector:
+    matchLabels: { app: crest-worker-ingest }
+  template:
+    metadata:
+      labels: { app: crest-worker-ingest }
+    spec:
+      containers:
+        - name: worker
+          image: crest/api:latest
+          command: ["celery", "-A", "backend.workers.celery_app", "worker", "-Q", "ingest", "-c", "2", "--loglevel=info"]
+          envFrom:
+            - configMapRef:  { name: crest-config }
+            - secretRef:     { name: crest-secrets }
+          resources:
+            requests: { cpu: "500m",  memory: "1Gi" }
+            limits:   { cpu: "2000m", memory: "2Gi" }
+
+---
+# ── Celery Beat (Scheduler) ───────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crest-celery-beat
+  namespace: crest-prod
+spec:
+  replicas: 1          # Always exactly 1 beat instance
+  selector:
+    matchLabels: { app: crest-celery-beat }
+  template:
+    metadata:
+      labels: { app: crest-celery-beat }
+    spec:
+      containers:
+        - name: beat
+          image: crest/api:latest
+          command: ["celery", "-A", "backend.workers.celery_app", "beat", "--loglevel=info"]
+          envFrom:
+            - configMapRef:  { name: crest-config }
+            - secretRef:     { name: crest-secrets }
+          resources:
+            requests: { cpu: "100m", memory: "256Mi" }
+            limits:   { cpu: "500m", memory: "512Mi" }
+
+---
+# ── Kafka Consumer ────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crest-kafka-consumer
+  namespace: crest-prod
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: crest-kafka-consumer }
+  template:
+    metadata:
+      labels: { app: crest-kafka-consumer }
+    spec:
+      containers:
+        - name: consumer
+          image: crest/api:latest
+          command: ["python", "-m", "integrations.kafka.consumer"]
+          envFrom:
+            - configMapRef:  { name: crest-config }
+            - secretRef:     { name: crest-secrets }
+          resources:
+            requests: { cpu: "200m", memory: "256Mi" }
+            limits:   { cpu: "500m", memory: "512Mi" }
+
+---
+# ── Horizontal Pod Autoscaler (ingest workers) ────────────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: crest-worker-ingest-hpa
+  namespace: crest-prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: crest-worker-ingest
+  minReplicas: 4
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+---
+# ── Secrets template (fill before applying) ──────────────────
+# kubectl create secret generic crest-secrets \
+#   --from-literal=CREST_DB_URL=postgresql://... \
+#   --from-literal=ANTHROPIC_API_KEY=sk-ant-... \
+#   --from-literal=OPENAI_API_KEY=sk-... \
+#   --from-literal=REDIS_URL=redis://... \
+#   --from-literal=SLACK_WEBHOOK_URL=https://... \
+#   --from-literal=SENDGRID_API_KEY=SG.... \
+#   -n crest-prod
