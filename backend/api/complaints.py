@@ -11,8 +11,19 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from backend.utils.db import get_db
+from backend.mock_store import (
+    approve_draft as mock_approve_draft,
+    assign_complaint as mock_assign_complaint,
+    export_audit_trail as mock_export_audit_trail,
+    find_similar as mock_find_similar,
+    get_complaint as mock_get_complaint,
+    get_priority_queue as mock_get_priority_queue,
+    ingest as mock_ingest,
+    resolve_complaint as mock_resolve_complaint,
+)
+from backend.utils.db import get_db_optional
 from backend.utils.logger import get_logger
+from backend.utils.runtime import DEV_MOCK
 from backend.models.complaint import ComplaintIngest, ComplaintOut, ResolveRequest, AssignRequest
 from backend.services.complaint_service import (
     ingest_complaint, get_priority_queue, assign_complaint,
@@ -30,12 +41,15 @@ logger = get_logger("crest.api.complaints")
 # ── Ingest (sync path — for testing; production uses Kafka → Celery) ──
 
 @router.post("/ingest", response_model=dict, status_code=201)
-def ingest(payload: ComplaintIngest, db: Session = Depends(get_db)):
+def ingest(payload: ComplaintIngest, db: Optional[Session] = Depends(get_db_optional)):
     """
     Synchronous ingest endpoint.
     Runs the full AI pipeline in-request (use for testing / low-volume channels).
     Production: Kafka consumer dispatches to Celery ingest_worker instead.
     """
+    if DEV_MOCK:
+        return mock_ingest(payload.model_dump())
+
     try:
         classification  = classify(payload.body)
         entities        = extract(payload.body)
@@ -86,12 +100,15 @@ def ingest(payload: ComplaintIngest, db: Session = Depends(get_db)):
 # ── Priority Queue ────────────────────────────────────────────
 
 @router.get("/queue", response_model=list[dict])
-def priority_queue(limit: int = Query(50, le=200), db: Session = Depends(get_db)):
+def priority_queue(limit: int = Query(50, le=200), db: Optional[Session] = Depends(get_db_optional)):
     """
     Live Emotion-Decay Priority Queue.
     Returns open complaints ranked by priority_score descending.
     Refreshed every 5 min by Celery Beat.
     """
+    if DEV_MOCK:
+        return mock_get_priority_queue(limit=limit)
+
     complaints = get_priority_queue(db, limit=limit)
     return [
         {
@@ -117,7 +134,13 @@ def priority_queue(limit: int = Query(50, le=200), db: Session = Depends(get_db)
 # ── Single Complaint ──────────────────────────────────────────
 
 @router.get("/{complaint_id}", response_model=dict)
-def get_complaint(complaint_id: str, db: Session = Depends(get_db)):
+def get_complaint(complaint_id: str, db: Optional[Session] = Depends(get_db_optional)):
+    if DEV_MOCK:
+        complaint = mock_get_complaint(complaint_id)
+        if not complaint:
+            raise HTTPException(status_code=404, detail="Complaint not found")
+        return complaint
+
     from backend.models.complaint import Complaint
     c = db.query(Complaint).filter(Complaint.id == uuid.UUID(complaint_id)).first()
     if not c:
@@ -156,12 +179,15 @@ def get_complaint(complaint_id: str, db: Session = Depends(get_db)):
 def similar_complaints(
     complaint_id: str,
     top_k: int = Query(5, le=20),
-    db: Session = Depends(get_db),
+    db: Optional[Session] = Depends(get_db_optional),
 ):
     """
     Find complaints with similar Complaint DNA (cosine similarity > 0.75).
     Shown to agents as context: 'These related complaints may help you resolve this.'
     """
+    if DEV_MOCK:
+        return mock_find_similar(complaint_id, top_k=top_k)
+
     from backend.models.complaint import Complaint
     c = db.query(Complaint).filter(Complaint.id == uuid.UUID(complaint_id)).first()
     if not c or c.embedding is None:
@@ -174,7 +200,13 @@ def similar_complaints(
 # ── Assign ───────────────────────────────────────────────────
 
 @router.patch("/{complaint_id}/assign", response_model=dict)
-def assign(complaint_id: str, body: AssignRequest, db: Session = Depends(get_db)):
+def assign(complaint_id: str, body: AssignRequest, db: Optional[Session] = Depends(get_db_optional)):
+    if DEV_MOCK:
+        complaint = mock_assign_complaint(complaint_id, body.agent)
+        if not complaint:
+            raise HTTPException(status_code=404, detail="Complaint not found")
+        return {"status": "assigned", "agent": complaint["assigned_agent"]}
+
     try:
         c = assign_complaint(db, complaint_id, body.agent)
         return {"status": "assigned", "agent": c.assigned_agent}
@@ -185,7 +217,13 @@ def assign(complaint_id: str, body: AssignRequest, db: Session = Depends(get_db)
 # ── Approve Draft ─────────────────────────────────────────────
 
 @router.patch("/{complaint_id}/approve-draft", response_model=dict)
-def approve_draft_reply(complaint_id: str, agent: str = Query(...), db: Session = Depends(get_db)):
+def approve_draft_reply(complaint_id: str, agent: str = Query(...), db: Optional[Session] = Depends(get_db_optional)):
+    if DEV_MOCK:
+        complaint = mock_approve_draft(complaint_id, agent)
+        if not complaint:
+            raise HTTPException(status_code=404, detail="Complaint not found")
+        return {"status": "draft_approved"}
+
     try:
         approve_draft(db, complaint_id, agent)
         return {"status": "draft_approved"}
@@ -196,7 +234,17 @@ def approve_draft_reply(complaint_id: str, agent: str = Query(...), db: Session 
 # ── Resolve ───────────────────────────────────────────────────
 
 @router.patch("/{complaint_id}/resolve", response_model=dict)
-def resolve(complaint_id: str, body: ResolveRequest, db: Session = Depends(get_db)):
+def resolve(complaint_id: str, body: ResolveRequest, db: Optional[Session] = Depends(get_db_optional)):
+    if DEV_MOCK:
+        complaint = mock_resolve_complaint(complaint_id, body.agent, body.resolution_note, body.csat)
+        if not complaint:
+            raise HTTPException(status_code=404, detail="Complaint not found")
+        return {
+            "status": "resolved",
+            "sla_status": complaint["sla_status"],
+            "resolved_at": complaint["resolved_at"],
+        }
+
     try:
         c = resolve_complaint(
             db, complaint_id, body.agent, body.resolution_note,
@@ -214,9 +262,11 @@ def resolve(complaint_id: str, body: ResolveRequest, db: Session = Depends(get_d
 # ── RBI Audit Export ──────────────────────────────────────────
 
 @router.get("/{complaint_id}/audit", response_model=list[dict])
-def audit_trail(complaint_id: str, db: Session = Depends(get_db)):
+def audit_trail(complaint_id: str, db: Optional[Session] = Depends(get_db_optional)):
     """
     Full immutable audit trail for a complaint.
     Source for RBI-compliant PDF export.
     """
+    if DEV_MOCK:
+        return mock_export_audit_trail(complaint_id)
     return export_audit_trail(db, complaint_id)

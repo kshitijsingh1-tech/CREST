@@ -64,6 +64,10 @@ def classify(complaint_body: str) -> ClassificationResult:
         result = classify(complaint.body)
         # result.severity, result.anger_score, result.category ...
     """
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        logger.info("ANTHROPIC_API_KEY not set, using mock classifier")
+        return _mock_classify(complaint_body)
+
     try:
         from langchain_anthropic import ChatAnthropic
         from langchain_core.messages import HumanMessage, SystemMessage

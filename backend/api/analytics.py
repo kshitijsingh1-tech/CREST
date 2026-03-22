@@ -11,19 +11,31 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
-from backend.utils.db import get_db
+from backend.mock_store import (
+    channel_distribution as mock_channel_distribution,
+    complaints_by_category as mock_complaints_by_category,
+    complaints_by_severity as mock_complaints_by_severity,
+    dashboard_summary as mock_dashboard_summary,
+    spike_signals as mock_spike_signals,
+    volume_trend as mock_volume_trend,
+)
+from backend.utils.db import get_db_optional
 from backend.models.complaint import Complaint, Channel
 from backend.models.knowledge import SpikeSignal
+from backend.utils.runtime import DEV_MOCK
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
 
 @router.get("/dashboard")
-def dashboard_summary(db: Session = Depends(get_db)):
+def dashboard_summary(db: Session | None = Depends(get_db_optional)):
     """
     Top-level KPIs for the CREST dashboard header cards.
     Returns: total open, P0 count, SLA breach count, avg resolution time.
     """
+    if DEV_MOCK:
+        return mock_dashboard_summary()
+
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -53,9 +65,12 @@ def dashboard_summary(db: Session = Depends(get_db)):
 @router.get("/by-category")
 def complaints_by_category(
     days: int = Query(30, le=365),
-    db: Session = Depends(get_db),
+    db: Session | None = Depends(get_db_optional),
 ):
     """Complaint count grouped by category for the last N days."""
+    if DEV_MOCK:
+        return mock_complaints_by_category()
+
     since = datetime.now(timezone.utc) - timedelta(days=days)
     rows = (
         db.query(Complaint.category, func.count(Complaint.id).label("count"))
@@ -69,8 +84,11 @@ def complaints_by_category(
 
 
 @router.get("/by-severity")
-def complaints_by_severity(db: Session = Depends(get_db)):
+def complaints_by_severity(db: Session | None = Depends(get_db_optional)):
     """Count of open complaints per severity level."""
+    if DEV_MOCK:
+        return mock_complaints_by_severity()
+
     rows = (
         db.query(Complaint.severity, func.count(Complaint.id).label("count"))
         .filter(Complaint.status.in_(["open", "in_progress"]))
@@ -86,9 +104,12 @@ def complaints_by_severity(db: Session = Depends(get_db)):
 @router.get("/volume-trend")
 def volume_trend(
     days: int = Query(14, le=90),
-    db: Session = Depends(get_db),
+    db: Session | None = Depends(get_db_optional),
 ):
     """Daily complaint volume for the last N days — used for trend chart."""
+    if DEV_MOCK:
+        return mock_volume_trend(days)
+
     rows = db.execute(
         text("""
             SELECT DATE(created_at AT TIME ZONE 'Asia/Kolkata') AS day,
@@ -96,7 +117,7 @@ def volume_trend(
                    COUNT(*) FILTER (WHERE is_duplicate = TRUE) AS duplicates,
                    COUNT(*) FILTER (WHERE severity = 0) AS p0_count
             FROM complaints
-            WHERE created_at >= NOW() - INTERVAL ':days days'
+            WHERE created_at >= NOW() - make_interval(days => :days)
             GROUP BY day
             ORDER BY day ASC
         """),
@@ -114,7 +135,7 @@ def volume_trend(
 
 
 @router.get("/sla-health")
-def sla_health(db: Session = Depends(get_db)):
+def sla_health(db: Session | None = Depends(get_db_optional)):
     """SLA status distribution for all non-closed complaints."""
     rows = (
         db.query(Complaint.sla_status, func.count(Complaint.id).label("count"))
@@ -128,9 +149,12 @@ def sla_health(db: Session = Depends(get_db)):
 @router.get("/channel-distribution")
 def channel_distribution(
     days: int = Query(30, le=365),
-    db: Session = Depends(get_db),
+    db: Session | None = Depends(get_db_optional),
 ):
     """Complaint count per channel for the last N days."""
+    if DEV_MOCK:
+        return mock_channel_distribution()
+
     since = datetime.now(timezone.utc) - timedelta(days=days)
     rows = (
         db.query(Channel.name, func.count(Complaint.id).label("count"))
@@ -144,8 +168,11 @@ def channel_distribution(
 
 
 @router.get("/spike-signals")
-def spike_signals(hours: int = Query(48, le=168), db: Session = Depends(get_db)):
+def spike_signals(hours: int = Query(48, le=168), db: Session | None = Depends(get_db_optional)):
     """Recent spike prediction signals — for proactive staffing dashboard."""
+    if DEV_MOCK:
+        return mock_spike_signals(hours)
+
     since = datetime.now(timezone.utc) - timedelta(hours=hours)
     signals = (
         db.query(SpikeSignal)

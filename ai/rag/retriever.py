@@ -128,6 +128,10 @@ Complaint Body:
 {complaint_body}
 """
 
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        logger.info("ANTHROPIC_API_KEY not set, using template draft fallback")
+        return _template_fallback(category, named_entities, customer_name)
+
     # Step 3 — Claude generates draft
     try:
         import anthropic

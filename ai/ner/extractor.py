@@ -25,6 +25,7 @@ def _get_nlp():
             import spacy
             _nlp = spacy.load("en_core_web_sm")
         except Exception as e:
+            _nlp = False
             logger.warning(f"spaCy model load failed: {e}. Using regex-only NER.")
     return _nlp
 

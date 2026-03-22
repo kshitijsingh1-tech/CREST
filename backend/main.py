@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.complaints import router as complaints_router
 from backend.api.analytics  import router as analytics_router
 from backend.utils.logger   import get_logger
+from backend.utils.runtime  import DEV_MOCK
 
 logger = get_logger("crest.main")
 
@@ -32,11 +33,13 @@ async def disconnect(sid):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("CREST API starting up")
-    # Warm-up: verify DB connection
-    from backend.utils.db import engine
-    with engine.connect() as conn:
-        conn.execute(__import__("sqlalchemy").text("SELECT 1"))
-    logger.info("Database connection verified")
+    if DEV_MOCK:
+        logger.info("CREST_DEV_MOCK enabled, skipping database startup check")
+    else:
+        from backend.utils.db import engine
+        with engine.connect() as conn:
+            conn.execute(__import__("sqlalchemy").text("SELECT 1"))
+        logger.info("Database connection verified")
     yield
     logger.info("CREST API shutting down")
 

@@ -12,6 +12,8 @@ from pgvector.psycopg2 import register_vector
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
+from backend.utils.runtime import DEV_MOCK
+
 DATABASE_URL = os.getenv(
     "CREST_DB_URL",
     "postgresql://crest_user:crest_pass@localhost:5432/crest_db",
@@ -58,3 +60,11 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def get_db_optional():
+    """Yield a DB session in normal mode, or None in mock mode."""
+    if DEV_MOCK:
+        yield None
+        return
+    yield from get_db()
