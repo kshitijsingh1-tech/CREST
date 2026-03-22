@@ -6,6 +6,7 @@ Entities: amounts, account numbers, dates, bank product names, branch names.
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass, field
 from typing import Optional
@@ -16,10 +17,15 @@ logger = get_logger("crest.ner")
 
 # Lazy-load spaCy model so imports don't fail if spaCy isn't installed
 _nlp = None
+_ENABLE_SPACY = os.getenv("ENABLE_SPACY_NER", "0").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _get_nlp():
     global _nlp
+    if not _ENABLE_SPACY:
+        if _nlp is None:
+            _nlp = False
+        return _nlp
     if _nlp is None:
         try:
             import spacy

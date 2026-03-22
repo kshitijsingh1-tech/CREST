@@ -6,6 +6,7 @@ Dashboard metrics: SLA health, complaint volume, category distribution, spike si
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, text
@@ -20,9 +21,11 @@ from backend.mock_store import (
     volume_trend as mock_volume_trend,
 )
 from backend.utils.db import get_db_optional
-from backend.models.complaint import Complaint, Channel
-from backend.models.knowledge import SpikeSignal
 from backend.utils.runtime import DEV_MOCK
+
+if TYPE_CHECKING:
+    from backend.models.complaint import Channel, Complaint
+    from backend.models.knowledge import SpikeSignal
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
@@ -35,6 +38,8 @@ def dashboard_summary(db: Session | None = Depends(get_db_optional)):
     """
     if DEV_MOCK:
         return mock_dashboard_summary()
+
+    from backend.models.complaint import Complaint
 
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -71,6 +76,8 @@ def complaints_by_category(
     if DEV_MOCK:
         return mock_complaints_by_category()
 
+    from backend.models.complaint import Complaint
+
     since = datetime.now(timezone.utc) - timedelta(days=days)
     rows = (
         db.query(Complaint.category, func.count(Complaint.id).label("count"))
@@ -88,6 +95,8 @@ def complaints_by_severity(db: Session | None = Depends(get_db_optional)):
     """Count of open complaints per severity level."""
     if DEV_MOCK:
         return mock_complaints_by_severity()
+
+    from backend.models.complaint import Complaint
 
     rows = (
         db.query(Complaint.severity, func.count(Complaint.id).label("count"))
@@ -137,6 +146,8 @@ def volume_trend(
 @router.get("/sla-health")
 def sla_health(db: Session | None = Depends(get_db_optional)):
     """SLA status distribution for all non-closed complaints."""
+    from backend.models.complaint import Complaint
+
     rows = (
         db.query(Complaint.sla_status, func.count(Complaint.id).label("count"))
         .filter(Complaint.status.notin_(["closed"]))
@@ -155,6 +166,8 @@ def channel_distribution(
     if DEV_MOCK:
         return mock_channel_distribution()
 
+    from backend.models.complaint import Channel, Complaint
+
     since = datetime.now(timezone.utc) - timedelta(days=days)
     rows = (
         db.query(Channel.name, func.count(Complaint.id).label("count"))
@@ -172,6 +185,8 @@ def spike_signals(hours: int = Query(48, le=168), db: Session | None = Depends(g
     """Recent spike prediction signals — for proactive staffing dashboard."""
     if DEV_MOCK:
         return mock_spike_signals(hours)
+
+    from backend.models.knowledge import SpikeSignal
 
     since = datetime.now(timezone.utc) - timedelta(hours=hours)
     signals = (
