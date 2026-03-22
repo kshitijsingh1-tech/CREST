@@ -12,12 +12,27 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from backend.utils.logger import get_logger
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = get_logger("crest.integrations.kafka.producer")
 
 KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+DIRECT_INGEST_URL = os.getenv(
+    "CREST_DIRECT_INGEST_URL",
+    "http://127.0.0.1:8000/api/complaints/ingest",
+).strip()
 
 _producer = None
+
+
+def _is_truthy(value: str) -> bool:
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _use_direct_ingest() -> bool:
+    return bool(DIRECT_INGEST_URL) and _is_truthy(os.getenv("CREST_DEV_MOCK", "0"))
 
 
 def _get_producer():
@@ -38,6 +53,13 @@ def _delivery_report(err, msg):
         logger.error(f"Kafka delivery failed: {err}")
     else:
         logger.debug(f"Delivered to {msg.topic()} [{msg.partition()}]")
+
+
+def _publish_direct(payload: dict) -> None:
+    import httpx
+
+    response = httpx.post(DIRECT_INGEST_URL, json=payload, timeout=10.0)
+    response.raise_for_status()
 
 
 def publish(
@@ -63,6 +85,7 @@ def publish(
     """
     topic = f"crest.channel.{channel}"
     payload = {
+        "channel":       channel,
         "customer_id":   customer_id,
         "body":          body,
         "subject":       subject,
@@ -73,6 +96,11 @@ def publish(
         "ingested_at":   datetime.now(timezone.utc).isoformat(),
         **(metadata or {}),
     }
+    if _use_direct_ingest():
+        _publish_direct(payload)
+        logger.info(f"Published directly to API | channel={channel} customer={customer_id}")
+        return
+
     producer = _get_producer()
     producer.produce(
         topic,
