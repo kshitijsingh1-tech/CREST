@@ -104,6 +104,22 @@ def process_complaint(self, payload: dict) -> dict:
                 db.commit()
                 logger.info("Draft reply generated and saved")
 
+            # ── Step 8: Trigger WebSocket Broadcast ────────────
+            try:
+                import requests
+                requests.post(
+                    "http://127.0.0.1:8000/api/complaints/internal/broadcast",
+                    json={
+                        "complaint_id": complaint_id,
+                        "severity": classification.severity,
+                        "category": classification.category
+                    },
+                    timeout=2
+                )
+                logger.info("Sent webhook broadcast to Uvicorn successfully")
+            except Exception as e:
+                logger.warning(f"Failed to send webhook broadcast API ping: {e}")
+
         finally:
             db.close()
 

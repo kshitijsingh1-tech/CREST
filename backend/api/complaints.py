@@ -33,6 +33,8 @@ from ai.embeddings.embedder import embed
 from ai.agents.classifier_agent import classify
 from ai.ner.extractor import extract
 from ai.rag.retriever import generate_draft_reply
+from asgiref.sync import async_to_sync
+from backend.utils.socket import broadcast_queue_update, broadcast_new_complaint
 
 router = APIRouter(prefix="/api/complaints", tags=["complaints"])
 logger = get_logger("crest.api.complaints")
@@ -81,6 +83,13 @@ def ingest(payload: ComplaintIngest, db: Optional[Session] = Depends(get_db_opti
             named_entities= entities.to_dict(),
             draft_reply   = draft,
         )
+        
+        try:
+            async_to_sync(broadcast_queue_update)()
+            async_to_sync(broadcast_new_complaint)(str(complaint.id), complaint.severity, complaint.category)
+        except Exception as ws_err:
+            logger.error(f"WebSocket broadcast failed: {ws_err}")
+
         return {
             "complaint_id":  str(complaint.id),
             "category":      complaint.category,
@@ -212,6 +221,10 @@ def assign(complaint_id: str, body: AssignRequest, db: Optional[Session] = Depen
 
     try:
         c = assign_complaint(db, complaint_id, body.agent)
+        try:
+            async_to_sync(broadcast_queue_update)()
+        except Exception:
+            pass
         return {"status": "assigned", "agent": c.assigned_agent}
     except ValueError as e:
         message = str(e)
@@ -228,9 +241,18 @@ def approve_draft_reply(complaint_id: str, agent: str = Query(...), db: Optional
             result = mock_approve_draft(complaint_id, agent)
             if not result:
                 raise HTTPException(status_code=404, detail="Complaint not found")
+            try:
+                async_to_sync(broadcast_queue_update)()
+            except Exception:
+                pass
             return result
 
-        return approve_draft(db, complaint_id, agent)
+        res = approve_draft(db, complaint_id, agent)
+        try:
+            async_to_sync(broadcast_queue_update)()
+        except Exception:
+            pass
+        return res
     except ValueError as e:
         message = str(e)
         status_code = 404 if "not found" in message.lower() else 400
@@ -260,6 +282,10 @@ def resolve(complaint_id: str, body: ResolveRequest, db: Optional[Session] = Dep
             db, complaint_id, body.agent, body.resolution_note,
             add_to_kb=body.add_to_kb, csat=body.csat,
         )
+        try:
+            async_to_sync(broadcast_queue_update)()
+        except Exception:
+            pass
         return {
             "status":     "resolved",
             "sla_status": c.sla_status,
@@ -280,3 +306,28 @@ def audit_trail(complaint_id: str, db: Optional[Session] = Depends(get_db_option
     if DEV_MOCK:
         return mock_export_audit_trail(complaint_id)
     return export_audit_trail(db, complaint_id)
+
+
+# ── Internal Worker Hooks ─────────────────────────────────────
+
+from pydantic import BaseModel
+
+class WebhookBroadcast(BaseModel):
+    complaint_id: str
+    severity: int
+    category: str
+
+@router.post("/internal/broadcast", status_code=200)
+def celery_broadcast_webhook(payload: WebhookBroadcast):
+    """
+    Called strictly by the background Celery Workers immediately after they finish
+    persisting a new LLM draft reply. This triggers the WebSocket memory broadcast
+    on the Uvicorn master thread!
+    """
+    try:
+        async_to_sync(broadcast_queue_update)()
+        async_to_sync(broadcast_new_complaint)(payload.complaint_id, payload.severity, payload.category)
+        return {"status": "broadcast_fired"}
+    except Exception as e:
+        logger.error(f"Celery webhook broadcast failed: {e}")
+        raise HTTPException(status_code=500, detail="Socket broadcast failed")

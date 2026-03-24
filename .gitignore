@@ -54,6 +54,7 @@ htmlcov/
 tmp/
 .tmp/
 
+
 # Local binaries
 DockerSetup.exe
 cloudflared.exe
@@ -61,3 +62,6 @@ cloudflared.exe
 .logs/
 .tmp/
 frontend.zip
+
+# Local docs (architecture guides, walkthroughs)
+docs/

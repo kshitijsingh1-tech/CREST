@@ -1,15 +1,14 @@
 import os
 from contextlib import asynccontextmanager
 
-import socketio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.analytics import router as analytics_router
-from backend.api.complaints import router as complaints_router
-from backend.utils.logger import get_logger
-from backend.utils.runtime import DEV_MOCK, is_truthy
-from integrations.whatsapp.webhook import router as whatsapp_webhook_router
+from backend.api.analytics import router as analytics_router  # type: ignore
+from backend.api.complaints import router as complaints_router  # type: ignore
+from backend.utils.logger import get_logger  # type: ignore
+from backend.utils.runtime import DEV_MOCK, is_truthy  # type: ignore
+from integrations.whatsapp.webhook import router as whatsapp_webhook_router  # type: ignore
 
 logger = get_logger("crest.main")
 
@@ -28,8 +27,7 @@ socket_cors_origins: list[str] | str = "*" if ALLOW_ALL_ORIGINS else cors_origin
 if ALLOW_ALL_ORIGINS:
     logger.warning("CORS_ALLOW_ALL is enabled; allowing all HTTP and Socket.IO origins")
 
-
-sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=socket_cors_origins)
+from backend.utils.socket import sio
 
 
 @sio.event
@@ -85,19 +83,5 @@ def health():
     return {"status": "ok", "service": "CREST API"}
 
 
+import socketio  # type: ignore
 socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
-
-
-async def broadcast_queue_update(data: dict):
-    await sio.emit("queue_updated", data)
-
-
-async def broadcast_new_complaint(complaint_id: str, severity: int, category: str):
-    await sio.emit(
-        "new_complaint",
-        {
-            "id": complaint_id,
-            "severity": severity,
-            "category": category,
-        },
-    )

@@ -24,7 +24,7 @@ interface Props {
 
 export default function ComplaintDetail({ complaint: initial, similar, audit }: Props) {
   const [c, setC]           = useState(initial);
-  const [agent, setAgent]   = useState("");
+  const [agent, setAgent]   = useState(initial.assigned_agent || "");
   const [note, setNote]     = useState("");
   const [csat, setCsat]     = useState<number | "">("");
   const [loading, setLoading] = useState(false);
@@ -52,7 +52,8 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
     try {
       await approveDraft(c.id, agent);
       setC(prev => ({ ...prev, draft_approved: true }));
-      flash("ok", "Draft approved");
+      setNote("Resolved by approving AI generated draft reply.");
+      flash("ok", "Draft approved! You can now Mark as Resolved.");
     } catch { flash("err", "Approval failed"); }
     setLoading(false);
   };
@@ -174,6 +175,25 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
               <p className="text-sm text-gray-400 italic">No draft generated yet.</p>
             )}
           </div>
+
+          {/* Resolved Success State */}
+          {c.status === "resolved" && (
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-900/50 shadow-sm p-8 text-center backdrop-blur-md">
+              <div className="w-14 h-14 bg-green-100 dark:bg-green-800 text-green-600 dark:text-green-300 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold shadow-sm">
+                ✓
+              </div>
+              <h3 className="text-lg font-bold text-green-800 dark:text-green-400 mb-2">Complaint Successfully Resolved</h3>
+              <p className="text-sm text-green-600 dark:text-green-500 mb-6">
+                The resolution note has been securely locked into the RBI Audit Trail.
+              </p>
+              <a
+                href="/queue"
+                className="inline-flex items-center justify-center px-6 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500 text-white text-sm font-semibold rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                Return to Priority Queue ➔
+              </a>
+            </div>
+          )}
 
           {/* Agent actions */}
           {c.status !== "resolved" && (

@@ -32,7 +32,7 @@ def _is_truthy(value: str) -> bool:
 
 
 def _use_direct_ingest() -> bool:
-    return bool(DIRECT_INGEST_URL) and _is_truthy(os.getenv("CREST_DEV_MOCK", "0"))
+    return bool(DIRECT_INGEST_URL) and _is_truthy(os.getenv("CREST_USE_DIRECT_INGEST", "0"))
 
 
 def _get_producer():
