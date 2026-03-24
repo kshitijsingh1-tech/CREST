@@ -1,31 +1,56 @@
 """
-CREST — Embedding Generation
-Generates 1536-dim Complaint DNA vectors via Anthropic / OpenAI.
-Falls back to a mock normalised random vector in dev/test mode.
+CREST embedding generation.
+
+Generates 1536-dimensional vectors via OpenAI and falls back to a
+deterministic mock embedding in local/dev mode.
 """
 
 from __future__ import annotations
 
 import os
+
 import numpy as np
+
 from backend.utils.logger import get_logger
+from backend.utils.runtime import REPO_ROOT  # noqa: F401 - ensures repo .env is loaded
 
 logger = get_logger("crest.embeddings")
 
 EMBEDDING_DIM = 1536
-_MODE = os.getenv("EMBEDDING_MODE", "anthropic")   # anthropic | openai | mock
+
+
+def _get_mode() -> str:
+    return os.getenv("EMBEDDING_MODE", "openai").strip().lower()
+
+
+def get_embedding_mode() -> str:
+    """Return the normalized embedding mode configured for this process."""
+    return _get_mode()
+
+
+def _get_batch_size() -> int:
+    return max(1, int(os.getenv("EMBED_BATCH_SIZE", "64")))
+
+
+def _clean_text(text: str) -> str:
+    return (text or "").strip()
 
 
 def _mock_embed(text: str) -> list[float]:
-    """Unit-normalised deterministic mock embedding for local dev."""
+    """Unit-normalized deterministic mock embedding for local development."""
     rng = np.random.default_rng(abs(hash(text)) % (2**32))
-    v = rng.standard_normal(EMBEDDING_DIM).astype(np.float32)
-    return (v / np.linalg.norm(v)).tolist()
+    vector = rng.standard_normal(EMBEDDING_DIM).astype(np.float32)
+    return (vector / np.linalg.norm(vector)).tolist()
+
+
+def _openai_client():
+    from openai import OpenAI
+
+    return OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 
 def _openai_embed(text: str) -> list[float]:
-    from openai import OpenAI
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    client = _openai_client()
     response = client.embeddings.create(
         model="text-embedding-3-small",
         input=text,
@@ -34,50 +59,66 @@ def _openai_embed(text: str) -> list[float]:
     return response.data[0].embedding
 
 
-def _anthropic_embed(text: str) -> list[float]:
-    """
-    Anthropic doesn't expose a public embeddings endpoint yet.
-    We use the OpenAI adapter here and swap when Anthropic releases one.
-    In production, route through your embedding service.
-    """
-    return _openai_embed(text)
+def _openai_embed_batch(texts: list[str]) -> list[list[float]]:
+    client = _openai_client()
+    embeddings: list[list[float]] = []
+    batch_size = _get_batch_size()
+
+    for start in range(0, len(texts), batch_size):
+        batch = texts[start : start + batch_size]
+        response = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=batch,
+            dimensions=EMBEDDING_DIM,
+        )
+        embeddings.extend(
+            item.embedding for item in sorted(response.data, key=lambda item: item.index)
+        )
+
+    return embeddings
 
 
 def embed(text: str) -> list[float]:
     """
-    Generate a 1536-dim embedding for the given text.
-    Returns a list[float] safe to cast to np.float32 for pgvector.
+    Generate a 1536-dimensional embedding for the given text.
 
-    Usage:
-        vector = embed(complaint.body)
-        emb_array = np.array(vector, dtype=np.float32)
+    Returns a list[float] that can be safely cast to np.float32 for pgvector.
     """
-    text = text.strip()
-    if not text:
+    cleaned = _clean_text(text)
+    if not cleaned:
         raise ValueError("Cannot embed empty string")
 
+    mode = _get_mode()
     try:
-        if _MODE == "mock":
-            return _mock_embed(text)
-        elif _MODE == "openai":
-            return _openai_embed(text)
-        else:
-            return _anthropic_embed(text)
-    except Exception as e:
-        logger.error("Embedding failed, falling back to mock", extra={"error": str(e)})
-        return _mock_embed(text)
+        if mode == "mock":
+            return _mock_embed(cleaned)
+        if mode in {"openai", "anthropic"}:
+            return _openai_embed(cleaned)
+        raise ValueError(f"Unsupported EMBEDDING_MODE: {mode}")
+    except Exception as exc:
+        logger.error(
+            "Embedding failed, falling back to mock",
+            extra={"error": str(exc)},
+        )
+        return _mock_embed(cleaned)
 
 
 def embed_batch(texts: list[str]) -> list[list[float]]:
-    """Embed multiple texts — batches OpenAI calls for efficiency."""
-    if _MODE in ("mock", ):
-        return [embed(t) for t in texts]
+    """Embed multiple texts with API batching and mock fallback."""
+    cleaned = [_clean_text(text) for text in texts]
+    if any(not text for text in cleaned):
+        raise ValueError("Cannot embed empty string in batch")
 
-    from openai import OpenAI
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-    response = client.embeddings.create(
-        model="text-embedding-3-small",
-        input=texts,
-        dimensions=EMBEDDING_DIM,
-    )
-    return [item.embedding for item in sorted(response.data, key=lambda x: x.index)]
+    mode = _get_mode()
+    try:
+        if mode == "mock":
+            return [_mock_embed(text) for text in cleaned]
+        if mode in {"openai", "anthropic"}:
+            return _openai_embed_batch(cleaned)
+        raise ValueError(f"Unsupported EMBEDDING_MODE: {mode}")
+    except Exception as exc:
+        logger.error(
+            "Batch embedding failed, falling back to mock",
+            extra={"error": str(exc), "batch_size": len(cleaned)},
+        )
+        return [_mock_embed(text) for text in cleaned]

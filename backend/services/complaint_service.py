@@ -13,13 +13,14 @@ import math
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-import numpy as np
 from sqlalchemy.orm import Session
 
 from backend.models.complaint import Complaint, ComplaintAudit, Channel
 from backend.models.knowledge import ResolutionKnowledge
-from backend.utils.db import raw_conn
+from backend.utils.db import raw_conn, serialize_embedding
 from backend.utils.logger import get_logger
+from backend.utils.runtime import USE_PGVECTOR
+from integrations.email.sender import is_email_address, send_customer_reply
 
 logger = get_logger("crest.services.complaint")
 
@@ -36,7 +37,10 @@ def find_duplicate(embedding: list[float], exclude_id: Optional[str] = None) -> 
     Run ANN cosine search against all open non-duplicate complaints.
     Returns the parent complaint dict if similarity > DEDUP_THRESHOLD, else None.
     """
-    emb = np.array(embedding, dtype=np.float32)
+    if not USE_PGVECTOR or not embedding:
+        return None
+
+    emb = serialize_embedding(embedding)
     exclude_clause = "AND id != %s::uuid" if exclude_id else ""
     params = [emb, emb, DEDUP_THRESHOLD]
     if exclude_id:
@@ -67,7 +71,10 @@ def find_similar(embedding: list[float], top_k: int = 5, threshold: float = 0.75
     Find top_k similar complaints — used for agent context hints.
     Lower threshold than dedup (0.75 vs 0.92) to show related cases.
     """
-    emb = np.array(embedding, dtype=np.float32)
+    if not USE_PGVECTOR or not embedding:
+        return []
+
+    emb = serialize_embedding(embedding)
     with raw_conn() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -186,7 +193,7 @@ def ingest_complaint(
         subject         = subject,
         body            = body,
         language        = language,
-        embedding       = np.array(embedding, dtype=np.float32),
+        embedding       = serialize_embedding(embedding),
         category        = category,
         sub_category    = sub_category,
         severity        = severity,
@@ -223,7 +230,18 @@ def ingest_complaint(
 # ─────────────────────────────────────────────
 
 def assign_complaint(db: Session, complaint_id: str, agent: str) -> Complaint:
+    agent = (agent or "").strip()
+    if not agent:
+        raise ValueError("Agent ID is required")
+
     c = _get_or_raise(db, complaint_id)
+    if c.status in {"resolved", "closed"} or c.resolved_at is not None or c.sla_status == "resolved":
+        final_status = c.status if c.status in {"resolved", "closed"} else "resolved"
+        raise ValueError(f"Complaint {complaint_id} is already {final_status} and cannot be reassigned")
+
+    if c.assigned_agent == agent and c.status == "in_progress":
+        return c
+
     old_agent = c.assigned_agent
     c.assigned_agent = agent
     c.assigned_at    = datetime.now(timezone.utc)
@@ -279,13 +297,49 @@ def resolve_complaint(
     return c
 
 
-def approve_draft(db: Session, complaint_id: str, agent: str) -> Complaint:
+def approve_draft(db: Session, complaint_id: str, agent: str) -> dict:
     c = _get_or_raise(db, complaint_id)
+    recipient = _get_reply_recipient(c)
+
+    if c.draft_approved:
+        return {
+            "status": "already_approved",
+            "email_sent": False,
+            "recipient": recipient,
+            "detail": "Draft was already approved earlier. No new outbound email was sent.",
+        }
+
+    if not c.draft_reply or not c.draft_reply.strip():
+        raise ValueError("No AI draft reply is available for this complaint")
+
+    send_result = None
+    if recipient:
+        send_result = send_customer_reply(
+            recipient,
+            c.draft_reply,
+            subject=c.subject,
+            in_reply_to=c.external_ref,
+        )
+
     c.draft_approved = True
     _write_audit(db, c.id, agent, "draft_approved", None, {"draft_approved": True})
+    if send_result:
+        _write_audit(db, c.id, agent, "reply_sent", None, {
+            "recipient": send_result["recipient"],
+            "subject": send_result["subject"],
+        })
     db.commit()
     db.refresh(c)
-    return c
+    if send_result:
+        detail = f"Draft approved and emailed to {send_result['recipient']}."
+    else:
+        detail = "Draft approved. No deliverable customer email was available, so no outbound email was sent."
+    return {
+        "status": "draft_approved",
+        "email_sent": bool(send_result),
+        "recipient": send_result["recipient"] if send_result else None,
+        "detail": detail,
+    }
 
 
 # ─────────────────────────────────────────────
@@ -386,6 +440,11 @@ def _get_or_raise(db: Session, complaint_id: str) -> Complaint:
     if not c:
         raise ValueError(f"Complaint {complaint_id} not found")
     return c
+
+
+def _get_reply_recipient(complaint: Complaint) -> str | None:
+    customer_id = (complaint.customer_id or "").strip()
+    return customer_id if is_email_address(customer_id) else None
 
 
 def _write_audit(

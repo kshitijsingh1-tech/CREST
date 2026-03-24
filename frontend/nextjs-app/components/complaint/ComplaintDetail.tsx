@@ -83,30 +83,30 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
       )}
 
       {/* Header */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+      <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-6 backdrop-blur-md">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className={`text-xs font-bold text-white px-2 py-1 rounded ${SEV_COLOR[c.severity ?? 4]}`}>
                 P{c.severity}
               </span>
-              <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-medium">
+              <span className="text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400 px-2 py-1 rounded font-medium">
                 {c.category}
               </span>
               {c.sub_category && (
-                <span className="text-xs text-gray-400">{c.sub_category}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">{c.sub_category}</span>
               )}
-              <span className="text-xs text-gray-400">via {c.channel}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">via {c.channel}</span>
               {c.is_duplicate && (
-                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
+                <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 px-2 py-1 rounded">
                   Duplicate
                 </span>
               )}
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               {c.subject ?? "No Subject"}
             </h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
               {c.customer_name ?? c.customer_id} · {new Date(c.created_at).toLocaleString("en-IN")}
             </p>
           </div>
@@ -150,24 +150,24 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
         <div className="col-span-2 space-y-5">
 
           {/* Complaint body */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Customer Complaint</h3>
-            <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{(c as any).body}</p>
+          <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-5 backdrop-blur-md">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Customer Complaint</h3>
+            <p className="text-sm text-gray-800 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">{(c as any).body}</p>
           </div>
 
           {/* RAG Draft Reply */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-5 backdrop-blur-md">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 ✨ AI Draft Reply
-                <span className="ml-2 text-xs text-gray-400 font-normal">(Claude API + RAG)</span>
+                <span className="ml-2 text-xs text-gray-400 dark:text-gray-500 font-normal">(Claude API + RAG)</span>
               </h3>
               {c.draft_approved && (
-                <span className="text-xs text-green-600 font-medium">✓ Approved</span>
+                <span className="text-xs text-green-600 dark:text-green-500 font-medium">✓ Approved</span>
               )}
             </div>
             {c.draft_reply ? (
-              <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+              <p className="text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40">
                 {c.draft_reply}
               </p>
             ) : (
@@ -177,53 +177,53 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
 
           {/* Agent actions */}
           {c.status !== "resolved" && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
-              <h3 className="text-sm font-semibold text-gray-700">Agent Actions</h3>
+            <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-5 space-y-4 backdrop-blur-md">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Agent Actions</h3>
 
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Your Agent ID</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Your Agent ID</label>
                 <input
                   value={agent}
                   onChange={e => setAgent(e.target.value)}
                   placeholder="e.g. AGENT_042"
-                  className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  className="w-full text-sm border border-gray-200 dark:border-white/10 dark:bg-black/40 dark:text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700"
                 />
               </div>
 
               <div className="flex gap-2">
                 <button onClick={handleAssign} disabled={loading || !agent}
-                  className="text-xs px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors disabled:opacity-50">
+                  className="text-xs px-3 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded transition-colors disabled:opacity-50">
                   Assign to Me
                 </button>
                 {c.draft_reply && !c.draft_approved && (
                   <button onClick={handleApproveDraft} disabled={loading || !agent}
-                    className="text-xs px-3 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded transition-colors disabled:opacity-50">
+                    className="text-xs px-3 py-2 bg-indigo-100 dark:bg-indigo-900/60 hover:bg-indigo-200 dark:hover:bg-indigo-800 text-indigo-700 dark:text-indigo-300 rounded transition-colors disabled:opacity-50">
                     ✓ Approve Draft
                   </button>
                 )}
               </div>
 
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Resolution Note</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Resolution Note</label>
                 <textarea
                   rows={4} value={note}
                   onChange={e => setNote(e.target.value)}
                   placeholder="Describe the resolution steps taken…"
-                  className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  className="w-full text-sm border border-gray-200 dark:border-white/10 dark:bg-black/40 dark:text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
                 />
               </div>
 
               <div className="flex items-center gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">CSAT (1–5)</label>
+                  <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">CSAT (1–5)</label>
                   <input type="number" min={1} max={5} value={csat}
                     onChange={e => setCsat(e.target.value ? Number(e.target.value) : "")}
-                    className="w-20 text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none"
+                    className="w-20 text-sm border border-gray-200 dark:border-white/10 dark:bg-black/40 dark:text-white rounded px-3 py-2 focus:outline-none"
                     placeholder="4"
                   />
                 </div>
                 <button onClick={handleResolve} disabled={loading || !agent || !note}
-                  className="mt-4 text-sm px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors disabled:opacity-50">
+                  className="mt-4 text-sm px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded transition-colors disabled:opacity-50">
                   ✓ Mark Resolved
                 </button>
               </div>
@@ -236,14 +236,14 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
 
           {/* Named entities */}
           {(c as any).named_entities && Object.keys((c as any).named_entities).length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Extracted Entities</h3>
+            <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-4 backdrop-blur-md">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">Extracted Entities</h3>
               {Object.entries((c as any).named_entities as Record<string, string[]>).map(([k, vals]) => (
                 <div key={k} className="mb-2">
-                  <span className="text-xs text-gray-400 capitalize">{k.replace("_", " ")}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 capitalize">{k.replace("_", " ")}</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {vals.map(v => (
-                      <span key={v} className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono">{v}</span>
+                      <span key={v} className="text-xs bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded font-mono">{v}</span>
                     ))}
                   </div>
                 </div>
@@ -253,16 +253,16 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
 
           {/* Similar complaints */}
           {similar.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">
+            <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-4 backdrop-blur-md">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">
                 Similar Complaints (DNA Match)
               </h3>
               <div className="space-y-2">
                 {similar.map(s => (
                   <a key={s.id} href={`/complaints/${s.id}`}
-                    className="block text-xs p-2 rounded hover:bg-gray-50 border border-gray-100">
+                    className="block text-xs p-2 rounded hover:bg-gray-50 dark:hover:bg-white/5 border border-gray-100 dark:border-white/5">
                     <span className={`inline-block px-1.5 py-0.5 text-white rounded text-xs mr-1 ${SEV_COLOR[s.severity ?? 4]}`}>P{s.severity}</span>
-                    <span className="text-gray-700">{s.category}</span>
+                    <span className="text-gray-700 dark:text-gray-300">{s.category}</span>
                     <span className={`ml-1 text-xs ${s.status === "resolved" ? "text-green-500" : "text-amber-500"}`}>
                       ({s.status})
                     </span>
@@ -273,13 +273,13 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
           )}
 
           {/* Audit trail */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Audit Trail (RBI)</h3>
+          <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-4 backdrop-blur-md">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">Audit Trail (RBI)</h3>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {audit.map(e => (
-                <div key={e.id} className="text-xs border-l-2 border-indigo-200 pl-3 py-1">
-                  <div className="font-medium text-gray-700">{e.action.replace("_", " ")}</div>
-                  <div className="text-gray-400">{e.actor} · {new Date(e.ts).toLocaleString("en-IN")}</div>
+                <div key={e.id} className="text-xs border-l-2 border-indigo-200 dark:border-indigo-900/50 pl-3 py-1">
+                  <div className="font-medium text-gray-700 dark:text-gray-300">{e.action.replace("_", " ")}</div>
+                  <div className="text-gray-400 dark:text-gray-500">{e.actor} · {new Date(e.ts).toLocaleString("en-IN")}</div>
                 </div>
               ))}
             </div>

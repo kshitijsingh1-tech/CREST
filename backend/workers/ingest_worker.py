@@ -1,7 +1,7 @@
 """
-CREST — Ingest Worker
+CREST - Ingest Worker
 Celery task: runs the full AI Engine pipeline for each normalised complaint.
-  1. Classify with Claude API (LangChain agent)
+  1. Classify with Groq
   2. Extract entities with spaCy NER
   3. Generate 1536-dim embedding
   4. Dedup check via pgvector cosine similarity

@@ -171,7 +171,7 @@ spec:
 # ── Secrets template (fill before applying) ──────────────────
 # kubectl create secret generic crest-secrets \
 #   --from-literal=CREST_DB_URL=postgresql://... \
-#   --from-literal=ANTHROPIC_API_KEY=sk-ant-... \
+#   --from-literal=GROQ_API_KEY=gsk-... \
 #   --from-literal=OPENAI_API_KEY=sk-... \
 #   --from-literal=REDIS_URL=redis://... \
 #   --from-literal=SLACK_WEBHOOK_URL=https://... \

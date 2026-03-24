@@ -1,4 +1,4 @@
-# CREST — Makefile
+# CREST â€” Makefile
 # Common development commands
 
 .PHONY: up down logs api workers beat consumer frontend lint seed
@@ -48,10 +48,10 @@ lint:
 ## Install
 install:
 	pip install -r requirements.txt
-	python -m spacy download en_core_web_sm
+	python -m pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
 	cd frontend/nextjs-app && npm install
 
-## Run all backend processes (for dev — use tmux or run in separate terminals)
+## Run all backend processes (for dev â€” use tmux or run in separate terminals)
 dev: up
 	@echo "Services started. Now run in separate terminals:"
 	@echo "  make api"

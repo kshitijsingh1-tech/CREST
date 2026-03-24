@@ -1,7 +1,7 @@
 -- ============================================================
 -- CREST — Complaint Resolution & Escalation Smart Technology
 -- PostgreSQL + pgvector Schema
--- Embedding dim: 1536 (OpenAI text-embedding-3-small / Claude)
+-- Embedding dim: 1536 (OpenAI text-embedding-3-small)
 -- ============================================================
 
 -- Enable extensions
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS complaints (
     -- Complaint DNA — 1536-dim semantic vector (core innovation)
     embedding       VECTOR(1536),
 
-    -- AI classification (Claude API output)
+    -- AI classification (Groq output)
     category        TEXT,                        -- UPI, KYC, Loan, Card, NetBanking, …
     sub_category    TEXT,
     severity        SMALLINT CHECK (severity BETWEEN 0 AND 4),  -- P0–P4
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS complaints (
 CREATE TABLE IF NOT EXISTS complaint_audit (
     id              BIGSERIAL PRIMARY KEY,
     complaint_id    UUID NOT NULL REFERENCES complaints(id),
-    actor           TEXT NOT NULL,               -- agent_id | 'system' | 'claude-api'
+    actor           TEXT NOT NULL,               -- agent_id | 'system' | 'groq-api'
     action          TEXT NOT NULL,               -- created, classified, assigned, escalated, resolved …
     old_value       JSONB,
     new_value       JSONB,
@@ -118,7 +118,27 @@ CREATE TABLE IF NOT EXISTS resolution_knowledge (
 );
 
 -- ============================================================
--- 5. SPIKE_SIGNALS — external event feed for Spike Predictor
+-- 5. RAG_DOCUMENT_CHUNKS -- PDF-backed knowledge base
+-- ============================================================
+CREATE TABLE IF NOT EXISTS rag_document_chunks (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    source_path     TEXT NOT NULL,
+    source_name     TEXT NOT NULL,
+    document_title  TEXT NOT NULL,
+    document_type   TEXT NOT NULL DEFAULT 'reference',
+    page_number     INT NOT NULL,
+    chunk_index     INT NOT NULL,
+    content         TEXT NOT NULL,
+    chunk_metadata  JSONB DEFAULT '{}'::jsonb,
+    embedding       VECTOR(1536),
+    is_active       BOOLEAN DEFAULT TRUE,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_rag_document_chunk UNIQUE (source_path, chunk_index)
+);
+
+-- ============================================================
+-- 6. SPIKE_SIGNALS -- external event feed for Spike Predictor
 -- ============================================================
 CREATE TABLE IF NOT EXISTS spike_signals (
     id              SERIAL PRIMARY KEY,
@@ -157,6 +177,16 @@ CREATE INDEX IF NOT EXISTS idx_complaints_embedding
 CREATE INDEX IF NOT EXISTS idx_knowledge_embedding
     ON resolution_knowledge USING ivfflat (embedding vector_cosine_ops)
     WITH (lists = 50);
+
+CREATE INDEX IF NOT EXISTS idx_rag_document_chunks_embedding
+    ON rag_document_chunks USING ivfflat (embedding vector_cosine_ops)
+    WITH (lists = 50);
+
+CREATE INDEX IF NOT EXISTS idx_rag_document_source
+    ON rag_document_chunks (source_path, chunk_index);
+
+CREATE INDEX IF NOT EXISTS idx_rag_document_fts
+    ON rag_document_chunks USING GIN (to_tsvector('english', content));
 
 -- Priority queue index
 CREATE INDEX IF NOT EXISTS idx_complaints_priority
@@ -278,4 +308,8 @@ CREATE OR REPLACE TRIGGER trg_complaints_updated
 
 CREATE OR REPLACE TRIGGER trg_knowledge_updated
     BEFORE UPDATE ON resolution_knowledge
+    FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+
+CREATE OR REPLACE TRIGGER trg_rag_document_chunks_updated
+    BEFORE UPDATE ON rag_document_chunks
     FOR EACH ROW EXECUTE FUNCTION touch_updated_at();

@@ -1,17 +1,15 @@
 """
-CREST — LangChain Classifier Agent
-Classifies complaint severity, category, anger score, and sentiment using Claude API.
-Returns a structured ClassificationResult via LangChain's output parsing.
+CREST - Groq Classifier Agent
+Classifies complaint severity, category, anger score, and sentiment using the Groq API.
 """
 
 from __future__ import annotations
 
-import os
 import json
 from dataclasses import dataclass
-from typing import Optional
 
 from backend.utils.logger import get_logger
+from ai.providers.groq import create_chat_completion, get_model, has_api_key
 
 logger = get_logger("crest.agents.classifier")
 
@@ -34,6 +32,39 @@ Rules:
 - Return ONLY the JSON object, no markdown, no preamble
 """
 
+CLASSIFICATION_RESPONSE_FORMAT = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "complaint_classification",
+        "strict": True,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "enum": ["UPI", "KYC", "Loan", "Card", "NetBanking", "NEFT_RTGS", "ATM", "FD", "General"],
+                },
+                "sub_category": {"type": "string"},
+                "severity": {"type": "integer"},
+                "anger_score": {"type": "number"},
+                "sentiment": {"type": "string", "enum": ["positive", "neutral", "negative", "hostile"]},
+                "summary": {"type": "string"},
+                "urgency_reason": {"type": "string"},
+            },
+            "required": [
+                "category",
+                "sub_category",
+                "severity",
+                "anger_score",
+                "sentiment",
+                "summary",
+                "urgency_reason",
+            ],
+            "additionalProperties": False,
+        },
+    },
+}
+
 
 @dataclass
 class ClassificationResult:
@@ -47,7 +78,7 @@ class ClassificationResult:
 
     @classmethod
     def default(cls) -> "ClassificationResult":
-        """Fallback if Claude API fails."""
+        """Fallback if Groq API fails."""
         return cls(
             category="General", sub_category="Unclassified",
             severity=2, anger_score=0.5, sentiment="neutral",
@@ -58,34 +89,27 @@ class ClassificationResult:
 
 def classify(complaint_body: str) -> ClassificationResult:
     """
-    Send complaint text to Claude API via LangChain and return structured classification.
+    Send complaint text to Groq and return structured classification.
 
     Usage (from AI Engine / Celery worker):
         result = classify(complaint.body)
         # result.severity, result.anger_score, result.category ...
     """
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        logger.info("ANTHROPIC_API_KEY not set, using mock classifier")
+    if not has_api_key():
+        logger.info("No configured chat API key found, using mock classifier")
         return _mock_classify(complaint_body)
 
     try:
-        from langchain_anthropic import ChatAnthropic
-        from langchain_core.messages import HumanMessage, SystemMessage
-
-        llm = ChatAnthropic(
-            model="claude-sonnet-4-20250514",
-            api_key=os.environ.get("ANTHROPIC_API_KEY", ""),
+        raw = create_chat_completion(
+            model=get_model("GROQ_CLASSIFIER_MODEL", "openai/gpt-oss-20b"),
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": f"Complaint:\n{complaint_body}"},
+            ],
             max_tokens=512,
-            temperature=0,          # deterministic classification
+            temperature=0.0,
+            response_format=CLASSIFICATION_RESPONSE_FORMAT,
         )
-
-        messages = [
-            SystemMessage(content=SYSTEM_PROMPT),
-            HumanMessage(content=f"Complaint:\n{complaint_body}"),
-        ]
-
-        response = llm.invoke(messages)
-        raw = response.content.strip()
 
         # Strip markdown fences if present
         if raw.startswith("```"):
@@ -104,12 +128,9 @@ def classify(complaint_body: str) -> ClassificationResult:
             urgency_reason= data.get("urgency_reason", ""),
         )
 
-    except ImportError:
-        logger.warning("LangChain Anthropic not installed, using mock classifier")
-        return _mock_classify(complaint_body)
     except Exception as e:
-        logger.error(f"Classification failed: {e}")
-        return ClassificationResult.default()
+        logger.error(f"Groq classification failed: {e}")
+        return _mock_classify(complaint_body)
 
 
 def _mock_classify(text: str) -> ClassificationResult:

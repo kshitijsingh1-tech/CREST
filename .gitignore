@@ -9,6 +9,9 @@ dist/
 build/
 .eggs/
 .venv/
+.venv312/
+.venv-py312/
+.virtualenv-appdata/
 venv/
 env/
 
@@ -46,3 +49,15 @@ logs/
 .pytest_cache/
 .coverage
 htmlcov/
+
+
+tmp/
+.tmp/
+
+# Local binaries
+DockerSetup.exe
+cloudflared.exe
+.tools/
+.logs/
+.tmp/
+frontend.zip

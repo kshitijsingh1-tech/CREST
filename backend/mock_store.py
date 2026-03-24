@@ -4,6 +4,15 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import uuid
 
+from ai.agents.classifier_agent import classify
+from ai.embeddings.embedder import embed
+from ai.ner.extractor import extract
+from ai.rag.retriever import generate_draft_reply
+from backend.utils.logger import get_logger
+from integrations.email.sender import is_email_address, send_customer_reply
+
+logger = get_logger("crest.mock_store")
+
 
 NOW = datetime.now(timezone.utc)
 
@@ -151,18 +160,51 @@ def _add_audit(complaint_id: str, actor: str, action: str, old_value: dict | Non
 def ingest(payload: dict) -> dict:
     complaint_id = str(uuid.uuid4())
     created_at = datetime.now(timezone.utc)
+    try:
+        classification = classify(payload["body"])
+        named_entities = extract(payload["body"]).to_dict()
+        embedding = embed(payload["body"])
+        draft_reply = generate_draft_reply(
+            complaint_body=payload["body"],
+            complaint_subject=payload.get("subject"),
+            named_entities=named_entities,
+            category=classification.category,
+            embedding=embedding,
+            customer_name=payload.get("customer_name"),
+        )
+        category = classification.category
+        sub_category = classification.sub_category
+        severity = classification.severity
+        anger_score = classification.anger_score
+        sentiment = classification.sentiment
+    except Exception as exc:
+        logger.error("Mock ingest AI pipeline failed, using fallback draft", extra={"error": str(exc)})
+        category = "General"
+        sub_category = "General Enquiry"
+        severity = 2
+        anger_score = 0.5
+        sentiment = "neutral"
+        named_entities = {}
+        draft_reply = (
+            "Dear Customer,\n\n"
+            "We have registered your complaint and our team is reviewing it. "
+            "You will receive an update shortly.\n\n"
+            "Thank you for banking with Union Bank."
+        )
+
     complaint = {
         "id": complaint_id,
         "channel": payload["channel"],
         "customer_id": payload["customer_id"],
         "customer_name": payload.get("customer_name"),
+        "external_ref": payload.get("external_ref"),
         "subject": payload.get("subject"),
         "body": payload["body"],
-        "category": "General",
-        "sub_category": "General Enquiry",
-        "severity": 2,
-        "anger_score": 0.5,
-        "sentiment": "neutral",
+        "category": category,
+        "sub_category": sub_category,
+        "severity": severity,
+        "anger_score": anger_score,
+        "sentiment": sentiment,
         "priority_score": 4.5,
         "sla_deadline": (created_at + timedelta(hours=payload.get("sla_hours", 720))).isoformat(),
         "sla_status": "on_track",
@@ -170,10 +212,10 @@ def ingest(payload: dict) -> dict:
         "assigned_agent": None,
         "is_duplicate": False,
         "duplicate_of": None,
-        "draft_reply": "Dear Customer,\n\nWe have registered your complaint and our team is reviewing it. You will receive an update shortly.\n\nThank you for banking with Union Bank.",
+        "draft_reply": draft_reply,
         "draft_approved": False,
         "created_at": created_at.isoformat(),
-        "named_entities": {},
+        "named_entities": named_entities,
     }
     _complaints[complaint_id] = complaint
     _add_audit(complaint_id, "system", "created", None, {"channel": payload["channel"]})
@@ -234,9 +276,42 @@ def approve_draft(complaint_id: str, agent: str) -> dict | None:
     complaint = _complaints.get(complaint_id)
     if not complaint:
         return None
+    recipient = _get_reply_recipient(complaint)
+    if complaint["draft_approved"]:
+        return {
+            "status": "already_approved",
+            "email_sent": False,
+            "recipient": recipient,
+            "detail": "Draft was already approved earlier. No new outbound email was sent.",
+        }
+    if not complaint.get("draft_reply", "").strip():
+        raise ValueError("No AI draft reply is available for this complaint")
+
+    send_result = None
+    if recipient:
+        send_result = send_customer_reply(
+            recipient,
+            complaint["draft_reply"],
+            subject=complaint.get("subject"),
+            in_reply_to=complaint.get("external_ref"),
+        )
+
     complaint["draft_approved"] = True
     _add_audit(complaint_id, agent, "draft_approved", None, {"draft_approved": True})
-    return _copy(complaint)
+    if send_result:
+        _add_audit(complaint_id, agent, "reply_sent", None, {
+            "recipient": send_result["recipient"],
+            "subject": send_result["subject"],
+        })
+        detail = f"Draft approved and emailed to {send_result['recipient']}."
+    else:
+        detail = "Draft approved. No deliverable customer email was available, so no outbound email was sent."
+    return {
+        "status": "draft_approved",
+        "email_sent": bool(send_result),
+        "recipient": send_result["recipient"] if send_result else None,
+        "detail": detail,
+    }
 
 
 def resolve_complaint(complaint_id: str, agent: str, resolution_note: str, csat: float | None = None) -> dict | None:
@@ -297,3 +372,8 @@ def spike_signals(hours: int) -> list[dict]:
     cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
     signals = [signal for signal in _spikes if datetime.fromisoformat(signal["signal_ts"]) >= cutoff]
     return _copy(signals)
+
+
+def _get_reply_recipient(complaint: dict) -> str | None:
+    customer_id = (complaint.get("customer_id") or "").strip()
+    return customer_id if is_email_address(customer_id) else None

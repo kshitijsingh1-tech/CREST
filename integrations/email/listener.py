@@ -17,14 +17,14 @@ from email.header import decode_header
 from email.utils import parseaddr
 
 from backend.utils.logger import get_logger
-from integrations.kafka.producer import publish
+import requests
 
 logger = get_logger("crest.integrations.email")
 
-IMAP_HOST     = os.getenv("EMAIL_IMAP_HOST",     "imap.unionbank.in")
+IMAP_HOST     = os.getenv("EMAIL_IMAP_HOST",     "imap.gmail.com")
 IMAP_PORT     = int(os.getenv("EMAIL_IMAP_PORT", "993"))
-IMAP_USER     = os.getenv("EMAIL_IMAP_USER",     "grievances@unionbank.in")
-IMAP_PASSWORD = os.getenv("EMAIL_IMAP_PASSWORD", "")
+IMAP_USER     = os.getenv("EMAIL_IMAP_USER",     "ayushiiscute@gmail.com")
+IMAP_PASSWORD = os.getenv("EMAIL_IMAP_PASSWORD", "obqrclyncutnuuot")
 POLL_INTERVAL = int(os.getenv("EMAIL_POLL_INTERVAL_SECS", "60"))
 
 
@@ -79,14 +79,20 @@ def _process_email(mail: imaplib.IMAP4_SSL, uid: bytes) -> None:
     # customer_id = email address (hash in production for PII compliance)
     customer_id = from_addr or "unknown@email"
 
-    publish(
-        channel      = "email",
-        customer_id  = customer_id,
-        body         = body,
-        subject      = subject,
-        external_ref = msg_id,
-    )
-    logger.info(f"Published email complaint: from={from_addr} subject={subject[:60]}")
+    payload = {
+        "channel": "email",
+        "customer_id": customer_id,
+        "body": body,
+        "subject": subject,
+        "external_ref": msg_id,
+    }
+    
+    try:
+        resp = requests.post("http://localhost:8000/api/complaints/ingest", json=payload, timeout=20)
+        resp.raise_for_status()
+        logger.info(f"Successfully posted email to API: from={from_addr} subject={subject[:60]}")
+    except Exception as e:
+        logger.error(f"Failed to post email to API: {e}")
 
 
 def run_listener() -> None:

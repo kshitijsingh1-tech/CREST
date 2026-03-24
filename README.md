@@ -1,7 +1,7 @@
 # CREST
 ### Complaint Resolution & Escalation Smart Technology
 **India's first RBI-aligned Gen-AI grievance intelligence platform**
-PSBs Hackathon 2026 · Union Bank of India · Gen Forge · IDEA 2.0 · AI-CSPARC
+PSBs Hackathon 2026 Â· Union Bank of India Â· Gen Forge Â· IDEA 2.0 Â· AI-CSPARC
 
 ---
 
@@ -9,77 +9,77 @@ PSBs Hackathon 2026 · Union Bank of India · Gen Forge · IDEA 2.0 · AI-CSPARC
 
 ```
 crest/
-├── backend/
-│   ├── api/
-│   │   ├── complaints.py       # All complaint lifecycle endpoints
-│   │   └── analytics.py        # Dashboard metrics & chart data
-│   ├── workers/
-│   │   ├── celery_app.py       # Celery config + Beat schedule
-│   │   ├── ingest_worker.py    # Full AI pipeline per complaint (Celery task)
-│   │   ├── priority_worker.py  # Emotion-Decay refresh every 5 min
-│   │   └── sla_worker.py       # SLA monitoring + Slack/SendGrid alerts
-│   ├── services/
-│   │   └── complaint_service.py # Core business logic: dedup, priority, SLA
-│   ├── models/
-│   │   ├── complaint.py        # SQLAlchemy ORM + Pydantic schemas
-│   │   └── knowledge.py        # ResolutionKnowledge + SpikeSignal models
-│   ├── utils/
-│   │   ├── db.py               # Connection pool, SQLAlchemy engine
-│   │   └── logger.py           # JSON structured logging
-│   └── main.py                 # FastAPI app + Socket.IO mount
-│
-├── ai/
-│   ├── agents/
-│   │   └── classifier_agent.py # LangChain → Claude API: P0-P4, anger, category
-│   ├── rag/
-│   │   └── retriever.py        # LlamaIndex pgvector retrieval + Claude draft reply
-│   ├── embeddings/
-│   │   └── embedder.py         # 1536-dim Complaint DNA vector generation
-│   └── ner/
-│       └── extractor.py        # spaCy NER: amounts, txn IDs, dates, products
-│
-├── integrations/
-│   ├── whatsapp/
-│   │   └── webhook.py          # Meta Cloud API webhook + Whisper STT voice notes
-│   ├── twitter/
-│   │   └── stream.py           # Twitter API v2 filtered stream listener
-│   ├── email/
-│   │   └── listener.py         # IMAP poller for grievance inbox
-│   └── kafka/
-│       ├── consumer.py         # Reads 6 channel topics → Celery dispatch
-│       └── producer.py         # Shared publisher for all channel integrations
-│
-├── frontend/
-│   └── nextjs-app/
-│       ├── app/
-│       │   ├── page.tsx                    # Dashboard home (Server Component)
-│       │   ├── analytics/page.tsx          # Analytics charts page
-│       │   ├── complaints/[id]/page.tsx    # Complaint detail (Server Component)
-│       │   ├── layout.tsx                  # Root layout
-│       │   └── globals.css
-│       ├── components/
-│       │   ├── queue/PriorityQueue.tsx     # Live queue table (Socket.IO)
-│       │   ├── complaint/ComplaintDetail.tsx # Full detail + agent actions
-│       │   ├── sla/SLABadge.tsx            # SLA status pill
-│       │   └── charts/VolumeTrendChart.tsx # Recharts line chart
-│       └── lib/
-│           ├── api.ts                      # Typed API client
-│           └── useSocket.ts                # Socket.IO real-time hook
-│
-├── infra/
-│   ├── docker/
-│   │   ├── Dockerfile.api      # FastAPI + Celery image
-│   │   ├── Dockerfile.nextjs   # Next.js production image
-│   │   └── schema.sql          # PostgreSQL + pgvector schema (auto-run on init)
-│   ├── k8s/
-│   │   └── deployments.yaml    # Kubernetes manifests + HPA for ingest workers
-│   └── configs/
-│       └── (env-specific overrides)
-│
-├── docker-compose.yml          # Full local dev stack (12 services)
-├── requirements.txt            # Python deps
-├── .env.example                # All environment variables documented
-└── README.md
+â”œâ”€â”€ backend/
+â”‚   â”œâ”€â”€ api/
+â”‚   â”‚   â”œâ”€â”€ complaints.py       # All complaint lifecycle endpoints
+â”‚   â”‚   â””â”€â”€ analytics.py        # Dashboard metrics & chart data
+â”‚   â”œâ”€â”€ workers/
+â”‚   â”‚   â”œâ”€â”€ celery_app.py       # Celery config + Beat schedule
+â”‚   â”‚   â”œâ”€â”€ ingest_worker.py    # Full AI pipeline per complaint (Celery task)
+â”‚   â”‚   â”œâ”€â”€ priority_worker.py  # Emotion-Decay refresh every 5 min
+â”‚   â”‚   â””â”€â”€ sla_worker.py       # SLA monitoring + Slack/SendGrid alerts
+â”‚   â”œâ”€â”€ services/
+â”‚   â”‚   â””â”€â”€ complaint_service.py # Core business logic: dedup, priority, SLA
+â”‚   â”œâ”€â”€ models/
+â”‚   â”‚   â”œâ”€â”€ complaint.py        # SQLAlchemy ORM + Pydantic schemas
+â”‚   â”‚   â””â”€â”€ knowledge.py        # ResolutionKnowledge + SpikeSignal models
+â”‚   â”œâ”€â”€ utils/
+â”‚   â”‚   â”œâ”€â”€ db.py               # Connection pool, SQLAlchemy engine
+â”‚   â”‚   â””â”€â”€ logger.py           # JSON structured logging
+â”‚   â””â”€â”€ main.py                 # FastAPI app + Socket.IO mount
+â”‚
+â”œâ”€â”€ ai/
+â”‚   â”œâ”€â”€ agents/
+â”‚   â”‚   â””â”€â”€ classifier_agent.py # LangChain â†’ Claude API: P0-P4, anger, category
+â”‚   â”œâ”€â”€ rag/
+â”‚   â”‚   â””â”€â”€ retriever.py        # LlamaIndex pgvector retrieval + Claude draft reply
+â”‚   â”œâ”€â”€ embeddings/
+â”‚   â”‚   â””â”€â”€ embedder.py         # 1536-dim Complaint DNA vector generation
+â”‚   â””â”€â”€ ner/
+â”‚       â””â”€â”€ extractor.py        # spaCy NER: amounts, txn IDs, dates, products
+â”‚
+â”œâ”€â”€ integrations/
+â”‚   â”œâ”€â”€ whatsapp/
+â”‚   â”‚   â””â”€â”€ webhook.py          # Meta Cloud API webhook + Whisper STT voice notes
+â”‚   â”œâ”€â”€ twitter/
+â”‚   â”‚   â””â”€â”€ stream.py           # Twitter API v2 filtered stream listener
+â”‚   â”œâ”€â”€ email/
+â”‚   â”‚   â””â”€â”€ listener.py         # IMAP poller for grievance inbox
+â”‚   â””â”€â”€ kafka/
+â”‚       â”œâ”€â”€ consumer.py         # Reads 6 channel topics â†’ Celery dispatch
+â”‚       â””â”€â”€ producer.py         # Shared publisher for all channel integrations
+â”‚
+â”œâ”€â”€ frontend/
+â”‚   â””â”€â”€ nextjs-app/
+â”‚       â”œâ”€â”€ app/
+â”‚       â”‚   â”œâ”€â”€ page.tsx                    # Dashboard home (Server Component)
+â”‚       â”‚   â”œâ”€â”€ analytics/page.tsx          # Analytics charts page
+â”‚       â”‚   â”œâ”€â”€ complaints/[id]/page.tsx    # Complaint detail (Server Component)
+â”‚       â”‚   â”œâ”€â”€ layout.tsx                  # Root layout
+â”‚       â”‚   â””â”€â”€ globals.css
+â”‚       â”œâ”€â”€ components/
+â”‚       â”‚   â”œâ”€â”€ queue/PriorityQueue.tsx     # Live queue table (Socket.IO)
+â”‚       â”‚   â”œâ”€â”€ complaint/ComplaintDetail.tsx # Full detail + agent actions
+â”‚       â”‚   â”œâ”€â”€ sla/SLABadge.tsx            # SLA status pill
+â”‚       â”‚   â””â”€â”€ charts/VolumeTrendChart.tsx # Recharts line chart
+â”‚       â””â”€â”€ lib/
+â”‚           â”œâ”€â”€ api.ts                      # Typed API client
+â”‚           â””â”€â”€ useSocket.ts                # Socket.IO real-time hook
+â”‚
+â”œâ”€â”€ infra/
+â”‚   â”œâ”€â”€ docker/
+â”‚   â”‚   â”œâ”€â”€ Dockerfile.api      # FastAPI + Celery image
+â”‚   â”‚   â”œâ”€â”€ Dockerfile.nextjs   # Next.js production image
+â”‚   â”‚   â””â”€â”€ schema.sql          # PostgreSQL + pgvector schema (auto-run on init)
+â”‚   â”œâ”€â”€ k8s/
+â”‚   â”‚   â””â”€â”€ deployments.yaml    # Kubernetes manifests + HPA for ingest workers
+â”‚   â””â”€â”€ configs/
+â”‚       â””â”€â”€ (env-specific overrides)
+â”‚
+â”œâ”€â”€ docker-compose.yml          # Full local dev stack (12 services)
+â”œâ”€â”€ requirements.txt            # Python deps
+â”œâ”€â”€ .env.example                # All environment variables documented
+â””â”€â”€ README.md
 ```
 
 ---
@@ -89,7 +89,7 @@ crest/
 ### 1. Environment
 ```bash
 cp .env.example .env
-# Fill in ANTHROPIC_API_KEY (or set EMBEDDING_MODE=mock for local dev without API keys)
+# Fill in GROQ_API_KEY (and OPENAI_API_KEY if using OpenAI embeddings)
 ```
 
 ### 2. Start all services
@@ -102,7 +102,7 @@ docker compose ps
 ### 3. Install Python deps (for running locally without Docker)
 ```bash
 pip install -r requirements.txt
-python -m spacy download en_core_web_sm
+python -m pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
 ```
 
 ### 4. Seed sample data
@@ -139,29 +139,29 @@ npm install && npm run dev
 
 ```
 Customer (WhatsApp / Twitter / Email / App / Voice / Branch)
-        │
-        ▼
-  Channel Integration  →  Kafka Topic  →  Celery Ingest Worker
-                                                    │
-                          ┌─────────────────────────┼─────────────────────────┐
-                          │                         │                         │
-                   Claude API                   spaCy NER              Embedder (1536-dim)
+        â”‚
+        â–¼
+  Channel Integration  â†’  Kafka Topic  â†’  Celery Ingest Worker
+                                                    â”‚
+                          â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+                          â”‚                         â”‚                         â”‚
+                     Groq API                   spaCy NER              Embedder (1536-dim)
                  (classify P0-P4,            (extract amounts,        (Complaint DNA vector)
                  anger, category)             txn IDs, dates)
-                          │                         │                         │
-                          └─────────────────────────┼─────────────────────────┘
-                                                    │
+                          â”‚                         â”‚                         â”‚
+                          â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                                    â”‚
                                         PostgreSQL + pgvector
-                                      ┌─────────────────────────┐
-                                      │ Dedup check (cosine>0.92)│
-                                      │ Priority score calc      │
-                                      │ SLA timer created        │
-                                      │ Audit log entry          │
-                                      └─────────────────────────┘
-                                                    │
+                                      â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+                                      â”‚ Dedup check (cosine>0.92)â”‚
+                                      â”‚ Priority score calc      â”‚
+                                      â”‚ SLA timer created        â”‚
+                                      â”‚ Audit log entry          â”‚
+                                      â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                                    â”‚
                                          LlamaIndex RAG retrieval
-                                         Claude API draft reply
-                                                    │
+                                           Groq draft reply
+                                                    â”‚
                                       Next.js Agent Dashboard
                                       (Socket.IO live updates)
 ```
@@ -171,17 +171,17 @@ Customer (WhatsApp / Twitter / Email / App / Voice / Branch)
 ## The Three Core Innovations
 
 ### 1. Complaint DNA Fingerprinting
-Every complaint gets a **1536-dimensional embedding vector** stored in PostgreSQL via pgvector. When a new complaint arrives, a cosine ANN query finds any existing open complaint with similarity > 0.92 — and automatically marks the new one as a duplicate. Zero manual deduplication.
+Every complaint gets a **1536-dimensional embedding vector** stored in PostgreSQL via pgvector. When a new complaint arrives, a cosine ANN query finds any existing open complaint with similarity > 0.92 â€” and automatically marks the new one as a duplicate. Zero manual deduplication.
 
 ### 2. Emotion-Decay Priority Queue
 ```
-priority_score = severity_weight × anger_score × decay_factor
+priority_score = severity_weight Ã— anger_score Ã— decay_factor
 decay_factor   = MIN(3.0,  1 + LN(1 + hours_waiting / 8))
 ```
 Recalculated every 5 minutes by Celery Beat. A 3-day-old furious customer always outranks a calm new ticket.
 
 ### 3. Proactive Spike Prediction
-The `spike_signals` table logs outages, app updates, and rate changes. The ML model correlates these with historical complaint velocity to predict surges 24 hours in advance — shifting operations from reactive firefighting to truly predictive.
+The `spike_signals` table logs outages, app updates, and rate changes. The ML model correlates these with historical complaint velocity to predict surges 24 hours in advance â€” shifting operations from reactive firefighting to truly predictive.
 
 ---
 
@@ -204,7 +204,7 @@ The `spike_signals` table logs outages, app updates, and rate changes. The ML mo
 
 ---
 
-## Team — Gen Forge
+## Team â€” Gen Forge
 
 | Name | Role |
 |------|------|
@@ -215,4 +215,4 @@ The `spike_signals` table logs outages, app updates, and rate changes. The ML mo
 
 ---
 
-*CREST · PSBs Hackathon 2026 · Union Bank of India · 4× ROI · Zero SLA Breaches · 500M+ Customers*
+*CREST Â· PSBs Hackathon 2026 Â· Union Bank of India Â· 4Ã— ROI Â· Zero SLA Breaches Â· 500M+ Customers*

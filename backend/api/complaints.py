@@ -23,7 +23,7 @@ from backend.mock_store import (
 )
 from backend.utils.db import get_db_optional
 from backend.utils.logger import get_logger
-from backend.utils.runtime import DEV_MOCK
+from backend.utils.runtime import DEV_MOCK, USE_PGVECTOR
 from backend.models.complaint import ComplaintIngest, ComplaintOut, ResolveRequest, AssignRequest
 from backend.services.complaint_service import (
     ingest_complaint, get_priority_queue, assign_complaint,
@@ -190,10 +190,13 @@ def similar_complaints(
 
     from backend.models.complaint import Complaint
     c = db.query(Complaint).filter(Complaint.id == uuid.UUID(complaint_id)).first()
-    if not c or c.embedding is None:
-        raise HTTPException(status_code=404, detail="Complaint or embedding not found")
+    if not c:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    if not USE_PGVECTOR or c.embedding is None:
+        return []
 
-    similar = find_similar(list(c.embedding), top_k=top_k)
+    embedding = c.embedding if isinstance(c.embedding, list) else list(c.embedding)
+    similar = find_similar(embedding, top_k=top_k)
     return [s for s in similar if str(s["id"]) != complaint_id]
 
 
@@ -211,24 +214,31 @@ def assign(complaint_id: str, body: AssignRequest, db: Optional[Session] = Depen
         c = assign_complaint(db, complaint_id, body.agent)
         return {"status": "assigned", "agent": c.assigned_agent}
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        message = str(e)
+        status_code = 404 if "not found" in message.lower() else 400
+        raise HTTPException(status_code=status_code, detail=message)
 
 
 # ── Approve Draft ─────────────────────────────────────────────
 
 @router.patch("/{complaint_id}/approve-draft", response_model=dict)
 def approve_draft_reply(complaint_id: str, agent: str = Query(...), db: Optional[Session] = Depends(get_db_optional)):
-    if DEV_MOCK:
-        complaint = mock_approve_draft(complaint_id, agent)
-        if not complaint:
-            raise HTTPException(status_code=404, detail="Complaint not found")
-        return {"status": "draft_approved"}
-
     try:
-        approve_draft(db, complaint_id, agent)
-        return {"status": "draft_approved"}
+        if DEV_MOCK:
+            result = mock_approve_draft(complaint_id, agent)
+            if not result:
+                raise HTTPException(status_code=404, detail="Complaint not found")
+            return result
+
+        return approve_draft(db, complaint_id, agent)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        message = str(e)
+        status_code = 404 if "not found" in message.lower() else 400
+        raise HTTPException(status_code=status_code, detail=message)
+    except Exception as e:
+        logger.error(f"Approve draft failed: {e}", exc_info=True)
+        detail = str(e).strip() or "Approve draft failed"
+        raise HTTPException(status_code=502, detail=detail)
 
 
 # ── Resolve ───────────────────────────────────────────────────

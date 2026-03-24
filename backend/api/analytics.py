@@ -1,5 +1,5 @@
 """
-CREST — Analytics API Router
+CREST - Analytics API Router
 Dashboard metrics: SLA health, complaint volume, category distribution, spike signals.
 """
 
@@ -17,6 +17,7 @@ from backend.mock_store import (
     complaints_by_category as mock_complaints_by_category,
     complaints_by_severity as mock_complaints_by_severity,
     dashboard_summary as mock_dashboard_summary,
+    get_priority_queue as mock_get_priority_queue,
     spike_signals as mock_spike_signals,
     volume_trend as mock_volume_trend,
 )
@@ -32,10 +33,6 @@ router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
 @router.get("/dashboard")
 def dashboard_summary(db: Session | None = Depends(get_db_optional)):
-    """
-    Top-level KPIs for the CREST dashboard header cards.
-    Returns: total open, P0 count, SLA breach count, avg resolution time.
-    """
     if DEV_MOCK:
         return mock_dashboard_summary()
 
@@ -44,26 +41,31 @@ def dashboard_summary(db: Session | None = Depends(get_db_optional)):
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    total_open     = db.query(func.count(Complaint.id)).filter(Complaint.status == "open").scalar()
-    p0_open        = db.query(func.count(Complaint.id)).filter(Complaint.status == "open", Complaint.severity == 0).scalar()
-    breached       = db.query(func.count(Complaint.id)).filter(Complaint.sla_status == "breached", Complaint.status != "resolved").scalar()
-    resolved_today = db.query(func.count(Complaint.id)).filter(Complaint.resolved_at >= today_start).scalar()
-    duplicates_caught = db.query(func.count(Complaint.id)).filter(Complaint.is_duplicate == True).scalar()
+    total_open = db.query(func.count(Complaint.id)).filter(Complaint.status == "open").scalar()
+    p0_open = db.query(func.count(Complaint.id)).filter(
+        Complaint.status == "open", Complaint.severity == 0
+    ).scalar()
+    breached = db.query(func.count(Complaint.id)).filter(
+        Complaint.sla_status == "breached", Complaint.status != "resolved"
+    ).scalar()
+    resolved_today = db.query(func.count(Complaint.id)).filter(
+        Complaint.resolved_at >= today_start
+    ).scalar()
+    duplicates_caught = db.query(func.count(Complaint.id)).filter(
+        Complaint.is_duplicate == True
+    ).scalar()
 
-    # Avg resolution time in hours (resolved complaints)
     avg_resolution = db.query(
-        func.avg(
-            func.extract("epoch", Complaint.resolved_at - Complaint.created_at) / 3600
-        )
+        func.avg(func.extract("epoch", Complaint.resolved_at - Complaint.created_at) / 3600)
     ).filter(Complaint.resolved_at.isnot(None)).scalar()
 
     return {
-        "total_open":        total_open or 0,
-        "p0_open":           p0_open or 0,
-        "sla_breached":      breached or 0,
-        "resolved_today":    resolved_today or 0,
+        "total_open": total_open or 0,
+        "p0_open": p0_open or 0,
+        "sla_breached": breached or 0,
+        "resolved_today": resolved_today or 0,
         "duplicates_caught": duplicates_caught or 0,
-        "avg_resolution_hrs":round(float(avg_resolution or 0), 1),
+        "avg_resolution_hrs": round(float(avg_resolution or 0), 1),
     }
 
 
@@ -72,7 +74,6 @@ def complaints_by_category(
     days: int = Query(30, le=365),
     db: Session | None = Depends(get_db_optional),
 ):
-    """Complaint count grouped by category for the last N days."""
     if DEV_MOCK:
         return mock_complaints_by_category()
 
@@ -92,7 +93,6 @@ def complaints_by_category(
 
 @router.get("/by-severity")
 def complaints_by_severity(db: Session | None = Depends(get_db_optional)):
-    """Count of open complaints per severity level."""
     if DEV_MOCK:
         return mock_complaints_by_severity()
 
@@ -115,12 +115,12 @@ def volume_trend(
     days: int = Query(14, le=90),
     db: Session | None = Depends(get_db_optional),
 ):
-    """Daily complaint volume for the last N days — used for trend chart."""
     if DEV_MOCK:
         return mock_volume_trend(days)
 
     rows = db.execute(
-        text("""
+        text(
+            """
             SELECT DATE(created_at AT TIME ZONE 'Asia/Kolkata') AS day,
                    COUNT(*) AS total,
                    COUNT(*) FILTER (WHERE is_duplicate = TRUE) AS duplicates,
@@ -129,15 +129,16 @@ def volume_trend(
             WHERE created_at >= NOW() - make_interval(days => :days)
             GROUP BY day
             ORDER BY day ASC
-        """),
+            """
+        ),
         {"days": days},
     ).fetchall()
     return [
         {
-            "date":       str(r.day),
-            "total":      r.total,
+            "date": str(r.day),
+            "total": r.total,
             "duplicates": r.duplicates,
-            "p0_count":   r.p0_count,
+            "p0_count": r.p0_count,
         }
         for r in rows
     ]
@@ -145,7 +146,13 @@ def volume_trend(
 
 @router.get("/sla-health")
 def sla_health(db: Session | None = Depends(get_db_optional)):
-    """SLA status distribution for all non-closed complaints."""
+    if DEV_MOCK:
+        counts: dict[str, int] = {}
+        for complaint in mock_get_priority_queue(limit=500):
+            status = complaint.get("sla_status", "unknown")
+            counts[status] = counts.get(status, 0) + 1
+        return [{"status": status, "count": count} for status, count in sorted(counts.items())]
+
     from backend.models.complaint import Complaint
 
     rows = (
@@ -162,7 +169,6 @@ def channel_distribution(
     days: int = Query(30, le=365),
     db: Session | None = Depends(get_db_optional),
 ):
-    """Complaint count per channel for the last N days."""
     if DEV_MOCK:
         return mock_channel_distribution()
 
@@ -182,7 +188,6 @@ def channel_distribution(
 
 @router.get("/spike-signals")
 def spike_signals(hours: int = Query(48, le=168), db: Session | None = Depends(get_db_optional)):
-    """Recent spike prediction signals — for proactive staffing dashboard."""
     if DEV_MOCK:
         return mock_spike_signals(hours)
 
@@ -197,12 +202,12 @@ def spike_signals(hours: int = Query(48, le=168), db: Session | None = Depends(g
     )
     return [
         {
-            "id":                   s.id,
-            "signal_type":          s.signal_type,
-            "description":          s.description,
-            "expected_impact":      s.expected_impact,
-            "predicted_surge_pct":  float(s.predicted_surge_pct or 0),
-            "signal_ts":            s.signal_ts.isoformat(),
+            "id": s.id,
+            "signal_type": s.signal_type,
+            "description": s.description,
+            "expected_impact": s.expected_impact,
+            "predicted_surge_pct": float(s.predicted_surge_pct or 0),
+            "signal_ts": s.signal_ts.isoformat(),
         }
         for s in signals
     ]

@@ -9,7 +9,6 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from pgvector.sqlalchemy import Vector
 from pydantic import BaseModel, Field
 from sqlalchemy import (
     Boolean, Column, DateTime, ForeignKey, Integer,
@@ -19,6 +18,14 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from backend.utils.db import Base
+from backend.utils.runtime import USE_PGVECTOR
+
+if USE_PGVECTOR:
+    from pgvector.sqlalchemy import Vector
+
+    EMBEDDING_TYPE = Vector(1536)
+else:
+    EMBEDDING_TYPE = JSONB
 
 
 # ─────────────────────────────────────────────
@@ -50,7 +57,7 @@ class Complaint(Base):
     language        = Column(String(10), default="en")
 
     # Complaint DNA — 1536-dim vector
-    embedding       = Column(Vector(1536))
+    embedding       = Column(EMBEDDING_TYPE)
 
     # AI classification
     category        = Column(String(100))

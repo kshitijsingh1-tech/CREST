@@ -11,7 +11,10 @@ x-common-env: &common-env
   CREST_DB_URL:         postgresql://crest_user:crest_pass@postgres:5432/crest_db
   REDIS_URL:            redis://redis:6379/0
   KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-  ANTHROPIC_API_KEY:    ${ANTHROPIC_API_KEY:-}
+  GROQ_API_KEY:         ${GROQ_API_KEY:-}
+  GROQ_BASE_URL:        ${GROQ_BASE_URL:-https://api.groq.com/openai/v1}
+  GROQ_CLASSIFIER_MODEL: ${GROQ_CLASSIFIER_MODEL:-openai/gpt-oss-20b}
+  GROQ_DRAFT_MODEL:     ${GROQ_DRAFT_MODEL:-llama-3.3-70b-versatile}
   OPENAI_API_KEY:       ${OPENAI_API_KEY:-}
   EMBEDDING_MODE:       ${EMBEDDING_MODE:-mock}
 
@@ -70,7 +73,10 @@ services:
     environment:
       KAFKA_BROKER_ID:                        1
       KAFKA_ZOOKEEPER_CONNECT:                zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS:             PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS:                        PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS:             PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:   PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME:       PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE:        "true"
     healthcheck:
@@ -85,12 +91,12 @@ services:
       kafka: { condition: service_healthy }
     entrypoint: ["/bin/bash", "-c"]
     command: |
-      "kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic crest.channel.email     --partitions 3 --replication-factor 1
-       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic crest.channel.whatsapp  --partitions 3 --replication-factor 1
-       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic crest.channel.app       --partitions 3 --replication-factor 1
-       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic crest.channel.twitter   --partitions 3 --replication-factor 1
-       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic crest.channel.voice     --partitions 3 --replication-factor 1
-       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic crest.channel.branch    --partitions 3 --replication-factor 1
+      "kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.email     --partitions 3 --replication-factor 1
+       kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.whatsapp  --partitions 3 --replication-factor 1
+       kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.app       --partitions 3 --replication-factor 1
+       kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.twitter   --partitions 3 --replication-factor 1
+       kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.voice     --partitions 3 --replication-factor 1
+       kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.branch    --partitions 3 --replication-factor 1
        echo 'Kafka topics created'"
     restart: "no"
 
@@ -122,7 +128,7 @@ services:
     ports: ["8000:8000"]
     environment:
       <<: *common-env
-      CORS_ORIGINS: "http://localhost:3000"
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
     volumes: [.:/app]
     command: uvicorn backend.main:socket_app --host 0.0.0.0 --port 8000 --reload
 
@@ -195,7 +201,8 @@ services:
     depends_on: [api]
     ports: ["3000:3000"]
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+      BACKEND_INTERNAL_URL: http://api:8000
 
 volumes:
   crest_pgdata:

@@ -1,8 +1,3 @@
-"""
-CREST — FastAPI Application Entry Point
-Mounts all routers, configures CORS, Socket.IO, and startup events.
-"""
-
 import os
 from contextlib import asynccontextmanager
 
@@ -10,26 +5,43 @@ import socketio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.api.analytics import router as analytics_router
 from backend.api.complaints import router as complaints_router
-from backend.api.analytics  import router as analytics_router
-from backend.utils.logger   import get_logger
-from backend.utils.runtime  import DEV_MOCK
+from backend.utils.logger import get_logger
+from backend.utils.runtime import DEV_MOCK, is_truthy
+from integrations.whatsapp.webhook import router as whatsapp_webhook_router
 
 logger = get_logger("crest.main")
 
-# ── Socket.IO for real-time dashboard updates ────────────────
-sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
+
+def _parse_origins(value: str | None) -> list[str]:
+    if not value:
+        return ["http://localhost:3000"]
+    return [origin.strip() for origin in value.split(",") if origin.strip()]
+
+
+ALLOW_ALL_ORIGINS = is_truthy(os.getenv("CORS_ALLOW_ALL", "0"))
+cors_origins = _parse_origins(os.getenv("CORS_ORIGINS"))
+http_cors_origins = ["*"] if ALLOW_ALL_ORIGINS else cors_origins
+socket_cors_origins: list[str] | str = "*" if ALLOW_ALL_ORIGINS else cors_origins
+
+if ALLOW_ALL_ORIGINS:
+    logger.warning("CORS_ALLOW_ALL is enabled; allowing all HTTP and Socket.IO origins")
+
+
+sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=socket_cors_origins)
+
 
 @sio.event
 async def connect(sid, environ):
     logger.info(f"Dashboard client connected: {sid}")
+
 
 @sio.event
 async def disconnect(sid):
     logger.info(f"Dashboard client disconnected: {sid}")
 
 
-# ── Lifespan (startup / shutdown) ───────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("CREST API starting up")
@@ -37,31 +49,35 @@ async def lifespan(app: FastAPI):
         logger.info("CREST_DEV_MOCK enabled, skipping database startup check")
     else:
         from backend.utils.db import engine
+        from backend.utils.init_db import initialize_database
+        from sqlalchemy import text
+
+        initialize_database()
         with engine.connect() as conn:
-            conn.execute(__import__("sqlalchemy").text("SELECT 1"))
-        logger.info("Database connection verified")
+            conn.execute(text("SELECT 1"))
+        logger.info("Database connection verified and schema initialized")
     yield
     logger.info("CREST API shutting down")
 
 
-# ── FastAPI app ──────────────────────────────────────────────
 app = FastAPI(
-    title       = "CREST API",
-    description = "Complaint Resolution & Escalation Smart Technology — Union Bank of India",
-    version     = "1.0.0",
-    lifespan    = lifespan,
+    title="CREST API",
+    description="Complaint Resolution and Escalation Smart Technology - Union Bank of India",
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins     = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(","),
-    allow_credentials = True,
-    allow_methods     = ["*"],
-    allow_headers     = ["*"],
+    allow_origins=http_cors_origins,
+    allow_credentials=not ALLOW_ALL_ORIGINS,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(complaints_router)
 app.include_router(analytics_router)
+app.include_router(whatsapp_webhook_router)
 
 
 @app.get("/health")
@@ -69,20 +85,19 @@ def health():
     return {"status": "ok", "service": "CREST API"}
 
 
-# ── Mount Socket.IO alongside FastAPI ─────────────────────────
 socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
 
 
-# ── Helper called by Celery workers to push live updates ─────
 async def broadcast_queue_update(data: dict):
-    """Push priority queue refresh to all connected dashboard clients."""
     await sio.emit("queue_updated", data)
 
 
 async def broadcast_new_complaint(complaint_id: str, severity: int, category: str):
-    """Notify dashboard of a newly ingested complaint."""
-    await sio.emit("new_complaint", {
-        "id":       complaint_id,
-        "severity": severity,
-        "category": category,
-    })
+    await sio.emit(
+        "new_complaint",
+        {
+            "id": complaint_id,
+            "severity": severity,
+            "category": category,
+        },
+    )

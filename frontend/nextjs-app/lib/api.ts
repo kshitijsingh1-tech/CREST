@@ -4,18 +4,28 @@
  * Used by React Server Components (RSC) and client hooks alike.
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const getBaseUrl = () => {
+  if (typeof window === "undefined") {
+    return process.env.BACKEND_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  }
+  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+};
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...init,
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`API ${path} → ${res.status}: ${err}`);
+  const baseUrl = getBaseUrl();
+  try {
+    const res = await fetch(`${baseUrl}${path}`, {
+      headers: { "Content-Type": "application/json" },
+      ...init,
+    });
+    if (!res.ok) {
+      throw new Error(`API ${path} failed with status ${res.status}`);
+    }
+    return res.json() as Promise<T>;
+  } catch (error) {
+    console.error(`[API Fetch Error] ${path}:`, error);
+    throw error;
   }
-  return res.json() as Promise<T>;
 }
 
 // ── Types ─────────────────────────────────────────────────────

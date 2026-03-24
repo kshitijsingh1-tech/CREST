@@ -8,11 +8,13 @@ from contextlib import contextmanager
 
 import psycopg2
 import psycopg2.extras
-from pgvector.psycopg2 import register_vector
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
-from backend.utils.runtime import DEV_MOCK
+from backend.utils.runtime import DEV_MOCK, USE_PGVECTOR
+
+if USE_PGVECTOR:
+    from pgvector.psycopg2 import register_vector
 
 DATABASE_URL = os.getenv(
     "CREST_DB_URL",
@@ -38,7 +40,8 @@ class Base(DeclarativeBase):
 def get_raw_conn():
     """psycopg2 connection with pgvector registered. Caller must close."""
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
-    register_vector(conn)
+    if USE_PGVECTOR:
+        register_vector(conn)
     return conn
 
 
@@ -68,3 +71,12 @@ def get_db_optional():
         yield None
         return
     yield from get_db()
+
+
+def serialize_embedding(embedding: list[float]):
+    """Normalize embedding payload for the configured database backend."""
+    if USE_PGVECTOR:
+        import numpy as np
+
+        return np.array(embedding, dtype=np.float32)
+    return [float(value) for value in embedding]
