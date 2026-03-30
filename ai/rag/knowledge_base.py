@@ -315,9 +315,19 @@ def ingest_rag_dataset(
         )
 
     if all_chunks:
-        embeddings = embed_batch([chunk.content for chunk in all_chunks])
-        for chunk, embedding in zip(all_chunks, embeddings):
-            chunk.embedding = embedding
+        batch_size = 50  # Smaller batches to avoid memory/timeout issues with local SBERT
+        total_chunks = len(all_chunks)
+        print(f"Embedding {total_chunks} chunks in batches of {batch_size}...")
+        
+        for start in range(0, total_chunks, batch_size):
+            end = min(start + batch_size, total_chunks)
+            batch_contents = [chunk.content for chunk in all_chunks[start:end]]
+            batch_embeddings = embed_batch(batch_contents)
+            
+            for i, embedding in enumerate(batch_embeddings):
+                all_chunks[start + i].embedding = embedding
+            
+            print(f"  - Progress: {end}/{total_chunks} chunks embedded.")
 
     persisted_chunk_count = 0
     if persist and all_chunks:
@@ -422,7 +432,11 @@ def _search_document_chunks_pgvector(
                 """,
                 params,
             )
-            return [dict(row) for row in cur.fetchall()]
+            rows = [dict(row) for row in cur.fetchall()]
+            for row in rows:
+                if "id" in row:
+                    row["id"] = str(row["id"])
+            return rows
 
 
 def _search_document_chunks_python(
@@ -447,7 +461,7 @@ def _search_document_chunks_python(
                 continue
             ranked.append(
                 {
-                    "id": chunk.id,
+                    "id": str(chunk.id),
                     "source_path": chunk.source_path,
                     "source_name": chunk.source_name,
                     "document_title": chunk.document_title,

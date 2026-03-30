@@ -17,6 +17,7 @@ app = Celery(
         "backend.workers.ingest_worker",
         "backend.workers.priority_worker",
         "backend.workers.sla_worker",
+        "backend.workers.spike_worker",
     ],
 )
 
@@ -32,6 +33,7 @@ app.conf.update(
         "backend.workers.ingest_worker.*":   {"queue": "ingest"},
         "backend.workers.priority_worker.*": {"queue": "scheduler"},
         "backend.workers.sla_worker.*":      {"queue": "scheduler"},
+        "backend.workers.spike_worker.*":    {"queue": "scheduler"},
     },
 )
 
@@ -51,5 +53,10 @@ app.conf.beat_schedule = {
     "update-sla-statuses": {
         "task":     "backend.workers.sla_worker.update_statuses",
         "schedule": 1800,  # 30 minutes
+    },
+    # Detect category spikes every 15 minutes
+    "detect-spikes": {
+        "task":     "backend.workers.spike_worker.detect_spikes",
+        "schedule": 900,   # 15 minutes
     },
 }

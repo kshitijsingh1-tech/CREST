@@ -20,7 +20,7 @@ from backend.utils.runtime import USE_PGVECTOR
 if USE_PGVECTOR:
     from pgvector.sqlalchemy import Vector
 
-    EMBEDDING_TYPE = Vector(1536)
+    EMBEDDING_TYPE = Vector(768)
 else:
     EMBEDDING_TYPE = JSONB
 
@@ -84,7 +84,7 @@ class SpikeSignal(Base):
     signal_type = Column(String(100), nullable=False)
     description = Column(Text)
     expected_impact = Column(String(20))
-    predicted_surge_pct = Column(Numeric(5, 2))
+    predicted_surge_pct = Column(Numeric(10, 2))
     signal_ts = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

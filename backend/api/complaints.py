@@ -56,7 +56,7 @@ def ingest(payload: ComplaintIngest, db: Optional[Session] = Depends(get_db_opti
         classification  = classify(payload.body)
         entities        = extract(payload.body)
         embedding       = embed(payload.body)
-        draft           = generate_draft_reply(
+        rag_result      = generate_draft_reply(
             complaint_body    = payload.body,
             complaint_subject = payload.subject,
             named_entities    = entities.to_dict(),
@@ -81,7 +81,8 @@ def ingest(payload: ComplaintIngest, db: Optional[Session] = Depends(get_db_opti
             category      = classification.category,
             sub_category  = classification.sub_category,
             named_entities= entities.to_dict(),
-            draft_reply   = draft,
+            draft_reply   = rag_result["draft"],
+            draft_metadata= rag_result["sources"],
         )
         
         try:
@@ -154,6 +155,7 @@ def get_complaint(complaint_id: str, db: Optional[Session] = Depends(get_db_opti
     c = db.query(Complaint).filter(Complaint.id == uuid.UUID(complaint_id)).first()
     if not c:
         raise HTTPException(status_code=404, detail="Complaint not found")
+
     return {
         "id":              str(c.id),
         "channel":         c.channel.name if c.channel else None,
@@ -175,6 +177,7 @@ def get_complaint(complaint_id: str, db: Optional[Session] = Depends(get_db_opti
         "is_duplicate":    c.is_duplicate,
         "duplicate_of":    str(c.duplicate_of) if c.duplicate_of else None,
         "draft_reply":     c.draft_reply,
+        "draft_metadata":  c.draft_metadata,
         "draft_approved":  c.draft_approved,
         "resolution_note": c.resolution_note,
         "created_at":      c.created_at.isoformat(),
@@ -313,20 +316,28 @@ def audit_trail(complaint_id: str, db: Optional[Session] = Depends(get_db_option
 from pydantic import BaseModel
 
 class WebhookBroadcast(BaseModel):
-    complaint_id: str
-    severity: int
-    category: str
+    complaint_id: Optional[str] = None
+    severity:     Optional[int] = None
+    category:     Optional[str] = None
+    surge_pct:    Optional[float] = None
+    type:         str = "complaint"  # complaint or spike
+
 
 @router.post("/internal/broadcast", status_code=200)
 def celery_broadcast_webhook(payload: WebhookBroadcast):
     """
-    Called strictly by the background Celery Workers immediately after they finish
-    persisting a new LLM draft reply. This triggers the WebSocket memory broadcast
-    on the Uvicorn master thread!
+    Called strictly by background workers to trigger Socket.IO via Uvicorn master thread.
     """
     try:
-        async_to_sync(broadcast_queue_update)()
-        async_to_sync(broadcast_new_complaint)(payload.complaint_id, payload.severity, payload.category)
+        from backend.utils.socket import broadcast_queue_update, broadcast_new_complaint, broadcast_spike_alert
+        
+        if payload.type == "spike":
+            async_to_sync(broadcast_spike_alert)(payload.category, payload.surge_pct)
+        else:
+            async_to_sync(broadcast_queue_update)()
+            if payload.complaint_id:
+                async_to_sync(broadcast_new_complaint)(payload.complaint_id, payload.severity, payload.category)
+        
         return {"status": "broadcast_fired"}
     except Exception as e:
         logger.error(f"Celery webhook broadcast failed: {e}")

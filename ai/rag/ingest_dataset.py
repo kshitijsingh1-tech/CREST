@@ -44,21 +44,34 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    if not args.dry_run:
-        initialize_database()
+    try:
+        if not args.dry_run:
+            initialize_database()
 
-    ingest_kwargs = {
-        "dataset_dir": args.dataset_dir,
-        "persist": not args.dry_run,
-        "purge_existing": args.purge_existing,
-    }
-    if args.chunk_size is not None:
-        ingest_kwargs["chunk_size"] = args.chunk_size
-    if args.chunk_overlap is not None:
-        ingest_kwargs["chunk_overlap"] = args.chunk_overlap
+        ingest_kwargs = {
+            "dataset_dir": args.dataset_dir,
+            "persist": not args.dry_run,
+            "purge_existing": args.purge_existing,
+        }
+        if args.chunk_size is not None:
+            ingest_kwargs["chunk_size"] = args.chunk_size
+        if args.chunk_overlap is not None:
+            ingest_kwargs["chunk_overlap"] = args.chunk_overlap
 
-    summary = ingest_rag_dataset(**ingest_kwargs)
-    print(json.dumps(summary, indent=2))
+        summary = ingest_rag_dataset(**ingest_kwargs)
+        
+        # Clean up documents from the summary to avoid huge output
+        if "documents" in summary:
+            docs = summary.pop("documents")
+            print(f"Ingested {len(docs)} documents.")
+            
+        print(json.dumps(summary, indent=2))
+        
+    except Exception as e:
+        print(f"\nFATAL ERROR during ingestion: {e}")
+        import traceback
+        traceback.print_exc()
+        exit(1)
 
 
 if __name__ == "__main__":

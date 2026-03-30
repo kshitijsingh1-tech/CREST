@@ -64,4 +64,5 @@ cloudflared.exe
 frontend.zip
 
 # Local docs (architecture guides, walkthroughs)
-docs/
+# Removed docs/ to allow pushing session reports
+# docs/

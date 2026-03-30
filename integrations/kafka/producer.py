@@ -41,9 +41,12 @@ def _get_producer():
         from confluent_kafka import Producer
         _producer = Producer({
             "bootstrap.servers": KAFKA_BOOTSTRAP,
-            "acks":              "all",        # wait for all replicas
+            "acks":              "all",
             "retries":           5,
             "retry.backoff.ms":  200,
+            "api.version.request": True,
+            "socket.timeout.ms": 10000,
+            "request.timeout.ms": 15000,
         })
     return _producer
 

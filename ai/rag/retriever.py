@@ -138,7 +138,7 @@ def _retrieve_resolutions_python(
                 continue
             ranked.append(
                 {
-                    "id": row.id,
+                    "id": str(row.id),
                     "category": row.category,
                     "sub_category": row.sub_category,
                     "title": row.title,
@@ -186,7 +186,7 @@ def _retrieve_resolutions_keyword(
                 continue
             ranked.append(
                 {
-                    "id": row.id,
+                    "id": str(row.id),
                     "category": row.category,
                     "sub_category": row.sub_category,
                     "title": row.title,
@@ -261,7 +261,11 @@ def retrieve_resolutions(
                         """,
                         params,
                     )
-                    return [dict(row) for row in cur.fetchall()]
+                    rows = [dict(row) for row in cur.fetchall()]
+                    for row in rows:
+                        if "id" in row:
+                            row["id"] = str(row["id"])
+                    return rows
         except Exception as exc:
             logger.warning(
                 "pgvector resolution search failed, falling back to Python cosine search",
@@ -427,13 +431,16 @@ def generate_draft_reply(
     category: str,
     embedding: list[float],
     customer_name: Optional[str] = None,
-) -> str:
+) -> dict[str, Any]:
     """
     Full RAG pipeline:
     1. Retrieve similar past resolutions
     2. Retrieve relevant PDF policy/procedure chunks
     3. Build grounded context
     4. Call Groq to generate a draft reply
+    
+    Returns:
+        dict: {"draft": str, "sources": {"documents": list, "resolutions": list}}
     """
     try:
         resolutions = retrieve_resolutions(
@@ -493,7 +500,7 @@ Complaint Body:
 
     if not has_api_key():
         logger.info("No configured chat API key found, using template draft fallback")
-        return _template_fallback(
+        draft = _template_fallback(
             category,
             named_entities,
             customer_name,
@@ -501,6 +508,13 @@ Complaint Body:
             resolutions=resolutions,
             document_chunks=document_chunks,
         )
+        return {
+            "draft": draft,
+            "sources": {
+                "documents": document_chunks,
+                "resolutions": resolutions
+            }
+        }
 
     try:
         draft = create_chat_completion(
@@ -513,10 +527,16 @@ Complaint Body:
             temperature=0.2,
         )
         logger.info("Draft reply generated via Groq")
-        return draft
+        return {
+            "draft": draft,
+            "sources": {
+                "documents": document_chunks,
+                "resolutions": resolutions
+            }
+        }
     except Exception as exc:
         logger.error("Groq draft generation failed", extra={"error": str(exc)})
-        return _template_fallback(
+        draft = _template_fallback(
             category,
             named_entities,
             customer_name,
@@ -524,6 +544,13 @@ Complaint Body:
             resolutions=resolutions,
             document_chunks=document_chunks,
         )
+        return {
+            "draft": draft,
+            "sources": {
+                "documents": document_chunks,
+                "resolutions": resolutions
+            }
+        }
 
 
 def _template_fallback(

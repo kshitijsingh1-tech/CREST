@@ -15,6 +15,9 @@ import os
 import signal
 import sys
 from typing import Optional
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from backend.utils.logger import get_logger
 
@@ -85,9 +88,11 @@ def run_consumer():
         "bootstrap.servers":        KAFKA_BOOTSTRAP,
         "group.id":                 KAFKA_GROUP_ID,
         "auto.offset.reset":        "earliest",
-        "enable.auto.commit":       False,   # manual commit after Celery dispatch
+        "enable.auto.commit":       False,
         "max.poll.interval.ms":     300_000,
         "session.timeout.ms":       30_000,
+        "api.version.request":      True,
+        "socket.timeout.ms":        10000,
     })
     consumer.subscribe(CHANNEL_TOPICS)
     logger.info(f"Kafka consumer started. Topics: {CHANNEL_TOPICS}")
@@ -106,6 +111,8 @@ def run_consumer():
         while running:
             msg = consumer.poll(timeout=1.0)
             if msg is None:
+                if processed % 10 == 0:
+                    logger.info(f"Consumer heartbeat: polling {CHANNEL_TOPICS}...")
                 continue
             if msg.error():
                 if msg.error().code() == KafkaError._PARTITION_EOF:

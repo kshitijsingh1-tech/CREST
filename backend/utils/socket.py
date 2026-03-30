@@ -1,7 +1,9 @@
 import os
 import socketio
-
+from dotenv import load_dotenv
 from backend.utils.runtime import is_truthy
+
+load_dotenv()
 
 ALLOW_ALL_ORIGINS = is_truthy(os.getenv("CORS_ALLOW_ALL", "0"))
 
@@ -27,5 +29,15 @@ async def broadcast_new_complaint(complaint_id: str, severity: int, category: st
             "id": complaint_id,
             "severity": severity,
             "category": category,
+        },
+    )
+
+async def broadcast_spike_alert(category: str, surge_pct: float):
+    await sio.emit(
+        "new_spike",
+        {
+            "category": category,
+            "surge_pct": surge_pct,
+            "ts": datetime.now().isoformat(),
         },
     )

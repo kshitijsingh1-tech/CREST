@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.analytics import router as analytics_router  # type: ignore
 from backend.api.complaints import router as complaints_router  # type: ignore
+from backend.api.insights import router as insights_router  # type: ignore
 from backend.utils.logger import get_logger  # type: ignore
 from backend.utils.runtime import DEV_MOCK, is_truthy  # type: ignore
 from integrations.whatsapp.webhook import router as whatsapp_webhook_router  # type: ignore
@@ -75,6 +76,7 @@ app.add_middleware(
 
 app.include_router(complaints_router)
 app.include_router(analytics_router)
+app.include_router(insights_router)
 app.include_router(whatsapp_webhook_router)
 
 

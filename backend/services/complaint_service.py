@@ -24,7 +24,7 @@ from integrations.email.sender import is_email_address, send_customer_reply
 
 logger = get_logger("crest.services.complaint")
 
-DEDUP_THRESHOLD    = 0.92
+DEDUP_THRESHOLD    = 0.88
 SLA_DEFAULT_HOURS  = 720   # 30 days — Union Bank RBI mandate
 
 
@@ -160,6 +160,7 @@ def ingest_complaint(
     sub_category:   Optional[str]  = None,
     named_entities: dict           = None,
     draft_reply:    Optional[str]  = None,
+    draft_metadata: Optional[dict] = None,
 ) -> Complaint:
     """
     Full ingest pipeline — dedup → priority → persist → audit.
@@ -208,6 +209,7 @@ def ingest_complaint(
         similarity_score= sim_score,
         status          = "open",
         draft_reply     = draft_reply,
+        draft_metadata  = draft_metadata or {},
     )
     db.add(complaint)
     db.flush()   # get complaint.id before audit insert

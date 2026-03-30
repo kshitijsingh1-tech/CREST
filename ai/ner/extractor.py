@@ -42,11 +42,16 @@ _ACCOUNT_RE   = re.compile(r"\b(?:account|A/C|acc)\s*(?:no\.?|number)?\s*[:\-]?\
 _TXNID_RE     = re.compile(r"\b(?:UPI|UTR|TXN|REF|NEFT|RTGS|transaction)\s*(?:ID|ref|no\.?)?\s*[:\-]?\s*([A-Z0-9]{10,30})\b", re.IGNORECASE)
 _CARD_RE      = re.compile(r"\bcard\s+(?:ending|no\.?|number)?\s*[:\-]?\s*(\d{4})\b", re.IGNORECASE)
 _LOANID_RE    = re.compile(r"\b(?:loan|HL|PL|CC)\s*(?:account|no\.?)?\s*[:\-]?\s*([A-Z0-9]{8,20})\b", re.IGNORECASE)
+_IFSC_RE      = re.compile(r"\b([A-Z]{4}0[A-Z0-9]{6})\b", re.IGNORECASE)
+_PHONE_RE     = re.compile(r"\b(?:(?:\+|0{0,2})91[\s\-]?)?([6789]\d{9})\b")
+_EMAIL_RE     = re.compile(r"\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b")
 
 BANKING_PRODUCTS = [
     "UPI", "NEFT", "RTGS", "IMPS", "FD", "RD", "KYC",
     "debit card", "credit card", "net banking", "internet banking",
     "mobile banking", "ATM", "EMI", "home loan", "personal loan",
+    "cheque book", "locker", "savings account", "current account",
+    "fixed deposit", "dormant account", "account freeze", "beneficiary",
 ]
 
 
@@ -61,6 +66,9 @@ class BankingEntities:
     products:    list[str] = field(default_factory=list)
     persons:     list[str] = field(default_factory=list)
     locations:   list[str] = field(default_factory=list)
+    ifsc_codes:  list[str] = field(default_factory=list)
+    phones:      list[str] = field(default_factory=list)
+    emails:      list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {k: v for k, v in self.__dict__.items() if v}
@@ -85,6 +93,9 @@ def extract(text: str) -> BankingEntities:
     entities.txn_ids     = [m.group(1).upper() for m in _TXNID_RE.finditer(text)]
     entities.card_last4  = [m.group(1) for m in _CARD_RE.finditer(text)]
     entities.loan_ids    = [m.group(1).upper() for m in _LOANID_RE.finditer(text)]
+    entities.ifsc_codes  = [m.group(1).upper() for m in _IFSC_RE.finditer(text)]
+    entities.phones      = [m.group(1) for m in _PHONE_RE.finditer(text)]
+    entities.emails      = [m.group(1).lower() for m in _EMAIL_RE.finditer(text)]
 
     # Banking product mentions (case-insensitive keyword match)
     text_lower = text.lower()
@@ -104,7 +115,8 @@ def extract(text: str) -> BankingEntities:
 
     # Deduplicate all lists
     for attr in ("amounts", "account_nos", "txn_ids", "card_last4",
-                 "loan_ids", "dates", "products", "persons", "locations"):
+                 "loan_ids", "dates", "products", "persons", "locations",
+                 "ifsc_codes", "phones", "emails"):
         setattr(entities, attr, list(dict.fromkeys(getattr(entities, attr))))
 
     return entities

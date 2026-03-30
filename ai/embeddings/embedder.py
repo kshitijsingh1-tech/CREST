@@ -16,7 +16,7 @@ from backend.utils.runtime import REPO_ROOT  # noqa: F401 - ensures repo .env is
 
 logger = get_logger("crest.embeddings")
 
-EMBEDDING_DIM = 1536
+EMBEDDING_DIM = 768
 
 
 def _get_mode() -> str:
@@ -78,9 +78,47 @@ def _openai_embed_batch(texts: list[str]) -> list[list[float]]:
     return embeddings
 
 
+_model = None
+
+
+def _get_model_instance():
+    global _model
+    if _model is None:
+        try:
+            from sentence_transformers import SentenceTransformer
+            # all-mpnet-base-v2 is 768-dimensional, matching our DB schema exactly.
+            _model = SentenceTransformer("all-mpnet-base-v2")
+            logger.info("Local SBERT model (all-mpnet-base-v2) loaded successfully.")
+        except Exception as e:
+            logger.error(f"Failed to load SBERT model: {e}")
+            return None
+    return _model
+
+
+def _local_embed(text: str) -> list[float]:
+    """Generate 768-dim embedding using local SBERT."""
+    model = _get_model_instance()
+    if model is None:
+        raise RuntimeError("Local model not available")
+    
+    # encode() returns a numpy array
+    embedding = model.encode(text, convert_to_numpy=True)
+    return embedding.tolist()
+
+
+def _local_embed_batch(texts: list[str]) -> list[list[float]]:
+    """Batch embed using local SBERT."""
+    model = _get_model_instance()
+    if model is None:
+        raise RuntimeError("Local model not available")
+    
+    embeddings = model.encode(texts, convert_to_numpy=True)
+    return embeddings.tolist()
+
+
 def embed(text: str) -> list[float]:
     """
-    Generate a 1536-dimensional embedding for the given text.
+    Generate a 768-dimensional embedding for the given text.
 
     Returns a list[float] that can be safely cast to np.float32 for pgvector.
     """
@@ -92,6 +130,11 @@ def embed(text: str) -> list[float]:
     try:
         if mode == "mock":
             return _mock_embed(cleaned)
+        if mode == "local":
+            return _local_embed(cleaned)
+        if mode == "groq":
+            # Groq embeddings are currently 404ing or unreliable; use local for now
+            return _local_embed(cleaned)
         if mode in {"openai", "anthropic"}:
             return _openai_embed(cleaned)
         raise ValueError(f"Unsupported EMBEDDING_MODE: {mode}")
@@ -113,6 +156,10 @@ def embed_batch(texts: list[str]) -> list[list[float]]:
     try:
         if mode == "mock":
             return [_mock_embed(text) for text in cleaned]
+        if mode == "local":
+            return _local_embed_batch(cleaned)
+        if mode == "groq":
+            return _local_embed_batch(cleaned)
         if mode in {"openai", "anthropic"}:
             return _openai_embed_batch(cleaned)
         raise ValueError(f"Unsupported EMBEDDING_MODE: {mode}")

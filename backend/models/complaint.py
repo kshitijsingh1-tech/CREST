@@ -23,7 +23,7 @@ from backend.utils.runtime import USE_PGVECTOR
 if USE_PGVECTOR:
     from pgvector.sqlalchemy import Vector
 
-    EMBEDDING_TYPE = Vector(1536)
+    EMBEDDING_TYPE = Vector(768)
 else:
     EMBEDDING_TYPE = JSONB
 
@@ -88,6 +88,7 @@ class Complaint(Base):
     resolved_at     = Column(DateTime(timezone=True))
     resolution_note = Column(Text)
     draft_reply     = Column(Text)
+    draft_metadata  = Column(JSONB, default=dict)
     draft_approved  = Column(Boolean, default=False)
 
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
@@ -145,6 +146,7 @@ class ComplaintOut(BaseModel):
     assigned_agent: Optional[str]
     is_duplicate:   bool
     duplicate_of:   Optional[uuid.UUID]
+    draft_metadata: Optional[dict] = None
     created_at:     datetime
 
     class Config:

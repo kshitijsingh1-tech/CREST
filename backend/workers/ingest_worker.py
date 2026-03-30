@@ -92,7 +92,7 @@ def process_complaint(self, payload: dict) -> dict:
             # ── Step 6: Pre-generate draft reply ────────────
             # Skip for duplicates (parent complaint already has a draft)
             if not complaint.is_duplicate:
-                draft = generate_draft_reply(
+                rag_result = generate_draft_reply(
                     complaint_body    = payload["body"],
                     complaint_subject = payload.get("subject"),
                     named_entities    = entities_dict,
@@ -100,9 +100,10 @@ def process_complaint(self, payload: dict) -> dict:
                     embedding         = embedding,
                     customer_name     = payload.get("customer_name"),
                 )
-                complaint.draft_reply = draft
+                complaint.draft_reply = rag_result["draft"]
+                complaint.draft_metadata = rag_result["sources"]
                 db.commit()
-                logger.info("Draft reply generated and saved")
+                logger.info("Draft reply and source metadata generated and saved")
 
             # ── Step 8: Trigger WebSocket Broadcast ────────────
             try:
