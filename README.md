@@ -9,77 +9,66 @@ PSBs Hackathon 2026 Â· Union Bank of India Â· Gen Forge Â· IDEA 2.0 Â· A
 
 ```
 crest/
-â”œâ”€â”€ backend/
-â”‚   â”œâ”€â”€ api/
-â”‚   â”‚   â”œâ”€â”€ complaints.py       # All complaint lifecycle endpoints
-â”‚   â”‚   â””â”€â”€ analytics.py        # Dashboard metrics & chart data
-â”‚   â”œâ”€â”€ workers/
-â”‚   â”‚   â”œâ”€â”€ celery_app.py       # Celery config + Beat schedule
-â”‚   â”‚   â”œâ”€â”€ ingest_worker.py    # Full AI pipeline per complaint (Celery task)
-â”‚   â”‚   â”œâ”€â”€ priority_worker.py  # Emotion-Decay refresh every 5 min
-â”‚   â”‚   â””â”€â”€ sla_worker.py       # SLA monitoring + Slack/SendGrid alerts
-â”‚   â”œâ”€â”€ services/
-â”‚   â”‚   â””â”€â”€ complaint_service.py # Core business logic: dedup, priority, SLA
-â”‚   â”œâ”€â”€ models/
-â”‚   â”‚   â”œâ”€â”€ complaint.py        # SQLAlchemy ORM + Pydantic schemas
-â”‚   â”‚   â””â”€â”€ knowledge.py        # ResolutionKnowledge + SpikeSignal models
-â”‚   â”œâ”€â”€ utils/
-â”‚   â”‚   â”œâ”€â”€ db.py               # Connection pool, SQLAlchemy engine
-â”‚   â”‚   â””â”€â”€ logger.py           # JSON structured logging
-â”‚   â””â”€â”€ main.py                 # FastAPI app + Socket.IO mount
-â”‚
-â”œâ”€â”€ ai/
-â”‚   â”œâ”€â”€ agents/
-â”‚   â”‚   â””â”€â”€ classifier_agent.py # LangChain â†’ Claude API: P0-P4, anger, category
-â”‚   â”œâ”€â”€ rag/
-â”‚   â”‚   â””â”€â”€ retriever.py        # LlamaIndex pgvector retrieval + Claude draft reply
-â”‚   â”œâ”€â”€ embeddings/
-â”‚   â”‚   â””â”€â”€ embedder.py         # 1536-dim Complaint DNA vector generation
-â”‚   â””â”€â”€ ner/
-â”‚       â””â”€â”€ extractor.py        # spaCy NER: amounts, txn IDs, dates, products
-â”‚
-â”œâ”€â”€ integrations/
-â”‚   â”œâ”€â”€ whatsapp/
-â”‚   â”‚   â””â”€â”€ webhook.py          # Meta Cloud API webhook + Whisper STT voice notes
-â”‚   â”œâ”€â”€ twitter/
-â”‚   â”‚   â””â”€â”€ stream.py           # Twitter API v2 filtered stream listener
-â”‚   â”œâ”€â”€ email/
-â”‚   â”‚   â””â”€â”€ listener.py         # IMAP poller for grievance inbox
-â”‚   â””â”€â”€ kafka/
-â”‚       â”œâ”€â”€ consumer.py         # Reads 6 channel topics â†’ Celery dispatch
-â”‚       â””â”€â”€ producer.py         # Shared publisher for all channel integrations
-â”‚
-â”œâ”€â”€ frontend/
-â”‚   â””â”€â”€ nextjs-app/
-â”‚       â”œâ”€â”€ app/
-â”‚       â”‚   â”œâ”€â”€ page.tsx                    # Dashboard home (Server Component)
-â”‚       â”‚   â”œâ”€â”€ analytics/page.tsx          # Analytics charts page
-â”‚       â”‚   â”œâ”€â”€ complaints/[id]/page.tsx    # Complaint detail (Server Component)
-â”‚       â”‚   â”œâ”€â”€ layout.tsx                  # Root layout
-â”‚       â”‚   â””â”€â”€ globals.css
-â”‚       â”œâ”€â”€ components/
-â”‚       â”‚   â”œâ”€â”€ queue/PriorityQueue.tsx     # Live queue table (Socket.IO)
-â”‚       â”‚   â”œâ”€â”€ complaint/ComplaintDetail.tsx # Full detail + agent actions
-â”‚       â”‚   â”œâ”€â”€ sla/SLABadge.tsx            # SLA status pill
-â”‚       â”‚   â””â”€â”€ charts/VolumeTrendChart.tsx # Recharts line chart
-â”‚       â””â”€â”€ lib/
-â”‚           â”œâ”€â”€ api.ts                      # Typed API client
-â”‚           â””â”€â”€ useSocket.ts                # Socket.IO real-time hook
-â”‚
-â”œâ”€â”€ infra/
-â”‚   â”œâ”€â”€ docker/
-â”‚   â”‚   â”œâ”€â”€ Dockerfile.api      # FastAPI + Celery image
-â”‚   â”‚   â”œâ”€â”€ Dockerfile.nextjs   # Next.js production image
-â”‚   â”‚   â””â”€â”€ schema.sql          # PostgreSQL + pgvector schema (auto-run on init)
-â”‚   â”œâ”€â”€ k8s/
-â”‚   â”‚   â””â”€â”€ deployments.yaml    # Kubernetes manifests + HPA for ingest workers
-â”‚   â””â”€â”€ configs/
-â”‚       â””â”€â”€ (env-specific overrides)
-â”‚
-â”œâ”€â”€ docker-compose.yml          # Full local dev stack (12 services)
-â”œâ”€â”€ requirements.txt            # Python deps
-â”œâ”€â”€ .env.example                # All environment variables documented
-â””â”€â”€ README.md
+├── backend/
+│   ├── api/
+│   │   ├── complaints.py       # All complaint lifecycle endpoints
+│   │   └── analytics.py        # Dashboard metrics & chart data
+│   ├── workers/
+│   │   ├── celery_app.py       # Celery config + Beat schedule
+│   │   ├── ingest_worker.py    # Full AI pipeline per complaint (Celery task)
+│   │   ├── priority_worker.py  # Emotion-Decay refresh every 5 min
+│   │   └── sla_worker.py       # SLA monitoring + Slack/SendGrid alerts
+│   ├── services/
+│   │   ├── complaint_service.py # Core business logic: dedup, priority, SLA
+│   │   └── spike_service.py    # Categorical surge detection & RCA triggers
+│   ├── models/
+│   │   ├── complaint.py        # SQLAlchemy ORM + Pydantic schemas
+│   │   └── knowledge.py        # ResolutionKnowledge + SpikeSignal models
+│   ├── utils/
+│   │   ├── db.py               # Connection pool, SQLAlchemy engine
+│   │   └── logger.py           # JSON structured logging
+│   └── main.py                 # FastAPI app + Socket.IO mount
+│
+├── ai/
+│   ├── agents/
+│   │   ├── classifier_agent.py # Classifies P0-P4, anger, category
+│   │   └── rca_agent.py        # Root Cause Analysis on complaint clusters
+│   ├── rag/
+│   │   └── retriever.py        # pgvector retrieval + RAG draft reply
+│   ├── embeddings/
+│   │   └── embedder.py         # 768-dim Complaint DNA vector generation
+│   └── ner/
+│       └── extractor.py        # Entity extraction: amounts, txn IDs, dates
+│
+├── integrations/
+│   ├── whatsapp/
+│   │   └── webhook.py          # WhatsApp integration + Whisper STT
+│   ├── twitter/
+│   │   └── stream.py           # Twitter listener
+│   ├── email/
+│   │   └── listener.py         # IMAP poller for grievance inbox
+│   └── kafka/
+│       ├── consumer.py         # Reads channel topics -> Celery dispatch
+│       └── producer.py         # Shared publisher for all integrations
+│
+├── frontend/
+│   └── nextjs-app/
+│       ├── app/
+│       │   ├── dashboard/page.tsx  # Main Dashboard (RCA alerts + Queue)
+│       │   └── complaints/[id]/page.tsx # Complaint detail (Grounded RAG)
+│       ├── components/
+│       │   ├── queue/PriorityQueue.tsx # Live queue table (Socket.IO)
+│       │   └── complaint/ComplaintDetail.tsx # RAG source rendering
+│       └── lib/
+│           ├── api.ts              # Typed API client
+│           └── useSocket.ts        # Socket.IO real-time hook
+│
+├── scripts/
+│   └── demo_spike.py           # Demo seeding script for PSBs presentation
+│
+├── requirements.txt            # Python dependencies
+├── .env.example                # Environment variables
+└── README.md
 ```
 
 ---
