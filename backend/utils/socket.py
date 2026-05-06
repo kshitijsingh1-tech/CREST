@@ -32,12 +32,14 @@ async def broadcast_new_complaint(complaint_id: str, severity: int, category: st
         },
     )
 
-async def broadcast_spike_alert(category: str, surge_pct: float):
+async def broadcast_spike_alert(category: str, surge_pct: float, rca_insight: str = None):
+    from datetime import datetime
     await sio.emit(
         "new_spike",
         {
             "category": category,
             "surge_pct": surge_pct,
+            "rca_insight": rca_insight,
             "ts": datetime.now().isoformat(),
         },
     )

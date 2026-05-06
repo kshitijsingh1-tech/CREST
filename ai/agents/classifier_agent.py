@@ -32,38 +32,7 @@ Rules:
 - Return ONLY the JSON object, no markdown, no preamble
 """
 
-CLASSIFICATION_RESPONSE_FORMAT = {
-    "type": "json_schema",
-    "json_schema": {
-        "name": "complaint_classification",
-        "strict": True,
-        "schema": {
-            "type": "object",
-            "properties": {
-                "category": {
-                    "type": "string",
-                    "enum": ["UPI", "KYC", "Loan", "Card", "NetBanking", "NEFT_RTGS", "ATM", "FD", "General"],
-                },
-                "sub_category": {"type": "string"},
-                "severity": {"type": "integer"},
-                "anger_score": {"type": "number"},
-                "sentiment": {"type": "string", "enum": ["positive", "neutral", "negative", "hostile"]},
-                "summary": {"type": "string"},
-                "urgency_reason": {"type": "string"},
-            },
-            "required": [
-                "category",
-                "sub_category",
-                "severity",
-                "anger_score",
-                "sentiment",
-                "summary",
-                "urgency_reason",
-            ],
-            "additionalProperties": False,
-        },
-    },
-}
+CLASSIFICATION_RESPONSE_FORMAT = {"type": "json_object"}
 
 
 @dataclass

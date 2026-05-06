@@ -49,6 +49,7 @@ export interface Complaint {
   is_duplicate:   boolean;
   duplicate_of:   string | null;
   draft_reply:    string | null;
+  draft_metadata: any | null;
   draft_approved: boolean;
   created_at:     string;
 }
@@ -72,6 +73,8 @@ export interface SpikeSignal   {
   description:         string;
   expected_impact:     string;
   predicted_surge_pct: number;
+  rca_insight:         string | null;
+  common_factors:      any | null;
   signal_ts:           string;
 }
 export interface AuditEntry {

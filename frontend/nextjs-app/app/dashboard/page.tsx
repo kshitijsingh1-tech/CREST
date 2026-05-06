@@ -106,6 +106,29 @@ export default async function DashboardPage() {
                       </span>
                     </div>
                     <p className="text-[11px] font-bold leading-relaxed transition-colors duration-500 dark:text-gray-400 text-gray-600">{s.description}</p>
+                    
+                    {/* RCA Insight Section */}
+                    {s.rca_insight && (
+                      <div className="mt-3 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-red-400 mb-1 flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          AI Root Cause
+                        </p>
+                        <p className="text-[11px] font-medium text-red-200/80 leading-relaxed italic">
+                          "{s.rca_insight}"
+                        </p>
+                        {s.common_factors && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {s.common_factors.platforms?.map((p: string) => (
+                              <span key={p} className="text-[9px] bg-red-500/10 text-red-300 px-1.5 py-0.5 rounded border border-red-500/20">{p}</span>
+                            ))}
+                            {s.common_factors.error_codes?.map((e: string) => (
+                              <span key={e} className="text-[9px] bg-white/10 text-white px-1.5 py-0.5 rounded font-mono">{e}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -27,11 +27,11 @@ def detect_spikes():
         if signals:
             logger.info(f"Detected {len(signals)} spikes. Triggering broadcasts.")
             # The broadcast logic is already inside detect_category_spikes 
-            # calling the internal webhook if needed, but let's make it explicit here 
+            # calling the internal webhook if needed, lekin make it explicit here 
             # if we want to separate service from worker.
-            # Currently spike_service.py:detect_category_spikes calls broadcast_spike_alert.
+            # filhal spike_service.py:detect_category_spikes calls broadcast_spike_alert.
             # Wait, spike_service cannot call async broadcast_spike_alert directly since it's sync.
-            # I must update spike_service to hit the webhook!
+            # updated spike_service to hit the webhook!
             pass
             
     except Exception as e:

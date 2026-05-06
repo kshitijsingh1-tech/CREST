@@ -86,6 +86,8 @@ class SpikeSignal(Base):
     expected_impact = Column(String(20))
     predicted_surge_pct = Column(Numeric(10, 2))
     signal_ts = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    rca_insight = Column(Text)
+    common_factors = Column(JSONB, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

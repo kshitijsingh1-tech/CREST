@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from backend.models.complaint import Complaint
 from backend.models.knowledge import SpikeSignal
 from backend.utils.logger import get_logger
+from ai.agents.rca_agent import perform_rca
 
 logger = get_logger("crest.services.spike")
 
@@ -22,22 +23,23 @@ logger = get_logger("crest.services.spike")
 SPIKE_SENSITIVITY = 2.5  # 250% increase vs. baseline
 MIN_THRESHOLD     = 5    # Minimum volume to trigger a spike (avoid noise)
 
+#rca = root cause analysis 
 
-def _trigger_spike_broadcast(category: str, surge_pct: float):
-    """Hits the local internal webhook for Socket.IO dispatch."""
+def _trigger_spike_broadcast_with_rca(category: str, surge_pct: float, rca_insight: Optional[str] = None):
+    """Hits the local internal webhook for Socket.IO dispatch with RCA info."""
     try:
-        # Using synchronous httpx to avoid async complexity in the worker
         httpx.post(
             "http://localhost:8000/api/complaints/internal/broadcast",
             json={
                 "type": "spike",
                 "category": category,
-                "surge_pct": surge_pct
+                "surge_pct": surge_pct,
+                "rca_insight": rca_insight
             },
-            timeout=5.0
+            timeout=10.0 # RCA might take longer
         )
     except Exception as e:
-        logger.error(f"Failed to fire spike webhook: {e}")
+        logger.error(f"Failed to fire spike/rca webhook: {e}")
 
 
 def detect_category_spikes(db: Session) -> List[SpikeSignal]:
@@ -86,22 +88,37 @@ def detect_category_spikes(db: Session) -> List[SpikeSignal]:
             
             logger.warning(f"SPIKE DETECTED: {cat_name} | Surge: {surge_pct}% | Current: {current_count}")
 
-            # Create Signal record
+            # 4. Perform AI Root Cause Analysis
+            # Fetch recent complaint bodies for this category
+            recent_bodies = [
+                c.body for c in db.query(Complaint.body)
+                .filter(Complaint.category == cat_name)
+                .filter(Complaint.created_at >= one_hour_ago)
+                .filter(Complaint.is_duplicate == False)
+                .order_by(Complaint.created_at.desc())
+                .limit(50)
+                .all()
+            ]
+            
+            rca_result = perform_rca(recent_bodies)
+            
+            # Create Signal record with RCA insights
             signal = SpikeSignal(
                 signal_type="categorical_surge",
                 description=f"Significant surge in {cat_name} complaints (last 1h vs 24h avg).",
                 expected_impact="high" if current_count > 20 else "medium",
-                predicted_surge_pct=surge_pct
+                predicted_surge_pct=surge_pct,
+                rca_insight=rca_result.get("rca_insight"),
+                common_factors=rca_result.get("common_factors", {})
             )
-            # We'll stick the category name in the description or extend model later
-            # (assuming model has a signal_type but not category field yet)
             
             db.add(signal)
             signals.append(signal)
 
-            # 4. Fire Socket.IO broadcast
+            # 5. Fire Socket.IO broadcast (extending payload with RCA)
             try:
-                broadcast_spike_alert(cat_name, surge_pct)
+                # We'll use a modified broadcast that includes RCA
+                _trigger_spike_broadcast_with_rca(cat_name, surge_pct, rca_result.get("rca_insight"))
             except Exception as e:
                 logger.error(f"Failed to broadcast spike: {e}")
 

@@ -1,7 +1,7 @@
 # Comprehensive Session Report: CREST AI Stabilization & Autonomous Surveillance
 **Date**: March 30, 2026
 **Subject**: End-to-End Migration to Local SBERT, Implementation of Autonomous Early Warning System, and Grounded RAG Source Highlighting
-**Author**: Antigravity Engineering (Google DeepMind Team)
+**Author**: Kshitij Singh 
 
 ---
 

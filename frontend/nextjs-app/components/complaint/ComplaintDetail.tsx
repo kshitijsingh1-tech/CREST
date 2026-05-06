@@ -168,9 +168,41 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
               )}
             </div>
             {c.draft_reply ? (
-              <p className="text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40">
-                {c.draft_reply}
-              </p>
+              <>
+                <p className="text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40">
+                  {c.draft_reply}
+                </p>
+                
+                {/* RAG Sources (Grounded AI) */}
+                {c.draft_metadata && (
+                  <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-3 flex items-center gap-2">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      Verified Policy References
+                    </h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      {c.draft_metadata.documents?.map((doc: any, i: number) => (
+                        <div key={i} className="text-xs bg-gray-50 dark:bg-black/40 p-3 rounded-lg border border-gray-100 dark:border-white/5 group hover:border-indigo-200 dark:hover:border-indigo-900/50 transition-colors">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-gray-700 dark:text-gray-300">{doc.document_title}</span>
+                            <span className="text-[10px] text-gray-400">Page {doc.page_number}</span>
+                          </div>
+                          <p className="text-gray-500 dark:text-gray-500 italic line-clamp-2">"{doc.content}"</p>
+                        </div>
+                      ))}
+                      {c.draft_metadata.resolutions?.map((res: any, i: number) => (
+                        <div key={i} className="text-xs bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/20">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-blue-700 dark:text-blue-400">Past Resolution: {res.title}</span>
+                            <span className="text-[10px] text-blue-400">Similarity: {(res.relevance * 100).toFixed(0)}%</span>
+                          </div>
+                          <p className="text-blue-600/80 dark:text-blue-500/80">Key: {res.resolution_text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <p className="text-sm text-gray-400 italic">No draft generated yet.</p>
             )}

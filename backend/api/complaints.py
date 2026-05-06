@@ -320,6 +320,7 @@ class WebhookBroadcast(BaseModel):
     severity:     Optional[int] = None
     category:     Optional[str] = None
     surge_pct:    Optional[float] = None
+    rca_insight:  Optional[str] = None
     type:         str = "complaint"  # complaint or spike
 
 
@@ -332,7 +333,7 @@ def celery_broadcast_webhook(payload: WebhookBroadcast):
         from backend.utils.socket import broadcast_queue_update, broadcast_new_complaint, broadcast_spike_alert
         
         if payload.type == "spike":
-            async_to_sync(broadcast_spike_alert)(payload.category, payload.surge_pct)
+            async_to_sync(broadcast_spike_alert)(payload.category, payload.surge_pct, payload.rca_insight)
         else:
             async_to_sync(broadcast_queue_update)()
             if payload.complaint_id:

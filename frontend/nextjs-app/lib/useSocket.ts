@@ -15,9 +15,10 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 interface SocketEvents {
   onQueueUpdated?:  (data: unknown) => void;
   onNewComplaint?:  (data: { id: string; severity: number; category: string }) => void;
+  onNewSpike?:      (data: { category: string; surge_pct: number; rca_insight?: string }) => void;
 }
 
-export function useSocket({ onQueueUpdated, onNewComplaint }: SocketEvents) {
+export function useSocket({ onQueueUpdated, onNewComplaint, onNewSpike }: SocketEvents) {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -37,6 +38,10 @@ export function useSocket({ onQueueUpdated, onNewComplaint }: SocketEvents) {
 
     socket.on("new_complaint", (data) => {
       onNewComplaint?.(data);
+    });
+
+    socket.on("new_spike", (data) => {
+      onNewSpike?.(data);
     });
 
     socket.on("disconnect", (reason) => {
