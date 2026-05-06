@@ -1,7 +1,7 @@
 # CREST
 ### Complaint Resolution & Escalation Smart Technology
 **India's first RBI-aligned Gen-AI grievance intelligence platform**
-PSBs Hackathon 2026 Â· Union Bank of India Â· Gen Forge Â· IDEA 2.0 Â· AI-CSPARC
+PSBs Hackathon 2026 · Union Bank of India · Gen Forge · IDEA 2.0 · AI-CSPARC
 
 ---
 
@@ -126,33 +126,33 @@ npm install && npm run dev
 
 ## How a Complaint Flows Through CREST
 
-```
-Customer (WhatsApp / Twitter / Email / App / Voice / Branch)
-        â”‚
-        â–¼
-  Channel Integration  â†’  Kafka Topic  â†’  Celery Ingest Worker
-                                                    â”‚
-                          â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                          â”‚                         â”‚                         â”‚
-                     Groq API                   spaCy NER              Embedder (1536-dim)
-                 (classify P0-P4,            (extract amounts,        (Complaint DNA vector)
-                 anger, category)             txn IDs, dates)
-                          â”‚                         â”‚                         â”‚
-                          â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                                                    â”‚
-                                        PostgreSQL + pgvector
-                                      â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                                      â”‚ Dedup check (cosine>0.92)â”‚
-                                      â”‚ Priority score calc      â”‚
-                                      â”‚ SLA timer created        â”‚
-                                      â”‚ Audit log entry          â”‚
-                                      â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                                                    â”‚
-                                         LlamaIndex RAG retrieval
-                                           Groq draft reply
-                                                    â”‚
-                                      Next.js Agent Dashboard
-                                      (Socket.IO live updates)
+```mermaid
+graph TD
+    A["Customer (WhatsApp / Twitter / Email / App / Voice / Branch)"] --> B["Channel Integration"]
+    B --> C["Kafka Topic"]
+    C --> D["Celery Ingest Worker"]
+    
+    subgraph "AI Extraction & Analysis"
+        D --> E["Groq API (Classify)"]
+        D --> F["spaCy NER (Extract)"]
+        D --> G["Embedder (DNA Vector)"]
+    end
+    
+    E --> H["PostgreSQL + pgvector"]
+    F --> H
+    G --> H
+    
+    subgraph "Logic & Knowledge"
+        H --> I["Dedup Check"]
+        H --> J["Priority Score"]
+        H --> K["SLA Timer"]
+    end
+    
+    I --> L["LlamaIndex RAG"]
+    J --> L
+    
+    L --> M["Groq Draft Reply"]
+    M --> N["Next.js Agent Dashboard"]
 ```
 
 ---
@@ -160,17 +160,17 @@ Customer (WhatsApp / Twitter / Email / App / Voice / Branch)
 ## The Three Core Innovations
 
 ### 1. Complaint DNA Fingerprinting
-Every complaint gets a **1536-dimensional embedding vector** stored in PostgreSQL via pgvector. When a new complaint arrives, a cosine ANN query finds any existing open complaint with similarity > 0.92 â€” and automatically marks the new one as a duplicate. Zero manual deduplication.
+Every complaint gets a **768-dimensional embedding vector** stored in PostgreSQL via pgvector. When a new complaint arrives, a cosine ANN query finds any existing open complaint with similarity > 0.92 — and automatically marks the new one as a duplicate. Zero manual deduplication.
 
 ### 2. Emotion-Decay Priority Queue
 ```
-priority_score = severity_weight Ã— anger_score Ã— decay_factor
+priority_score = severity_weight × anger_score × decay_factor
 decay_factor   = MIN(3.0,  1 + LN(1 + hours_waiting / 8))
 ```
 Recalculated every 5 minutes by Celery Beat. A 3-day-old furious customer always outranks a calm new ticket.
 
 ### 3. Proactive Spike Prediction
-The `spike_signals` table logs outages, app updates, and rate changes. The ML model correlates these with historical complaint velocity to predict surges 24 hours in advance â€” shifting operations from reactive firefighting to truly predictive.
+The `spike_signals` table logs outages, app updates, and rate changes. The ML model correlates these with historical complaint velocity to predict surges 24 hours in advance — shifting operations from reactive firefighting to truly predictive.
 
 ---
 
@@ -193,7 +193,7 @@ The `spike_signals` table logs outages, app updates, and rate changes. The ML mo
 
 ---
 
-## Team â€” Gen Forge
+## Team — Gen Forge
 
 | Name | Role |
 |------|------|
@@ -204,4 +204,4 @@ The `spike_signals` table logs outages, app updates, and rate changes. The ML mo
 
 ---
 
-*CREST Â· PSBs Hackathon 2026 Â· Union Bank of India Â· 4Ã— ROI Â· Zero SLA Breaches Â· 500M+ Customers*
+*CREST · PSBs Hackathon 2026 · Union Bank of India · 4x ROI · Zero SLA Breaches · 500M+ Customers*
