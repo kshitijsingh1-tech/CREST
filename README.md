@@ -1,6 +1,6 @@
 # CREST
 ### Complaint Resolution & Escalation Smart Technology
-**India's first RBI-aligned Gen-AI grievance intelligence platform**
+**India's first RBI-aligned Gen-AI grievance intelligence platform** kyuki aayush bola
 PSBs Hackathon 2026 · Union Bank of India · Gen Forge · IDEA 2.0 · AI-CSPARC
 
 ---
