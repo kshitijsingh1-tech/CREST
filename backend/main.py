@@ -1,8 +1,9 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from backend.utils.db import get_db_optional
 
 from backend.api.analytics import router as analytics_router  # type: ignore
 from backend.api.complaints import router as complaints_router  # type: ignore
@@ -80,9 +81,28 @@ app.include_router(insights_router)
 app.include_router(whatsapp_webhook_router)
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok", "service": "CREST API"}
+@app.get("/api/health")
+def health(db=Depends(get_db_optional)):
+    health_status = {
+        "status": "healthy",
+        "service": "CREST API",
+        "dependencies": {
+            "database": "down",
+            "ai_mode": "mock" if DEV_MOCK else "live"
+        }
+    }
+    
+    # 1. Check Database
+    try:
+        if db:
+            from sqlalchemy import text
+            db.execute(text("SELECT 1"))
+            health_status["dependencies"]["database"] = "up"
+    except Exception as e:
+        health_status["status"] = "degraded"
+        health_status["dependencies"]["database"] = f"error: {str(e)}"
+
+    return health_status
 
 
 import socketio  # type: ignore

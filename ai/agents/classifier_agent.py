@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from backend.utils.logger import get_logger
 from ai.providers.groq import create_chat_completion, get_model, has_api_key
+from ai.utils.pii import mask_pii
 
 logger = get_logger("crest.agents.classifier")
 
@@ -69,11 +70,12 @@ def classify(complaint_body: str) -> ClassificationResult:
         return _mock_classify(complaint_body)
 
     try:
+        masked_body = mask_pii(complaint_body)
         raw = create_chat_completion(
             model=get_model("GROQ_CLASSIFIER_MODEL", "openai/gpt-oss-20b"),
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": f"Complaint:\n{complaint_body}"},
+                {"role": "user", "content": f"Complaint:\n{masked_body}"},
             ],
             max_tokens=512,
             temperature=0.0,

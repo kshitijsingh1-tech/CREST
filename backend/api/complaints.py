@@ -311,6 +311,50 @@ def audit_trail(complaint_id: str, db: Optional[Session] = Depends(get_db_option
     return export_audit_trail(db, complaint_id)
 
 
+# ── Public Tracking ───────────────────────────────────────────
+
+@router.get("/track/{complaint_id}", response_model=dict)
+def track_complaint(complaint_id: str, db: Optional[Session] = Depends(get_db_optional)):
+    """
+    Public-facing endpoint for customer tracking.
+    Returns safe, non-sensitive status info.
+    """
+    if DEV_MOCK:
+        complaint = mock_get_complaint(complaint_id)
+        if not complaint:
+            raise HTTPException(status_code=404, detail="Complaint not found")
+        return {
+            "id":             complaint["id"],
+            "status":         complaint["status"],
+            "category":       complaint["category"],
+            "subject":        complaint["subject"],
+            "sla_deadline":   complaint["sla_deadline"],
+            "created_at":     complaint["created_at"],
+            "resolved_at":    complaint["resolved_at"],
+            "resolution_note":complaint.get("resolution_note") if complaint["status"] == "resolved" else None
+        }
+
+    from backend.models.complaint import Complaint
+    try:
+        c = db.query(Complaint).filter(Complaint.id == uuid.UUID(complaint_id)).first()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Complaint ID format")
+        
+    if not c:
+        raise HTTPException(status_code=404, detail="Grievance not found")
+
+    return {
+        "id":              str(c.id),
+        "status":          c.status,
+        "category":        c.category,
+        "subject":         c.subject,
+        "sla_deadline":    c.sla_deadline.isoformat() if c.sla_deadline else None,
+        "created_at":      c.created_at.isoformat(),
+        "resolved_at":     c.resolved_at.isoformat() if c.resolved_at else None,
+        "resolution_note": c.resolution_note if c.status == "resolved" else None
+    }
+
+
 # ── Internal Worker Hooks ─────────────────────────────────────
 
 from pydantic import BaseModel

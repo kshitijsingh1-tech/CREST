@@ -19,6 +19,7 @@ from ai.rag.knowledge_base import search_document_chunks
 from backend.models.knowledge import ResolutionKnowledge
 from backend.utils.db import SessionLocal, raw_conn, serialize_embedding
 from backend.utils.logger import get_logger
+from ai.utils.pii import mask_pii
 from backend.utils.runtime import USE_PGVECTOR
 
 logger = get_logger("crest.rag")
@@ -481,6 +482,7 @@ def generate_draft_reply(
     context, has_context = _build_context_payload(resolutions, document_chunks)
 
     entities_str = json.dumps(named_entities, indent=2) if named_entities else "None extracted"
+    masked_body = mask_pii(complaint_body)
     user_prompt = f"""Retrieved Context Available: {"yes" if has_context else "no"}
 
 Retrieved Context:
@@ -495,7 +497,7 @@ Category: {category or 'Unknown'}
 Extracted Entities: {entities_str}
 
 Complaint Body:
-{complaint_body}
+{masked_body}
 """
 
     if not has_api_key():

@@ -178,6 +178,7 @@ The `spike_signals` table logs outages, app updates, and rate changes. The ML mo
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/track/{id}` | **NEW: Customer Mirror Portal** (Themed Live Tracking) |
 | POST | `/api/complaints/ingest` | Sync ingest (test/low-volume) |
 | GET | `/api/complaints/queue` | Live priority queue |
 | GET | `/api/complaints/{id}` | Full complaint detail |
@@ -190,6 +191,18 @@ The `spike_signals` table logs outages, app updates, and rate changes. The ML mo
 | GET | `/api/analytics/by-category` | Category breakdown |
 | GET | `/api/analytics/volume-trend` | Daily volume chart data |
 | GET | `/api/analytics/spike-signals` | Recent spike predictions |
+| GET | `/api/health` | **NEW: Proactive Health Probes** (DB + AI check) |
+
+---
+
+## Deployment & Production Readiness
+
+CREST is hardened for banking-grade deployment with the following features:
+
+1. **PII Masking**: Built-in redaction of Account Numbers, Phone Numbers, and Emails before LLM processing (RBI compliant).
+2. **Robust Health Checks**: Proactive monitoring of Database, Redis, and Kafka dependencies.
+3. **Containerized Stack**: Full multi-container orchestration via Docker Compose.
+4. **Pre-flight Validation**: Run `python scripts/check_deployment.py` to verify environment readiness.
 
 ---
 

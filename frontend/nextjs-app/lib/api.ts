@@ -100,6 +100,9 @@ export const getSimilarComplaints = (id: string, topK = 5): Promise<Complaint[]>
 export const getAuditTrail = (id: string): Promise<AuditEntry[]> =>
   apiFetch(`/api/complaints/${id}/audit`, { cache: "no-store" });
 
+export const trackComplaint = (id: string): Promise<any> =>
+  apiFetch(`/api/complaints/track/${id}`, { cache: "no-store" });
+
 export const assignComplaint = (id: string, agent: string) =>
   apiFetch(`/api/complaints/${id}/assign`, {
     method: "PATCH",
