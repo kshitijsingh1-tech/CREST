@@ -4,7 +4,7 @@
 
 ---
 
-## 📂 (A) Problem being Solved
+## (A) Problem being Solved
 Union Bank of India serves millions of customers across diverse regions. Current grievance systems face three critical bottlenecks:
 1. **The "Duplicate" Storm**: Redundant tickets across Email/Twitter/App waste 30% of agent time.
 2. **Static Prioritization**: FIFO queues ignore high-emotion P0 cases and decaying SLAs.
@@ -46,7 +46,7 @@ graph TD
 
 ---
 
-## 💻 (B) How to Run Locally
+## (B) How to Run Locally
 
 ### **Project Structure**
 ```
@@ -66,14 +66,14 @@ crest/
 
 ---
 
-## 🛠️ (C) Libraries & Dependencies
+## (C) Libraries & Dependencies
 - **AI**: `llama-index`, `sentence-transformers`, `spacy`, `groq`.
 - **Backend**: `fastapi`, `sqlalchemy`, `pgvector`, `celery`, `redis-py`.
 - **Frontend**: `next`, `tailwind-css`, `socket.io-client`, `lucide-react`.
 
 ---
 
-## 📊 (D) Sample Dataset & Simulation
+## (D) Sample Dataset & Simulation
 Evaluators can populate the system with 50+ realistic grievances using:
 ```bash
 python -m backend.utils.reset_db
@@ -82,7 +82,7 @@ python -m backend.utils.reset_db
 
 ---
 
-## ⚠️ (E) Known Limitations & Readiness
+## (E) Known Limitations & Readiness
 1. **API Rate Limits**: Demo tier is limited to 14,400 tokens per minute.
 2. **PII Masking**: Built-in redaction of Account Numbers/Phone Numbers before LLM processing.
 3. **Audit Trail**: Full immutable audit trail for every action (RBI compliant).
@@ -98,7 +98,7 @@ python -m backend.utils.reset_db
 
 ---
 
-## 👥 Team Gen Forge
+## Team Gen Forge
 - **Kshitij Singh**: Lead Backend & AI
 - **Aayush Jaiswal**: Frontend & UI/UX
 - **Laxya Gaba**: AI Logic & RAG
