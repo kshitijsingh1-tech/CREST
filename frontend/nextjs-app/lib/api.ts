@@ -4,6 +4,8 @@
  * Used by React Server Components (RSC) and client hooks alike.
  */
 
+import Cookies from "js-cookie";
+
 const getBaseUrl = () => {
   if (typeof window === "undefined") {
     return process.env.BACKEND_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -14,11 +16,34 @@ const getBaseUrl = () => {
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const baseUrl = getBaseUrl();
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    
+    let token: string | undefined;
+
+    if (typeof window !== "undefined") {
+      // Client-side
+      token = Cookies.get("crest_token");
+    } else {
+      // Server-side (RSC)
+      const { cookies } = await import("next/headers");
+      token = cookies().get("crest_token")?.value;
+    }
+
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     const res = await fetch(`${baseUrl}${path}`, {
-      headers: { "Content-Type": "application/json" },
+      headers,
+      credentials: "include", // Essential for sending cookies to the backend
       ...init,
     });
+
     if (!res.ok) {
+      // Handle 401 specifically if possible
+      if (res.status === 401 && typeof window !== "undefined") {
+        console.warn("Unauthorized API call, redirecting to login");
+        // We don't redirect immediately here to avoid loops, 
+        // but we throw so the component can handle it.
+      }
       throw new Error(`API ${path} failed with status ${res.status}`);
     }
     return res.json() as Promise<T>;
@@ -45,13 +70,29 @@ export interface Complaint {
   sla_deadline:   string | null;
   sla_status:     string;
   status:         string;
-  assigned_agent: string | null;
+  region_id:      number | null;
+  assigned_employee_id: number | null;
+  is_escalated:   boolean;
   is_duplicate:   boolean;
   duplicate_of:   string | null;
   draft_reply:    string | null;
   draft_metadata: any | null;
   draft_approved: boolean;
   created_at:     string;
+}
+
+export interface Region {
+  id:   number;
+  name: string;
+}
+
+export interface User {
+  id:        number;
+  email:     string;
+  name:      string;
+  role:      string;
+  region_id: number | null;
+  is_active: boolean;
 }
 
 export interface DashboardSummary {
@@ -88,8 +129,10 @@ export interface AuditEntry {
 
 // ── Complaints ────────────────────────────────────────────────
 
-export const getPriorityQueue = (limit = 50): Promise<Complaint[]> =>
-  apiFetch(`/api/complaints/queue?limit=${limit}`, { cache: "no-store" });
+export const getPriorityQueue = (limit = 50, regionId?: number): Promise<Complaint[]> => {
+  const query = regionId ? `&region_id=${regionId}` : "";
+  return apiFetch(`/api/complaints/queue?limit=${limit}${query}`, { cache: "no-store" });
+};
 
 export const getComplaint = (id: string): Promise<Complaint> =>
   apiFetch(`/api/complaints/${id}`, { cache: "no-store" });
@@ -103,10 +146,16 @@ export const getAuditTrail = (id: string): Promise<AuditEntry[]> =>
 export const trackComplaint = (id: string): Promise<any> =>
   apiFetch(`/api/complaints/track/${id}`, { cache: "no-store" });
 
-export const assignComplaint = (id: string, agent: string) =>
+export const assignComplaint = (id: string, employeeId: number) =>
   apiFetch(`/api/complaints/${id}/assign`, {
     method: "PATCH",
-    body: JSON.stringify({ agent }),
+    body: JSON.stringify({ employee_id: employeeId }),
+  });
+
+export const escalateComplaint = (id: string, employeeId: number) =>
+  apiFetch(`/api/complaints/${id}/escalate`, {
+    method: "PATCH",
+    body: JSON.stringify({ employee_id: employeeId }),
   });
 
 export const approveDraft = (id: string, agent: string) =>
@@ -127,20 +176,66 @@ export const resolveComplaint = (
 
 // ── Analytics ─────────────────────────────────────────────────
 
-export const getDashboardSummary = (): Promise<DashboardSummary> =>
-  apiFetch("/api/analytics/dashboard", { next: { revalidate: 30 } });
+export const getDashboardSummary = (regionId?: number): Promise<DashboardSummary> => {
+  const query = regionId ? `?region_id=${regionId}` : "";
+  return apiFetch(`/api/analytics/dashboard${query}`, { next: { revalidate: 30 } });
+};
 
-export const getByCategory = (days = 30): Promise<CategoryStat[]> =>
-  apiFetch(`/api/analytics/by-category?days=${days}`, { next: { revalidate: 60 } });
+export const getByCategory = (days = 30, regionId?: number): Promise<CategoryStat[]> => {
+  const query = `?days=${days}${regionId ? `&region_id=${regionId}` : ""}`;
+  return apiFetch(`/api/analytics/by-category${query}`, { next: { revalidate: 60 } });
+};
 
-export const getBySeverity = (): Promise<SeverityStat[]> =>
-  apiFetch("/api/analytics/by-severity", { next: { revalidate: 60 } });
+export const getBySeverity = (regionId?: number): Promise<SeverityStat[]> => {
+  const query = regionId ? `?region_id=${regionId}` : "";
+  return apiFetch(`/api/analytics/by-severity${query}`, { next: { revalidate: 60 } });
+};
 
-export const getVolumeTrend = (days = 14): Promise<VolumeTrend[]> =>
-  apiFetch(`/api/analytics/volume-trend?days=${days}`, { next: { revalidate: 300 } });
+export const getVolumeTrend = (days = 14, regionId?: number): Promise<VolumeTrend[]> => {
+  const query = `?days=${days}${regionId ? `&region_id=${regionId}` : ""}`;
+  return apiFetch(`/api/analytics/volume-trend${query}`, { next: { revalidate: 300 } });
+};
 
-export const getChannelDistribution = (days = 30): Promise<ChannelStat[]> =>
-  apiFetch(`/api/analytics/channel-distribution?days=${days}`, { next: { revalidate: 60 } });
+export const getChannelDistribution = (days = 30, regionId?: number): Promise<ChannelStat[]> => {
+  const query = `?days=${days}${regionId ? `&region_id=${regionId}` : ""}`;
+  return apiFetch(`/api/analytics/channel-distribution${query}`, { next: { revalidate: 60 } });
+};
 
 export const getSpikeSignals = (hours = 48): Promise<SpikeSignal[]> =>
   apiFetch(`/api/analytics/spike-signals?hours=${hours}`, { next: { revalidate: 120 } });
+
+// ── Admin ─────────────────────────────────────────────────────
+
+export const getRegions = (): Promise<Region[]> =>
+  apiFetch("/api/admin/regions", { cache: "no-store" });
+
+export const getEmployees = (): Promise<User[]> =>
+  apiFetch("/api/admin/employees", { cache: "no-store" });
+
+export const getMe = (): Promise<User> =>
+  apiFetch("/api/admin/users/me", { cache: "no-store" });
+
+export const toggleStatus = (isActive: boolean): Promise<User> =>
+  apiFetch(`/api/admin/users/status?is_active=${isActive}`, { method: "PATCH" });
+
+// ── Auth ──────────────────────────────────────────────────────
+
+export const login = async (email: string, password: string): Promise<any> => {
+  const data = await apiFetch<any>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+  if (typeof window !== "undefined") {
+    Cookies.set("crest_token", data.access_token, { expires: 1/24, secure: false }); // 1 hour
+    localStorage.setItem("crest_user", JSON.stringify(data));
+  }
+  return data;
+};
+
+export const logout = () => {
+  if (typeof window !== "undefined") {
+    Cookies.remove("crest_token");
+    localStorage.removeItem("crest_user");
+    window.location.href = "/login";
+  }
+};

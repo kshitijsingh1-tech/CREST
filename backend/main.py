@@ -8,6 +8,8 @@ from backend.utils.db import get_db_optional
 from backend.api.analytics import router as analytics_router  # type: ignore
 from backend.api.complaints import router as complaints_router  # type: ignore
 from backend.api.insights import router as insights_router  # type: ignore
+from backend.api.users import router as users_router  # type: ignore
+from backend.api.auth import router as auth_router  # type: ignore
 from backend.utils.logger import get_logger  # type: ignore
 from backend.utils.runtime import DEV_MOCK, is_truthy  # type: ignore
 from integrations.whatsapp.webhook import router as whatsapp_webhook_router  # type: ignore
@@ -79,6 +81,8 @@ app.include_router(complaints_router)
 app.include_router(analytics_router)
 app.include_router(insights_router)
 app.include_router(whatsapp_webhook_router)
+app.include_router(users_router)
+app.include_router(auth_router)
 
 
 @app.get("/api/health")

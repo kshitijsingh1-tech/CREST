@@ -13,9 +13,11 @@ import math
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.models.complaint import Complaint, ComplaintAudit, Channel
+from backend.models.user import User, Region
 from backend.models.knowledge import ResolutionKnowledge
 from backend.utils.db import raw_conn, serialize_embedding
 from backend.utils.logger import get_logger
@@ -161,10 +163,10 @@ def ingest_complaint(
     named_entities: dict           = None,
     draft_reply:    Optional[str]  = None,
     draft_metadata: Optional[dict] = None,
+    region_id:      Optional[int]  = None,
 ) -> Complaint:
     """
-    Full ingest pipeline — dedup → priority → persist → audit.
-    Returns the created Complaint ORM object.
+    Full ingest pipeline — dedup → priority → assign → persist → audit.
     """
     # Resolve channel
     channel = db.query(Channel).filter(Channel.name == channel_name).first()
@@ -184,6 +186,13 @@ def ingest_complaint(
     now = datetime.now(timezone.utc)
     priority_score = calc_priority_score(severity, anger_score, now)
     sla_deadline   = now + timedelta(hours=sla_hours)
+
+    # Auto-Assignment Logic (Least-Loaded Active Employee in Region)
+    assigned_employee_id = None
+    if region_id and not is_dup:
+        assigned_employee_id = find_least_loaded_employee(db, region_id)
+        if assigned_employee_id:
+            logger.info(f"Auto-assigned complaint to employee_id={assigned_employee_id}")
 
     # Build ORM object
     complaint = Complaint(
@@ -207,7 +216,10 @@ def ingest_complaint(
         is_duplicate    = is_dup,
         duplicate_of    = dup_of,
         similarity_score= sim_score,
-        status          = "open",
+        status          = "open" if not assigned_employee_id else "in_progress",
+        region_id       = region_id,
+        assigned_employee_id = assigned_employee_id,
+        assigned_at     = now if assigned_employee_id else None,
         draft_reply     = draft_reply,
         draft_metadata  = draft_metadata or {},
     )
@@ -398,12 +410,17 @@ def update_sla_statuses(db: Session) -> None:
 # PRIORITY QUEUE
 # ─────────────────────────────────────────────
 
-def get_priority_queue(db: Session, limit: int = 50) -> list[Complaint]:
-    return (
+def get_priority_queue(db: Session, limit: int = 50, region_id: Optional[int] = None) -> list[Complaint]:
+    query = (
         db.query(Complaint)
         .filter(Complaint.status.in_(["open", "in_progress"]))
         .filter(Complaint.is_duplicate == False)
-        .order_by(Complaint.priority_score.desc())
+    )
+    if region_id:
+        query = query.filter(Complaint.region_id == region_id)
+
+    return (
+        query.order_by(Complaint.priority_score.desc())
         .limit(limit)
         .all()
     )
@@ -465,3 +482,30 @@ def _write_audit(
         new_value    = new_value,
     )
     db.add(entry)
+
+def find_least_loaded_employee(db: Session, region_id: int) -> Optional[int]:
+    """
+    Finds the active employee in a region with the lowest number of open tickets.
+    """
+    # Subquery to count open complaints per user
+    workload_subquery = (
+        db.query(
+            Complaint.assigned_employee_id,
+            func.count(Complaint.id).label("load")
+        )
+        .filter(Complaint.status.in_(["open", "in_progress"]))
+        .group_by(Complaint.assigned_employee_id)
+        .subquery()
+    )
+
+    least_loaded = (
+        db.query(User.id)
+        .outerjoin(workload_subquery, User.id == workload_subquery.c.assigned_employee_id)
+        .filter(User.region_id == region_id)
+        .filter(User.role == "EMPLOYEE")
+        .filter(User.is_active == True)
+        .order_by(func.coalesce(workload_subquery.c.load, 0).asc())
+        .first()
+    )
+    
+    return least_loaded[0] if least_loaded else None

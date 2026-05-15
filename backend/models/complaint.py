@@ -83,7 +83,10 @@ class Complaint(Base):
 
     # Lifecycle
     status          = Column(String(20), default="open")
-    assigned_agent  = Column(String(100))
+    region_id       = Column(Integer, ForeignKey("regions.id"), nullable=True)
+    assigned_employee_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    is_escalated    = Column(Boolean, default=False)
+    
     assigned_at     = Column(DateTime(timezone=True))
     resolved_at     = Column(DateTime(timezone=True))
     resolution_note = Column(Text)
@@ -95,6 +98,8 @@ class Complaint(Base):
     updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     channel    = relationship("Channel", back_populates="complaints")
+    region     = relationship("Region", back_populates="complaints")
+    assigned_employee = relationship("User", back_populates="assigned_complaints")
     audit_logs = relationship("ComplaintAudit", back_populates="complaint")
 
 
@@ -126,6 +131,7 @@ class ComplaintIngest(BaseModel):
     external_ref:  Optional[str]      = None
     language:      str                = "en"
     sla_hours:     int                = 720        # 30-day Union Bank default
+    region_id:     Optional[int]      = None
 
 
 class ComplaintOut(BaseModel):
@@ -143,7 +149,9 @@ class ComplaintOut(BaseModel):
     sla_deadline:   Optional[datetime]
     sla_status:     str
     status:         str
-    assigned_agent: Optional[str]
+    region_id:      Optional[int]
+    assigned_employee_id: Optional[int]
+    is_escalated:   bool
     is_duplicate:   bool
     duplicate_of:   Optional[uuid.UUID]
     draft_metadata: Optional[dict] = None
@@ -161,4 +169,9 @@ class ResolveRequest(BaseModel):
 
 
 class AssignRequest(BaseModel):
-    agent: str
+    employee_id: int
+
+
+class EscalateRequest(BaseModel):
+    employee_id: int
+    note: Optional[str] = None

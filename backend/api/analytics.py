@@ -32,7 +32,10 @@ router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
 
 @router.get("/dashboard")
-def dashboard_summary(db: Session | None = Depends(get_db_optional)):
+def dashboard_summary(
+    region_id: int | None = Query(None),
+    db: Session | None = Depends(get_db_optional)
+):
     if DEV_MOCK:
         return mock_dashboard_summary()
 
@@ -41,23 +44,27 @@ def dashboard_summary(db: Session | None = Depends(get_db_optional)):
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    total_open = db.query(func.count(Complaint.id)).filter(Complaint.status == "open").scalar()
-    p0_open = db.query(func.count(Complaint.id)).filter(
-        Complaint.status == "open", Complaint.severity == 0
-    ).scalar()
-    breached = db.query(func.count(Complaint.id)).filter(
-        Complaint.sla_status == "breached", Complaint.status != "resolved"
-    ).scalar()
-    resolved_today = db.query(func.count(Complaint.id)).filter(
-        Complaint.resolved_at >= today_start
-    ).scalar()
-    duplicates_caught = db.query(func.count(Complaint.id)).filter(
-        Complaint.is_duplicate == True
-    ).scalar()
+    base_query = db.query(Complaint)
+    if region_id is not None:
+        base_query = base_query.filter(Complaint.region_id == region_id)
 
-    avg_resolution = db.query(
+    total_open = base_query.filter(Complaint.status == "open").with_entities(func.count(Complaint.id)).scalar()
+    p0_open = base_query.filter(
+        Complaint.status == "open", Complaint.severity == 0
+    ).with_entities(func.count(Complaint.id)).scalar()
+    breached = base_query.filter(
+        Complaint.sla_status == "breached", Complaint.status != "resolved"
+    ).with_entities(func.count(Complaint.id)).scalar()
+    resolved_today = base_query.filter(
+        Complaint.resolved_at >= today_start
+    ).with_entities(func.count(Complaint.id)).scalar()
+    duplicates_caught = base_query.filter(
+        Complaint.is_duplicate == True
+    ).with_entities(func.count(Complaint.id)).scalar()
+
+    avg_resolution = base_query.filter(Complaint.resolved_at.isnot(None)).with_entities(
         func.avg(func.extract("epoch", Complaint.resolved_at - Complaint.created_at) / 3600)
-    ).filter(Complaint.resolved_at.isnot(None)).scalar()
+    ).scalar()
 
     return {
         "total_open": total_open or 0,
@@ -72,6 +79,7 @@ def dashboard_summary(db: Session | None = Depends(get_db_optional)):
 @router.get("/by-category")
 def complaints_by_category(
     days: int = Query(30, le=365),
+    region_id: int | None = Query(None),
     db: Session | None = Depends(get_db_optional),
 ):
     if DEV_MOCK:
@@ -80,10 +88,13 @@ def complaints_by_category(
     from backend.models.complaint import Complaint
 
     since = datetime.now(timezone.utc) - timedelta(days=days)
+    query = db.query(Complaint.category, func.count(Complaint.id).label("count")).filter(Complaint.created_at >= since).filter(Complaint.is_duplicate == False)
+    
+    if region_id is not None:
+        query = query.filter(Complaint.region_id == region_id)
+
     rows = (
-        db.query(Complaint.category, func.count(Complaint.id).label("count"))
-        .filter(Complaint.created_at >= since)
-        .filter(Complaint.is_duplicate == False)
+        query
         .group_by(Complaint.category)
         .order_by(func.count(Complaint.id).desc())
         .all()
@@ -92,16 +103,22 @@ def complaints_by_category(
 
 
 @router.get("/by-severity")
-def complaints_by_severity(db: Session | None = Depends(get_db_optional)):
+def complaints_by_severity(
+    region_id: int | None = Query(None),
+    db: Session | None = Depends(get_db_optional)
+):
     if DEV_MOCK:
         return mock_complaints_by_severity()
 
     from backend.models.complaint import Complaint
 
+    query = db.query(Complaint.severity, func.count(Complaint.id).label("count")).filter(Complaint.status.in_(["open", "in_progress"])).filter(Complaint.is_duplicate == False)
+    
+    if region_id is not None:
+        query = query.filter(Complaint.region_id == region_id)
+
     rows = (
-        db.query(Complaint.severity, func.count(Complaint.id).label("count"))
-        .filter(Complaint.status.in_(["open", "in_progress"]))
-        .filter(Complaint.is_duplicate == False)
+        query
         .group_by(Complaint.severity)
         .order_by(Complaint.severity)
         .all()
@@ -167,6 +184,7 @@ def sla_health(db: Session | None = Depends(get_db_optional)):
 @router.get("/channel-distribution")
 def channel_distribution(
     days: int = Query(30, le=365),
+    region_id: int | None = Query(None),
     db: Session | None = Depends(get_db_optional),
 ):
     if DEV_MOCK:
@@ -175,10 +193,13 @@ def channel_distribution(
     from backend.models.complaint import Channel, Complaint
 
     since = datetime.now(timezone.utc) - timedelta(days=days)
+    query = db.query(Channel.name, func.count(Complaint.id).label("count")).join(Complaint, Complaint.channel_id == Channel.id).filter(Complaint.created_at >= since)
+    
+    if region_id is not None:
+        query = query.filter(Complaint.region_id == region_id)
+
     rows = (
-        db.query(Channel.name, func.count(Complaint.id).label("count"))
-        .join(Complaint, Complaint.channel_id == Channel.id)
-        .filter(Complaint.created_at >= since)
+        query
         .group_by(Channel.name)
         .order_by(func.count(Complaint.id).desc())
         .all()

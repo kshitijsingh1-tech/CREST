@@ -95,18 +95,43 @@ def _process_email(mail: imaplib.IMAP4_SSL, uid: str) -> None:
         "external_ref": msg_id,
     }
     
+    # In dev, we prefer Direct API for instant results without Docker
+    ingested_via_api = False
     try:
-        from integrations.kafka.producer import publish
-        publish(
-            channel="email",
-            customer_id=customer_id,
-            body=body,
-            subject=subject,
-            external_ref=msg_id,
+        import requests
+        backend_url = os.getenv("NEXT_PUBLIC_API_URL", "http://127.0.0.1:8000")
+        resp = requests.post(
+            f"{backend_url}/api/complaints/ingest",
+            json={
+                "channel": "email",
+                "customer_id": customer_id,
+                "body": body,
+                "subject": subject,
+                "external_ref": msg_id
+            },
+            timeout=30
         )
-        logger.info(f"Published email to Kafka: from={from_addr} subject={subject[:60]}")
-    except Exception as e:
-        logger.error(f"Failed to publish email to Kafka: {e}")
+        if resp.status_code == 201:
+            logger.info(f"Successfully ingested email via Direct API: {customer_id}")
+            ingested_via_api = True
+        else:
+            logger.warning(f"Direct API ingestion failed (status {resp.status_code}), trying Kafka...")
+    except Exception as api_err:
+        logger.warning(f"Direct API ingestion error: {api_err}, trying Kafka...")
+
+    if not ingested_via_api:
+        try:
+            from integrations.kafka.producer import publish
+            publish(
+                channel="email",
+                customer_id=customer_id,
+                body=body,
+                subject=subject,
+                external_ref=msg_id,
+            )
+            logger.info(f"Published email to Kafka: from={from_addr}")
+        except Exception as kafka_err:
+            logger.error(f"Critical failure: Both Direct API and Kafka failed: {kafka_err}")
 
 
 def run_listener() -> None:

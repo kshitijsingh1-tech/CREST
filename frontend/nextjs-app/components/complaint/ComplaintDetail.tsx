@@ -6,8 +6,8 @@
  * Agent can assign, approve draft, and resolve from this view.
  */
 
-import { useState } from "react";
-import { assignComplaint, approveDraft, resolveComplaint, type Complaint, type AuditEntry } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { assignComplaint, escalateComplaint, approveDraft, resolveComplaint, type Complaint, type AuditEntry } from "@/lib/api";
 
 const SEV_COLOR: Record<number, string> = {
   0: "bg-red-600", 1: "bg-orange-500", 2: "bg-yellow-500", 3: "bg-blue-500", 4: "bg-gray-400",
@@ -24,8 +24,20 @@ interface Props {
 
 export default function ComplaintDetail({ complaint: initial, similar, audit }: Props) {
   const [c, setC]           = useState(initial);
-  const [agent, setAgent]   = useState(initial.assigned_agent || "");
+  const [agent, setAgent]   = useState("");
   const [note, setNote]     = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("crest_user");
+      if (stored) {
+        try {
+          const user = JSON.parse(stored);
+          setAgent(user.id?.toString() || "");
+        } catch {}
+      }
+    }
+  }, []);
   const [csat, setCsat]     = useState<number | "">("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg]       = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -39,8 +51,8 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
     if (!agent) return;
     setLoading(true);
     try {
-      await assignComplaint(c.id, agent);
-      setC(prev => ({ ...prev, assigned_agent: agent, status: "in_progress" }));
+      await assignComplaint(c.id, Number(agent));
+      setC(prev => ({ ...prev, assigned_employee_id: Number(agent), status: "in_progress" }));
       flash("ok", `Assigned to ${agent}`);
     } catch { flash("err", "Assignment failed"); }
     setLoading(false);
@@ -66,6 +78,17 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
       setC(prev => ({ ...prev, status: "resolved" }));
       flash("ok", "Complaint resolved and added to knowledge base ✓");
     } catch { flash("err", "Resolution failed"); }
+    setLoading(false);
+  };
+
+  const handleEscalate = async () => {
+    if (!agent) { flash("err", "Enter your employee ID first"); return; }
+    setLoading(true);
+    try {
+      await escalateComplaint(c.id, Number(agent));
+      setC(prev => ({ ...prev, is_escalated: true, assigned_employee_id: null, status: "open" }));
+      flash("ok", "Ticket escalated to your Regional Sub-Admin");
+    } catch { flash("err", "Escalation failed"); }
     setLoading(false);
   };
 
@@ -98,9 +121,14 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                 <span className="text-xs text-gray-400 dark:text-gray-500">{c.sub_category}</span>
               )}
               <span className="text-xs text-gray-400 dark:text-gray-500">via {c.channel}</span>
-              {c.is_duplicate && (
-                <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 px-2 py-1 rounded">
-                  Duplicate
+              {c.region_id && (
+                <span className="text-xs bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400 px-2 py-1 rounded">
+                  Region: {c.region_id}
+                </span>
+              )}
+              {c.is_escalated && (
+                <span className="text-xs bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 px-2 py-1 rounded font-bold">
+                  ⚠️ Escalated
                 </span>
               )}
             </div>
@@ -246,6 +274,10 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                 <button onClick={handleAssign} disabled={loading || !agent}
                   className="text-xs px-3 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded transition-colors disabled:opacity-50">
                   Assign to Me
+                </button>
+                <button onClick={handleEscalate} disabled={loading || !agent || c.is_escalated}
+                  className="text-xs px-3 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded border border-red-100 dark:border-red-900/30 transition-colors disabled:opacity-50">
+                  Escalate to Head
                 </button>
                 {c.draft_reply && !c.draft_approved && (
                   <button onClick={handleApproveDraft} disabled={loading || !agent}

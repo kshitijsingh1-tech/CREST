@@ -1,4 +1,4 @@
-import { getDashboardSummary, getByCategory, getBySeverity, getSpikeSignals } from "@/lib/api";
+import { getDashboardSummary, getByCategory, getBySeverity, getSpikeSignals, getMe } from "@/lib/api";
 import PriorityQueue from "@/components/queue/PriorityQueue";
 
 function KPICard({ label, value, sub, color }: {
@@ -25,11 +25,21 @@ function KPICard({ label, value, sub, color }: {
 }
 
 export default async function DashboardPage() {
+  let user;
+  try {
+    user = await getMe();
+  } catch (e) {
+    // Middleware should handle this, but safety first
+    return <div>Redirecting...</div>;
+  }
+
+  const regionId = user.region_id ?? undefined;
+
   const [summary, categories, severities, spikes] = await Promise.all([
-    getDashboardSummary(),
-    getByCategory(30),
-    getBySeverity(),
-    getSpikeSignals(48),
+    getDashboardSummary(regionId),
+    getByCategory(30, regionId),
+    getBySeverity(regionId),
+    getSpikeSignals(48), // Spikes are usually global/macro, but could be filtered too
   ]);
 
   return (
@@ -74,7 +84,7 @@ export default async function DashboardPage() {
               </h2>
             </div>
             <div className="transition-all duration-500">
-              <PriorityQueue />
+              <PriorityQueue regionId={regionId} />
             </div>
           </div>
         </div>

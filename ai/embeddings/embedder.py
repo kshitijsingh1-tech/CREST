@@ -12,7 +12,7 @@ import os
 import numpy as np
 
 from backend.utils.logger import get_logger
-from backend.utils.runtime import REPO_ROOT  # noqa: F401 - ensures repo .env is loaded
+from backend.utils.runtime import REPO_ROOT  # noqa: F401 - ensures repo .env is loaded ;) production shit
 
 logger = get_logger("crest.embeddings")
 

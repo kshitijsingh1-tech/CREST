@@ -38,18 +38,34 @@ function hoursUntilSLA(deadline: string | null): string {
   return d > 0 ? `${d}d ${h % 24}h` : `${h}h`;
 }
 
-export default function PriorityQueue() {
+export default function PriorityQueue({ regionId }: { regionId?: number }) {
   const [queue, setQueue]     = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [flash, setFlash]     = useState<string | null>(null);
+  const [currentRegion, setCurrentRegion] = useState<number | undefined>(regionId);
+  const [regions, setRegions] = useState<any[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   const refresh = useCallback(async () => {
-    const data = await getPriorityQueue(50);
-    setQueue(data);
-    setLoading(false);
-  }, []);
+    try {
+      const data = await getPriorityQueue(50, currentRegion);
+      setQueue(data);
+    } catch (err: any) {
+      console.error("Queue refresh failed:", err);
+      if (err.message.includes("401")) {
+        // Token expired or missing
+        window.location.href = "/login";
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [currentRegion]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => { 
+    refresh(); 
+    // Fetch regions for filtering
+    import("@/lib/api").then(api => api.getRegions().then(setRegions)).catch(console.error);
+  }, [refresh]);
 
   useSocket({
     onQueueUpdated: () => refresh(),
@@ -68,6 +84,49 @@ export default function PriorityQueue() {
 
   return (
     <div className="w-full">
+      <div className="flex items-center justify-between mb-4">
+        <button 
+          onClick={() => setShowFilters(!showFilters)}
+          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+          Filters
+        </button>
+
+        {showFilters && (
+          <div className="flex gap-4 p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border dark:border-white/10 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">By Region</label>
+              <select 
+                value={currentRegion || ""} 
+                onChange={(e) => setCurrentRegion(e.target.value ? Number(e.target.value) : undefined)}
+                className="block w-full bg-transparent border-b-2 border-gray-300 dark:border-white/20 text-xs font-bold py-1 focus:border-black dark:focus:border-white outline-none"
+              >
+                <option value="">All Regions</option>
+                {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">By Column</label>
+              <input 
+                type="text"
+                placeholder="Search category, status..."
+                onChange={(e) => {
+                  const val = e.target.value.toLowerCase();
+                  if (!val) { refresh(); return; }
+                  setQueue(prev => prev.filter(c => 
+                    c.category?.toLowerCase().includes(val) || 
+                    c.status.toLowerCase().includes(val) ||
+                    c.customer_name?.toLowerCase().includes(val)
+                  ));
+                }}
+                className="block w-full bg-transparent border-b-2 border-gray-300 dark:border-white/20 text-xs font-bold py-1 focus:border-black dark:focus:border-white outline-none"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
       {flash && (
         <div className="mb-3 px-4 py-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm animate-pulse">
           {flash}
@@ -146,9 +205,9 @@ export default function PriorityQueue() {
                   <span className="capitalize text-xs text-gray-600 dark:text-gray-400">{c.status.replace("_", " ")}</span>
                 </td>
 
-                {/* Agent */}
+                {/* Employee */}
                 <td className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
-                  {c.assigned_agent ?? <span className="text-amber-500">Unassigned</span>}
+                  {c.assigned_employee_id ? `ID: ${c.assigned_employee_id}` : <span className="text-amber-500">Unassigned</span>}
                 </td>
 
                 {/* Action */}

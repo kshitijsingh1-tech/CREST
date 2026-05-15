@@ -24,7 +24,7 @@ from backend.mock_store import (
 from backend.utils.db import get_db_optional
 from backend.utils.logger import get_logger
 from backend.utils.runtime import DEV_MOCK, USE_PGVECTOR
-from backend.models.complaint import ComplaintIngest, ComplaintOut, ResolveRequest, AssignRequest
+from backend.models.complaint import ComplaintIngest, ComplaintOut, ResolveRequest, AssignRequest, EscalateRequest
 from backend.services.complaint_service import (
     ingest_complaint, get_priority_queue, assign_complaint,
     resolve_complaint, approve_draft, export_audit_trail, find_similar,
@@ -35,6 +35,8 @@ from ai.ner.extractor import extract
 from ai.rag.retriever import generate_draft_reply
 from asgiref.sync import async_to_sync
 from backend.utils.socket import broadcast_queue_update, broadcast_new_complaint
+from backend.api.deps import get_current_user
+from backend.models.user import User
 
 router = APIRouter(prefix="/api/complaints", tags=["complaints"])
 logger = get_logger("crest.api.complaints")
@@ -83,6 +85,7 @@ def ingest(payload: ComplaintIngest, db: Optional[Session] = Depends(get_db_opti
             named_entities= entities.to_dict(),
             draft_reply   = rag_result["draft"],
             draft_metadata= rag_result["sources"],
+            region_id     = payload.region_id,
         )
         
         try:
@@ -110,16 +113,37 @@ def ingest(payload: ComplaintIngest, db: Optional[Session] = Depends(get_db_opti
 # ── Priority Queue ────────────────────────────────────────────
 
 @router.get("/queue", response_model=list[dict])
-def priority_queue(limit: int = Query(50, le=200), db: Optional[Session] = Depends(get_db_optional)):
+def priority_queue(
+    limit: int = Query(50, le=200),
+    region_id: Optional[int] = Query(None),
+    db: Optional[Session] = Depends(get_db_optional),
+    user: User = Depends(get_current_user)
+):
     """
     Live Emotion-Decay Priority Queue.
     Returns open complaints ranked by priority_score descending.
-    Refreshed every 5 min by Celery Beat.
+    Strictly scoped by user role (Regional/Employee scoping).
     """
     if DEV_MOCK:
         return mock_get_priority_queue(limit=limit)
 
-    complaints = get_priority_queue(db, limit=limit)
+    # Scoping logic based on role
+    effective_region_id = region_id
+    if user.role == "SUB_ADMIN":
+        effective_region_id = user.region_id
+    elif user.role == "EMPLOYEE":
+        # Employees see their assigned queue, handled by service if we pass user filter
+        # For now, let's just use the regional filter if they are regional
+        effective_region_id = user.region_id
+
+    complaints = get_priority_queue(db, limit=limit, region_id=effective_region_id)
+    
+    # If employee, further filter to assigned only? 
+    # Or maybe the queue shows all regional but highlights assigned?
+    # Requirement: "Employees see their assigned queue"
+    if user.role == "EMPLOYEE":
+        complaints = [c for c in complaints if c.assigned_employee_id == user.id]
+
     return [
         {
             "id":             str(c.id),
@@ -133,7 +157,9 @@ def priority_queue(limit: int = Query(50, le=200), db: Optional[Session] = Depen
             "sla_deadline":   c.sla_deadline.isoformat() if c.sla_deadline else None,
             "sla_status":     c.sla_status,
             "status":         c.status,
-            "assigned_agent": c.assigned_agent,
+            "region_id":      c.region_id,
+            "assigned_employee_id": c.assigned_employee_id,
+            "is_escalated":   c.is_escalated,
             "draft_approved": c.draft_approved,
             "created_at":     c.created_at.isoformat(),
         }
@@ -144,7 +170,11 @@ def priority_queue(limit: int = Query(50, le=200), db: Optional[Session] = Depen
 # ── Single Complaint ──────────────────────────────────────────
 
 @router.get("/{complaint_id}", response_model=dict)
-def get_complaint(complaint_id: str, db: Optional[Session] = Depends(get_db_optional)):
+def get_complaint(
+    complaint_id: str, 
+    db: Optional[Session] = Depends(get_db_optional),
+    user: User = Depends(get_current_user)
+):
     if DEV_MOCK:
         complaint = mock_get_complaint(complaint_id)
         if not complaint:
@@ -155,6 +185,12 @@ def get_complaint(complaint_id: str, db: Optional[Session] = Depends(get_db_opti
     c = db.query(Complaint).filter(Complaint.id == uuid.UUID(complaint_id)).first()
     if not c:
         raise HTTPException(status_code=404, detail="Complaint not found")
+
+    # Access Control check
+    if user.role == "SUB_ADMIN" and c.region_id != user.region_id:
+        raise HTTPException(status_code=403, detail="Access denied to other regions")
+    if user.role == "EMPLOYEE" and c.assigned_employee_id != user.id:
+         raise HTTPException(status_code=403, detail="Complaint not assigned to you")
 
     return {
         "id":              str(c.id),
@@ -173,7 +209,9 @@ def get_complaint(complaint_id: str, db: Optional[Session] = Depends(get_db_opti
         "sla_deadline":    c.sla_deadline.isoformat() if c.sla_deadline else None,
         "sla_status":      c.sla_status,
         "status":          c.status,
-        "assigned_agent":  c.assigned_agent,
+        "region_id":       c.region_id,
+        "assigned_employee_id": c.assigned_employee_id,
+        "is_escalated":    c.is_escalated,
         "is_duplicate":    c.is_duplicate,
         "duplicate_of":    str(c.duplicate_of) if c.duplicate_of else None,
         "draft_reply":     c.draft_reply,
@@ -217,22 +255,40 @@ def similar_complaints(
 @router.patch("/{complaint_id}/assign", response_model=dict)
 def assign(complaint_id: str, body: AssignRequest, db: Optional[Session] = Depends(get_db_optional)):
     if DEV_MOCK:
-        complaint = mock_assign_complaint(complaint_id, body.agent)
-        if not complaint:
-            raise HTTPException(status_code=404, detail="Complaint not found")
-        return {"status": "assigned", "agent": complaint["assigned_agent"]}
+        return {"status": "mock_assigned"}
 
     try:
-        c = assign_complaint(db, complaint_id, body.agent)
+        c = assign_complaint(db, complaint_id, str(body.employee_id))
+        c.assigned_employee_id = body.employee_id
+        db.commit()
         try:
             async_to_sync(broadcast_queue_update)()
         except Exception:
             pass
-        return {"status": "assigned", "agent": c.assigned_agent}
+        return {"status": "assigned", "employee_id": c.assigned_employee_id}
     except ValueError as e:
-        message = str(e)
-        status_code = 404 if "not found" in message.lower() else 400
-        raise HTTPException(status_code=status_code, detail=message)
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.patch("/{complaint_id}/escalate", response_model=dict)
+def escalate(complaint_id: str, body: EscalateRequest, db: Optional[Session] = Depends(get_db_optional)):
+    """
+    Escalates a complaint to the regional Sub-Admin.
+    """
+    from backend.models.complaint import Complaint
+    c = db.query(Complaint).filter(Complaint.id == uuid.UUID(complaint_id)).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    
+    c.is_escalated = True
+    c.assigned_employee_id = None # Remove from employee's queue
+    c.status = "open" # Put back in the sub-admin's regional pool
+    
+    db.commit()
+    try:
+        async_to_sync(broadcast_queue_update)()
+    except Exception:
+        pass
+    return {"status": "escalated"}
 
 
 # ── Approve Draft ─────────────────────────────────────────────
