@@ -4,14 +4,19 @@
 
 ---
 
-## 🚀 (A) Problem being Solved
-Union Bank of India manages millions of transactions daily. Currently, grievance handling faces three critical technical challenges that our POC addresses:
+## 📂 (A) Problem being Solved
+Union Bank of India serves millions of customers across diverse regions. Current grievance systems face three critical bottlenecks:
+1. **The "Duplicate" Storm**: Redundant tickets across Email/Twitter/App waste 30% of agent time.
+2. **Static Prioritization**: FIFO queues ignore high-emotion P0 cases and decaying SLAs.
+3. **Response Inconsistency**: Manual drafting leads to compliance and quality risks.
 
-1.  **Semantic Redundancy (The Duplicate Storm)**: Customers often send the same complaint across multiple channels (Email, Social Media, App). Standard systems treat these as separate tickets. **CREST uses 768-dimensional SBERT embeddings (Complaint DNA)** to semantically link duplicates with 92%+ accuracy.
-2.  **Static Prioritization**: First-In-First-Out (FIFO) queues fail to account for the "Emotional Decay" of a customer. **CREST implements a dynamic priority algorithm** that weights severity, sentiment (anger score), and waiting time.
-3.  **Manual Drafting Bottleneck**: Agents spend 5-10 minutes drafting standard replies. **CREST uses Grounded RAG** to auto-generate replies based strictly on the Union Bank Service Manual, ensuring compliance and speed.
+### **The Three Core Innovations**
+- **Complaint DNA Fingerprinting**: converted into 768-dim vectors. Cosine similarity > 0.92 flags duplicates instantly via **pgvector**.
+- **Emotion-Decay Priority Queue**:
+  `priority_score = severity_weight × anger_score × MIN(3.0, 1 + LN(1 + hours_waiting / 8))`
+- **Grounded RAG Engine**: Auto-drafts responses strictly using the Union Bank Service Manual.
 
-### **How it Works (Technical Workflow)**
+### **Technical Workflow**
 ```mermaid
 graph TD
     A["Customer (Email/Web)"] --> B["Ingestion Layer"]
@@ -43,64 +48,61 @@ graph TD
 
 ## 💻 (B) How to Run Locally
 
-### **1. Setup Environment**
-```bash
-git clone https://github.com/kshitijsingh1-tech/CREST.git
-cd CREST
-cp .env.example .env
-# Fill in your GROQ_API_KEY for LLM processing
+### **Project Structure**
+```
+crest/
+├── backend/            # FastAPI + SQLAlchemy
+├── ai/                 # RAG, NER, & Embeddings
+├── integrations/       # Email & Channel Listeners
+├── frontend/           # Next.js 14 Dashboard
+└── scripts/            # Demo seeding & tools
 ```
 
-### **2. Launch Services**
-You will need three terminals open:
-
-- **Terminal 1 (Backend API)**:
-  ```bash
-  python -m venv .venv && source .venv/bin/activate
-  pip install -r requirements.txt
-  uvicorn backend.main:socket_app --port 8000 --reload
-  ```
-- **Terminal 2 (AI Worker)**:
-  ```bash
-  celery -A backend.workers.celery_app worker --loglevel=info -P solo
-  ```
-- **Terminal 3 (Frontend Dashboard)**:
-  ```bash
-  cd frontend/nextjs-app && npm install && npm run dev
-  ```
+### **Quick Start**
+1. **Env**: `cp .env.example .env` and add your `GROQ_API_KEY`.
+2. **API**: `uvicorn backend.main:socket_app --port 8000 --reload`
+3. **Worker**: `celery -A backend.workers.celery_app worker --loglevel=info -P solo`
+4. **UI**: `cd frontend/nextjs-app && npm run dev`
 
 ---
 
 ## 🛠️ (C) Libraries & Dependencies
-
-- **AI/ML**: `llama-index` (RAG), `sentence-transformers` (Embeddings), `spacy` (NER), `groq` (Llama3 Inference).
+- **AI**: `llama-index`, `sentence-transformers`, `spacy`, `groq`.
 - **Backend**: `fastapi`, `sqlalchemy`, `pgvector`, `celery`, `redis-py`.
 - **Frontend**: `next`, `tailwind-css`, `socket.io-client`, `lucide-react`.
-- **Infrastructure**: `uvicorn`, `python-dotenv`, `pydantic`.
 
 ---
 
-## 📊 (D) Sample Dataset & Synthetic Data
-Evaluators can populate the system with 50+ realistic Union Bank grievances using our automated seeding script:
+## 📊 (D) Sample Dataset & Simulation
+Evaluators can populate the system with 50+ realistic grievances using:
 ```bash
 python -m backend.utils.reset_db
 ```
-*This simulates diverse issues like ATM non-dispense, KYC verification delays, and fraudulent transaction alerts with pre-calculated sentiment metrics.*
+*Simulates issues like ATM failures, KYC delays, and Loan queries with pre-calculated sentiment metrics.*
 
 ---
 
-## ⚠️ (E) Known Limitations
-1.  **Rate Limiting**: Our POC uses the Groq/Claude demo tier, which is limited to 14,400 tokens per minute.
-2.  **Channel Simulation**: WhatsApp and Twitter channels currently use webhook simulators for the POC demo.
-3.  **Regional Logic**: For the POC, we assume all complaints are initially routed to the "Delhi-NCR" or "Mumbai" regions for testing purposes.
+## ⚠️ (E) Known Limitations & Readiness
+1. **API Rate Limits**: Demo tier is limited to 14,400 tokens per minute.
+2. **PII Masking**: Built-in redaction of Account Numbers/Phone Numbers before LLM processing.
+3. **Audit Trail**: Full immutable audit trail for every action (RBI compliant).
+
+### **API Endpoints Reference**
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/complaints/ingest` | Sync ingest (test/low-volume) |
+| GET | `/api/complaints/queue` | Live priority queue |
+| PATCH | `/api/complaints/{id}/assign` | Assign to agent |
+| PATCH | `/api/complaints/{id}/resolve` | Resolve + push to KB |
+| GET | `/api/analytics/dashboard` | KPI summary |
 
 ---
 
-## 👥 Team Gen Forge — Union Bank iDEA 2.0
-- **Kshitij Singh**: Lead Backend & AI Architect
-- **Aayush Jaiswal**: Frontend & UX Engineer
-- **Laxya Gaba**: AI/NLP Logic & RAG
-- **Saanvi Aggarwal**: Product & Audit Compliance
+## 👥 Team Gen Forge
+- **Kshitij Singh**: Lead Backend & AI
+- **Aayush Jaiswal**: Frontend & UI/UX
+- **Laxya Gaba**: AI Logic & RAG
+- **Saanvi Aggarwal**: Product & Audit
 
 ---
-*CREST · India's first RBI-aligned grievance intelligence platform.*
+*CREST · PS5: Unified Complaint Dashboard · Union Bank iDEA 2.0*
