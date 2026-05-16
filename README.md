@@ -16,30 +16,34 @@ Union Bank of India serves millions of customers across diverse regions. Current
   `priority_score = severity_weight × anger_score × MIN(3.0, 1 + LN(1 + hours_waiting / 8))`
 - **Grounded RAG Engine**: Auto-drafts responses strictly using the Union Bank Service Manual.
 
-### **Technical Workflow**
+### **Technical Workflow (Enterprise Hybrid Architecture)**
 ```mermaid
 graph TD
-    A["Customer (Email/Web)"] --> B["Ingestion Layer"]
-    B --> C["FastAPI /integrations"]
-    C --> D["Celery Ingest Worker"]
+    A["Customer (Email/SMS/Twitter/Web)"] --> B["Ingestion Layer"]
+    B --> C["Kafka (Distributed Buffer)"]
+    C --> D["Celery Worker (AI Processor)"]
     
+    subgraph "Local Fallback (Safe Mode)"
+        B -.->|Direct Ingest| D
+    end
+
     subgraph "AI Extraction & Analysis"
-        D --> E["Llama3/Claude (Classification)"]
+        D --> E["Llama3/Groq (Classification)"]
         D --> F["spaCy NER (Entity Extraction)"]
-        D --> G["SBERT (Semantic DNA Vector)"]
+        D --> G["SBERT (DNA Vectoring)"]
     end
     
     E --> H["PostgreSQL + pgvector"]
     F --> H
     G --> H
     
-    subgraph "Logic & Knowledge"
+    subgraph "Intelligent Logic"
         H --> I["Semantic Dedup Check"]
         H --> J["Emotion-Decay Priority"]
         H --> K["SLA Monitoring"]
     end
     
-    I --> L["LlamaIndex RAG"]
+    I --> L["Grounded RAG Engine"]
     L --> M["Auto-Drafted Response"]
     M --> N["Next.js Agent Dashboard"]
 ```
@@ -91,6 +95,8 @@ python -m backend.utils.reset_db
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/api/complaints/ingest` | Sync ingest (test/low-volume) |
+| POST | `/api/integrations/sms/webhook` | SMS Ingest (Hybrid Kafka/Direct) |
+| POST | `/api/integrations/twitter/webhook` | Twitter Ingest (Hybrid Kafka/Direct) |
 | GET | `/api/complaints/queue` | Live priority queue |
 | PATCH | `/api/complaints/{id}/assign` | Assign to agent |
 | PATCH | `/api/complaints/{id}/resolve` | Resolve + push to KB |

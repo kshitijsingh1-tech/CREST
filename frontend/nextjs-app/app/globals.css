@@ -10,3 +10,13 @@
 body {
   background: #F8FAFC;
 }
+
+@layer utilities {
+  @keyframes p0-glow {
+    0%, 100% { background-color: rgba(239, 68, 68, 0.02); }
+    50% { background-color: rgba(239, 68, 68, 0.08); }
+  }
+  .animate-p0-glow {
+    animation: p0-glow 2s ease-in-out infinite;
+  }
+}

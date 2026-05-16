@@ -8,7 +8,7 @@ from backend.utils.auth import get_password_hash
 
 logger = get_logger("crest.db.init")
 
-DEFAULT_CHANNELS = ("email", "whatsapp", "app", "twitter", "voice", "branch")
+DEFAULT_CHANNELS = ("email", "whatsapp", "sms", "app", "twitter", "voice", "branch")
 
 
 def initialize_database() -> None:

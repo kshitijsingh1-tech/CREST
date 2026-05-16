@@ -209,8 +209,17 @@ export const getSpikeSignals = (hours = 48): Promise<SpikeSignal[]> =>
 export const getRegions = (): Promise<Region[]> =>
   apiFetch("/api/admin/regions", { cache: "no-store" });
 
-export const getEmployees = (): Promise<User[]> =>
-  apiFetch("/api/admin/employees", { cache: "no-store" });
+export const listUsers = (): Promise<User[]> =>
+  apiFetch("/api/admin/users", { cache: "no-store" });
+
+export const createUser = (payload: any): Promise<User> =>
+  apiFetch("/api/admin/users", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const deleteUser = (userId: number): Promise<any> =>
+  apiFetch(`/api/admin/users/${userId}`, { method: "DELETE" });
 
 export const getMe = (): Promise<User> =>
   apiFetch("/api/admin/users/me", { cache: "no-store" });

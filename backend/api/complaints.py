@@ -42,58 +42,70 @@ router = APIRouter(prefix="/api/complaints", tags=["complaints"])
 logger = get_logger("crest.api.complaints")
 
 
+async def ingest_complaint_logic(payload_dict: dict, db: Session):
+    """
+    Core ingestion logic including AI pipeline.
+    Reused by SMS, WhatsApp, and testing endpoints.
+    """
+    body = payload_dict.get("body", "")
+    subject = payload_dict.get("subject", "")
+    
+    classification  = classify(body)
+    entities        = extract(body)
+    embedding       = embed(body)
+    rag_result      = generate_draft_reply(
+        complaint_body    = body,
+        complaint_subject = subject,
+        named_entities    = entities.to_dict(),
+        category          = classification.category,
+        embedding         = embedding,
+        customer_name     = payload_dict.get("customer_name"),
+    )
+    
+    complaint = ingest_complaint(
+        db            = db,
+        channel_name  = payload_dict.get("channel", "app"),
+        customer_id   = payload_dict.get("customer_id", "unknown"),
+        body          = body,
+        embedding     = embedding,
+        subject       = subject,
+        customer_name = payload_dict.get("customer_name"),
+        external_ref  = payload_dict.get("external_ref"),
+        language      = payload_dict.get("language", "en"),
+        sla_hours     = payload_dict.get("sla_hours", 720),
+        severity      = classification.severity,
+        anger_score   = classification.anger_score,
+        sentiment     = classification.sentiment,
+        category      = classification.category,
+        sub_category  = classification.sub_category,
+        named_entities= entities.to_dict(),
+        draft_reply   = rag_result["draft"],
+        draft_metadata= rag_result["sources"],
+        region_id     = payload_dict.get("region_id"),
+    )
+    
+    try:
+        await broadcast_queue_update()
+        await broadcast_new_complaint(str(complaint.id), complaint.severity, complaint.category)
+    except Exception as ws_err:
+        logger.error(f"WebSocket broadcast failed: {ws_err}")
+
+    return complaint
+
+
 # ── Ingest (sync path — for testing; production uses Kafka → Celery) ──
 
 @router.post("/ingest", response_model=dict, status_code=201)
-def ingest(payload: ComplaintIngest, db: Optional[Session] = Depends(get_db_optional)):
+async def ingest(payload: ComplaintIngest, db: Optional[Session] = Depends(get_db_optional)):
     """
     Synchronous ingest endpoint.
     Runs the full AI pipeline in-request (use for testing / low-volume channels).
-    Production: Kafka consumer dispatches to Celery ingest_worker instead.
     """
     if DEV_MOCK:
         return mock_ingest(payload.model_dump())
 
     try:
-        classification  = classify(payload.body)
-        entities        = extract(payload.body)
-        embedding       = embed(payload.body)
-        rag_result      = generate_draft_reply(
-            complaint_body    = payload.body,
-            complaint_subject = payload.subject,
-            named_entities    = entities.to_dict(),
-            category          = classification.category,
-            embedding         = embedding,
-            customer_name     = payload.customer_name,
-        )
-        complaint = ingest_complaint(
-            db            = db,
-            channel_name  = payload.channel,
-            customer_id   = payload.customer_id,
-            body          = payload.body,
-            embedding     = embedding,
-            subject       = payload.subject,
-            customer_name = payload.customer_name,
-            external_ref  = payload.external_ref,
-            language      = payload.language,
-            sla_hours     = payload.sla_hours,
-            severity      = classification.severity,
-            anger_score   = classification.anger_score,
-            sentiment     = classification.sentiment,
-            category      = classification.category,
-            sub_category  = classification.sub_category,
-            named_entities= entities.to_dict(),
-            draft_reply   = rag_result["draft"],
-            draft_metadata= rag_result["sources"],
-            region_id     = payload.region_id,
-        )
-        
-        try:
-            async_to_sync(broadcast_queue_update)()
-            async_to_sync(broadcast_new_complaint)(str(complaint.id), complaint.severity, complaint.category)
-        except Exception as ws_err:
-            logger.error(f"WebSocket broadcast failed: {ws_err}")
-
+        complaint = await ingest_complaint_logic(payload.model_dump(), db)
         return {
             "complaint_id":  str(complaint.id),
             "category":      complaint.category,

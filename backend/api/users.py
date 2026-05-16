@@ -93,6 +93,43 @@ def toggle_status(is_active: bool, db: Session = Depends(get_db_optional), user:
     db.refresh(user)
     return user
 
+@router.get("/users", response_model=List[UserOut])
+def list_users(db: Session = Depends(get_db_optional), admin: User = Depends(get_current_user)):
+    """List users based on the requester's authority."""
+    if admin.role == "SUPER_ADMIN":
+        # Super-Admin sees everyone
+        return db.query(User).all()
+    elif admin.role == "SUB_ADMIN":
+        # Sub-Admin sees only employees in their region
+        return db.query(User).filter(User.region_id == admin.region_id, User.role == "EMPLOYEE").all()
+    else:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+@router.delete("/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db_optional), admin: User = Depends(get_current_user)):
+    """Delete a user with RBAC enforcement."""
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # 1. Super-Admin can delete anyone except themselves
+    if admin.role == "SUPER_ADMIN":
+        if target.id == admin.id:
+            raise HTTPException(status_code=400, detail="Cannot delete self")
+        db.delete(target)
+        db.commit()
+        return {"msg": "User deleted successfully"}
+    
+    # 2. Sub-Admin can only delete EMPLOYEES in their region
+    if admin.role == "SUB_ADMIN":
+        if target.role != "EMPLOYEE" or target.region_id != admin.region_id:
+            raise HTTPException(status_code=403, detail="Authority restricted to regional employees only")
+        db.delete(target)
+        db.commit()
+        return {"msg": "Employee deleted successfully"}
+    
+    raise HTTPException(status_code=403, detail="Insufficient authority")
+
 @router.get("/employees", response_model=List[UserOut])
 def list_employees(db: Session = Depends(get_db_optional), admin: User = Depends(require_role("SUB_ADMIN"))):
     """Sub-Admins can see employees in their region."""
