@@ -168,7 +168,7 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
 
                 {/* Severity badge */}
                 <td className="px-3 py-3">
-                  <span className={`inline-block px-2 py-0.5 text-xs font-bold rounded border ${SEVERITY_COLOR[c.severity ?? 4]}`}>
+                  <span className={`inline-block px-2 py-0.5 text-xs font-bold rounded border ${SEVERITY_BADGE[c.severity ?? 4]}`}>
                     {SEVERITY_LABEL[c.severity ?? 4]}
                   </span>
                 </td>
