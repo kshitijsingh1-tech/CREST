@@ -274,18 +274,24 @@ export default function DocsPage() {
         {/* Security */}
         <Section id="security" title="Security & RBI Compliance" subtitle="Built to banking standards">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {[
-              ["🔒 Role-Based Access Control", "Every officer sees only what they are authorised to see. Access is gated at every level — regional, functional, and data."],
-              ["📋 Immutable Audit Trail", "Every action — assignment, escalation, draft approval, resolution — is permanently logged. Fully RBI-compliant and exportable."],
-              ["🛡️ PII Redaction", "Account numbers and phone numbers are automatically masked before any AI processing — your sensitive data never reaches an external model."],
-              ["⏱️ SLA Monitoring", "Every complaint has a service-level deadline. CREST tracks, warns, and escalates cases approaching or breaching their SLA automatically."],
-              ["🌐 Dual-Factor Tracking", "Public complaint tracking uses a visual CAPTCHA combined with OTP verification — preventing unauthorised status access."],
-              ["📊 Predictive Spike Signals", "AI monitors complaint volume patterns and alerts administrators before a surge becomes a crisis — proactive, not reactive."],
-            ].map(([title, body]) => (
-              <div key={title as string} className="flex items-start gap-3 p-4 rounded-2xl border dark:bg-white/5 dark:border-white/10 bg-gray-50 border-gray-200">
-                <p className="text-xl flex-shrink-0">{(title as string).split(" ")[0]}</p>
+            {([
+              { icon: ShieldCheck, label: "Role-Based Access Control",   body: "Every officer sees only what they are authorised to see. Access is gated at every level — regional, functional, and data." },
+              { icon: BookOpen,    label: "Immutable Audit Trail",        body: "Every action — assignment, escalation, draft approval, resolution — is permanently logged. Fully RBI-compliant and exportable." },
+              { icon: Users,       label: "PII Redaction",                body: "Account numbers and phone numbers are automatically masked before any AI processing — your sensitive data never reaches an external model." },
+              { icon: Clock,       label: "SLA Monitoring",               body: "Every complaint has a service-level deadline. CREST tracks, warns, and escalates cases approaching or breaching their SLA automatically." },
+              { icon: Globe,       label: "Dual-Factor Public Tracking",  body: "Public complaint tracking uses a visual CAPTCHA combined with OTP verification — preventing unauthorised status access." },
+              { icon: BarChart3,   label: "Predictive Spike Signals",     body: "AI monitors complaint volume patterns and alerts administrators before a surge becomes a crisis — proactive, not reactive." },
+            ] as const).map(({ icon: Icon, label, body }) => (
+              <div key={label} className="flex items-start gap-4 p-5 rounded-2xl border transition-all duration-300
+                dark:bg-white/5 dark:border-white/10 dark:hover:border-white/20
+                bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-sm">
+                <div className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border
+                  dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400
+                  bg-blue-50 border-blue-200 text-blue-600">
+                  <Icon className="w-4 h-4" />
+                </div>
                 <div>
-                  <p className="text-xs font-black uppercase tracking-widest mb-1 dark:text-white text-gray-900">{(title as string).slice(3)}</p>
+                  <p className="text-xs font-black uppercase tracking-widest mb-1 dark:text-white text-gray-900">{label}</p>
                   <p className="text-[11px] leading-relaxed dark:text-slate-400 text-gray-500">{body}</p>
                 </div>
               </div>
