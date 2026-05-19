@@ -98,18 +98,19 @@ def _process_email(mail: imaplib.IMAP4_SSL, uid: str) -> None:
     # In dev, we prefer Direct API for instant results without Docker
     ingested_via_api = False
     try:
-        import requests
+        import httpx
         backend_url = os.getenv("NEXT_PUBLIC_API_URL", "http://127.0.0.1:8000")
-        resp = requests.post(
+        resp = httpx.post(
             f"{backend_url}/api/complaints/ingest",
             json={
                 "channel": "email",
                 "customer_id": customer_id,
                 "body": body,
                 "subject": subject,
-                "external_ref": msg_id
+                "external_ref": msg_id,
+                "region_id": 1
             },
-            timeout=30
+            timeout=30.0
         )
         if resp.status_code == 201:
             logger.info(f"Successfully ingested email via Direct API: {customer_id}")

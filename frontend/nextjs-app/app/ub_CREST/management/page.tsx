@@ -2,6 +2,7 @@ import { getMe, listUsers, getRegions } from "@/lib/api";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Users, ShieldCheck, MapPin, UserCheck, Activity, Search } from "lucide-react";
+import AddOfficerModal from "./AddOfficerModal";
 
 export default async function ManagementConsolePage() {
   let user;
@@ -24,8 +25,8 @@ export default async function ManagementConsolePage() {
   }, {} as Record<number, string>);
 
   const activeUsers = users.filter(u => u.is_active).length;
-  const adminCount = users.filter(u => u.role === "admin").length;
-  const staffCount = users.filter(u => u.role === "staff").length;
+  const adminCount = users.filter(u => u.role === "admin" || u.role === "SUPER_ADMIN" || u.role === "SUB_ADMIN").length;
+  const staffCount = users.filter(u => u.role === "staff" || u.role === "EMPLOYEE").length;
 
   return (
     <div className="flex-1 bg-transparent p-6 md:p-10 space-y-10 max-w-[90rem] mx-auto w-full animate-fade-in-up">
@@ -61,7 +62,7 @@ export default async function ManagementConsolePage() {
         </div>
         <div className="rounded-3xl border p-6 dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl bg-white border-gray-200 shadow-xl relative overflow-hidden group">
           <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl group-hover:scale-[2] transition-transform duration-700"></div>
-          <p className="text-[10px] uppercase tracking-widest font-bold dark:text-purple-400 text-purple-600 mb-1">Super Admins</p>
+          <p className="text-[10px] uppercase tracking-widest font-bold dark:text-purple-400 text-purple-600 mb-1">Admins</p>
           <p className="text-4xl font-black dark:text-white text-black">{adminCount}</p>
         </div>
         <div className="rounded-3xl border p-6 dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl bg-white border-gray-200 shadow-xl relative overflow-hidden group">
@@ -80,15 +81,21 @@ export default async function ManagementConsolePage() {
           <h2 className="text-base font-black uppercase tracking-widest flex items-center gap-3 transition-colors duration-500 dark:text-white text-black">
             <Users className="w-5 h-5 dark:text-emerald-400 text-emerald-600" /> Authorized Personnel Directory
           </h2>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <input 
-              type="text" 
-              placeholder="Search officer name..." 
-              className="pl-9 pr-4 py-2 rounded-xl text-xs font-bold w-full md:w-64 outline-none border transition-all duration-300
-                dark:bg-slate-900 dark:border-slate-800 dark:text-white dark:focus:border-emerald-500
-                bg-gray-50 border-gray-200 text-black focus:border-emerald-500"
-            />
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <div className="relative flex-1 md:flex-none">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input 
+                type="text" 
+                placeholder="Search officer name..." 
+                className="pl-9 pr-4 py-2 rounded-xl text-xs font-bold w-full md:w-64 outline-none border transition-all duration-300
+                  dark:bg-slate-900 dark:border-slate-800 dark:text-white dark:focus:border-emerald-500
+                  bg-gray-50 border-gray-200 text-black focus:border-emerald-500"
+              />
+            </div>
+            
+            {(user.role === "SUPER_ADMIN" || user.role === "SUB_ADMIN") && (
+              <AddOfficerModal regions={regions} currentUserRole={user.role} />
+            )}
           </div>
         </div>
 
