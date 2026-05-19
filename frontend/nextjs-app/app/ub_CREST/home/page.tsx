@@ -1,7 +1,7 @@
 import { getMe, getSpikeSignals } from "@/lib/api";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Activity, ShieldCheck, Zap, Users, ListFilter, Cpu, Radio } from "lucide-react";
+import { Activity, ShieldCheck, Zap, Users, ListFilter, Cpu, Radio, BookOpen } from "lucide-react";
 
 export default async function CommandCenterHome() {
   let user;
@@ -89,6 +89,20 @@ export default async function CommandCenterHome() {
               </div>
               <h3 className="text-lg font-black text-white uppercase tracking-wider mb-2">Analytics</h3>
               <p className="text-xs text-slate-400 font-medium leading-relaxed">Deep-dive into 30-day volume trajectories, channel distributions, and SLA compliances.</p>
+            </Link>
+
+            <Link href="/ub_CREST/docs" className="group rounded-3xl p-6 bg-slate-900/60 border border-slate-800 hover:border-cyan-500/40 hover:bg-slate-900 transition-all duration-500 relative overflow-hidden backdrop-blur-xl hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] hover:-translate-y-1">
+              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-125 transition-transform duration-500 text-cyan-400">
+                <BookOpen className="w-20 h-20" />
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-6 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                <BookOpen className="w-6 h-6 text-cyan-400" />
+              </div>
+              <h3 className="text-lg font-black text-white uppercase tracking-wider mb-2">Platform Docs</h3>
+              <p className="text-xs text-slate-400 font-medium leading-relaxed">Full REST API reference, role hierarchy, ingest channel setup, and quick-start guide for CREST.</p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-cyan-400">
+                View Docs →
+              </span>
             </Link>
           </div>
         </div>
