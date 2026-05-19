@@ -104,11 +104,50 @@ python -m backend.utils.reset_db
 
 ---
 
+---
+
+## (F) User Hierarchy & Portal System
+
+CREST divides portal scopes strictly between **Public Citizens** and **Enterprise Officers** (Super Admins, Sub-Admins, and Employees) to balance transparency with rigorous administrative security:
+
+### **1. Public Portal (`/ub_publicPortal`)**
+Designed for maximum ease-of-use and dynamic citizen redressal:
+*   **Multi-Channel Lodging:** Lodge grievances natively via direct web forms, email integrations, SMS headers, or Twitter mentions.
+*   **Dual-Factor Live Tracking:** Track resolution status in real-time securely using the alphanumeric Visual Captcha (noise grid + distortion blur) combined with double-factor OTP authentication.
+*   **RAG Knowledge Corner:** Dynamic, searchable FAQ accordion explaining consumer rights, fraud prevention guidelines, and regional nodal escalation trees.
+
+---
+
+### **2. Corporate Hierarchy & Control Panel (`/ub_CREST`)**
+
+#### ** Super Administrator (`role: admin`)**
+*   **Global Command Room:** Complete visual analytics of all bank branches and regions globally.
+*   **Staff Roster Directory:** Add, delete, suspend, or inspect all system users, regional administrators, and officers globally.
+*   **Global Superior Takeover:** Can claim any unresolved complaint across the entire bank. 
+
+#### ** Regional Sub-Administrator (`role: SUB_ADMIN`)**
+*   **Scoped Jurisdiction:** Scoped strictly to their designated regional ID (e.g. Maharashtra, NCR, etc.)—cannot access metrics of other regions.
+*   **Team Supervision:** Oversee, activate, and manage junior officers within their regional roster.
+*   **Regional Superior Takeover:** Can assign any unresolved regional ticket to themselves. 
+
+#### ** Regional Officer / Employee (`role: EMPLOYEE`)**
+*   **Auto-Load Balanced Queues:** Brand-new complaints are automatically load-balanced and distributed to the least-busy active officer within the corresponding region.
+*   **Focused Workspace:** Strictly sees their own assigned tickets, preventing mental fatigue.
+*   **Grounded Draft Management:** Read, edit, and approve the grounded RAG-generated manual draft.
+*   **Superior Claim Lockout:** If a Sub-Admin or Super Admin takes over a complaint, the employee is safely locked out from editing drafts or resolving the case, displaying: *"Your superior is working with the complaint"*.
+*   **Escalation Protocol:** Can escalate complex grievances upward to their regional Sub-Admin at any time.
+
+#### ** Custom Resolution Notes & RBI Templates**
+*   **Resolution Input:** Displays the placeholder *“Note if something was special...”* until the officer begins typing.
+*   **Intelligent Reporting:** If the officer notes something unique about the case, it is logged in the permanent audit trail. If empty, the system automatically appends a generic, RBI-compliant resolution protocol note (e.g., *"Resolved via standard regional protocol"*).
+
+---
+
 ## Team Gen Forge
 - **Kshitij Singh**: Lead Backend & AI
 - **Aayush Jaiswal**: Frontend & UI/UX
-- **Laxya Gaba**: AI Logic & RAG
-- **Saanvi Aggarwal**: Product & Audit
+- **Laxya Gaba**: AI Logic
+- **Saanvi Aggarwal**: DataBase , Deployment & Audit
 
 ---
 *CREST · PS5: Unified Complaint Dashboard · Union Bank iDEA 2.0*

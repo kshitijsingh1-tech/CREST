@@ -56,6 +56,21 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
   const [currentRegion, setCurrentRegion] = useState<number | undefined>(regionId);
   const [regions, setRegions] = useState<any[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [userRole, setUserRole] = useState<string>("");
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("crest_user");
+      if (stored) {
+        try {
+           const u = JSON.parse(stored);
+           setUserRole(u.role || "");
+           setCurrentUserId(u.user_id || null);
+        } catch {}
+      }
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -232,16 +247,31 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
                         {c.assigned_employee_id}
                       </div>
                       <span>Agent ID</span>
+                      {userRole !== "EMPLOYEE" && c.assigned_employee_id !== currentUserId && (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              if (!currentUserId) return;
+                              await import("@/lib/api").then(api => api.assignComplaint(c.id, currentUserId));
+                              refresh();
+                            } catch (err) { console.error(err); }
+                          }}
+                          className="ml-2 text-[10px] px-2 py-0.5 bg-red-50 text-red-600 border border-red-200 rounded font-bold uppercase hover:bg-red-100 transition-colors"
+                        >
+                          Takeover
+                        </button>
+                      )}
                     </div>
+                  ) : userRole === "EMPLOYEE" ? (
+                    <span className="text-gray-400 italic">Unassigned</span>
                   ) : (
                     <button
                       onClick={async (e) => {
                         e.stopPropagation();
                         try {
-                          const userStr = localStorage.getItem("crest_user");
-                          if (!userStr) return;
-                          const user = JSON.parse(userStr);
-                          await import("@/lib/api").then(api => api.assignComplaint(c.id, user.id));
+                          if (!currentUserId) return;
+                          await import("@/lib/api").then(api => api.assignComplaint(c.id, currentUserId));
                           refresh();
                         } catch (err) { console.error(err); }
                       }}

@@ -33,7 +33,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
       if (stored) {
         try {
           const user = JSON.parse(stored);
-          setAgent(user.id?.toString() || "");
+          setAgent(user.user_id?.toString() || "");
         } catch {}
       }
     }
@@ -71,7 +71,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
   };
 
   const handleResolve = async () => {
-    if (!agent || !note) { flash("err", "Agent ID and resolution note required"); return; }
+    if (!agent) { flash("err", "Agent ID required"); return; }
     setLoading(true);
     try {
       await resolveComplaint(c.id, agent, note, csat !== "" ? Number(csat) : undefined);
@@ -255,6 +255,18 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
             </div>
           )}
 
+          {/* Superior Lockout State */}
+          {c.status !== "resolved" && (c as any).is_superior_takeover && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-5 shadow-sm backdrop-blur-md">
+               <h3 className="text-sm font-bold text-yellow-800 dark:text-yellow-400 flex items-center gap-2">
+                 ⚠️ Your superior is working with the complaint
+               </h3>
+               <p className="text-xs text-yellow-700 dark:text-yellow-500 mt-1">
+                 You cannot edit, approve, or resolve this ticket.
+               </p>
+            </div>
+          )}
+
           {/* Agent actions */}
           {c.status !== "resolved" && (
             <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-5 space-y-4 backdrop-blur-md">
@@ -271,15 +283,17 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
               </div>
 
               <div className="flex gap-2">
-                <button onClick={handleAssign} disabled={loading || !agent}
-                  className="text-xs px-3 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded transition-colors disabled:opacity-50">
-                  Assign to Me
-                </button>
+                {!(c as any).is_superior_takeover && (
+                  <button onClick={handleAssign} disabled={loading || !agent}
+                    className="text-xs px-3 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded transition-colors disabled:opacity-50">
+                    Assign to Me
+                  </button>
+                )}
                 <button onClick={handleEscalate} disabled={loading || !agent || c.is_escalated}
                   className="text-xs px-3 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded border border-red-100 dark:border-red-900/30 transition-colors disabled:opacity-50">
                   Escalate to Head
                 </button>
-                {c.draft_reply && !c.draft_approved && (
+                {c.draft_reply && !c.draft_approved && !(c as any).is_superior_takeover && (
                   <button onClick={handleApproveDraft} disabled={loading || !agent}
                     className="text-xs px-3 py-2 bg-indigo-100 dark:bg-indigo-900/60 hover:bg-indigo-200 dark:hover:bg-indigo-800 text-indigo-700 dark:text-indigo-300 rounded transition-colors disabled:opacity-50">
                     ✓ Approve Draft
@@ -287,30 +301,34 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                 )}
               </div>
 
-              <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Resolution Note</label>
-                <textarea
-                  rows={4} value={note}
-                  onChange={e => setNote(e.target.value)}
-                  placeholder="Describe the resolution steps taken…"
-                  className="w-full text-sm border border-gray-200 dark:border-white/10 dark:bg-black/40 dark:text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
-                />
-              </div>
+              {!(c as any).is_superior_takeover && (
+                <>
+                  <div>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Resolution Note</label>
+                    <textarea
+                      rows={4} value={note}
+                      onChange={e => setNote(e.target.value)}
+                      placeholder="Note if something was special"
+                      className="w-full text-sm border border-gray-200 dark:border-white/10 dark:bg-black/40 dark:text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
+                    />
+                  </div>
 
-              <div className="flex items-center gap-3">
-                <div>
-                  <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">CSAT (1–5)</label>
-                  <input type="number" min={1} max={5} value={csat}
-                    onChange={e => setCsat(e.target.value ? Number(e.target.value) : "")}
-                    className="w-20 text-sm border border-gray-200 dark:border-white/10 dark:bg-black/40 dark:text-white rounded px-3 py-2 focus:outline-none"
-                    placeholder="4"
-                  />
-                </div>
-                <button onClick={handleResolve} disabled={loading || !agent || !note}
-                  className="mt-4 text-sm px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded transition-colors disabled:opacity-50">
-                  ✓ Mark Resolved
-                </button>
-              </div>
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">CSAT (1–5)</label>
+                      <input type="number" min={1} max={5} value={csat}
+                        onChange={e => setCsat(e.target.value ? Number(e.target.value) : "")}
+                        className="w-20 text-sm border border-gray-200 dark:border-white/10 dark:bg-black/40 dark:text-white rounded px-3 py-2 focus:outline-none"
+                        placeholder="4"
+                      />
+                    </div>
+                    <button onClick={handleResolve} disabled={loading || !agent}
+                      className="mt-4 text-sm px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded transition-colors disabled:opacity-50">
+                      ✓ Mark Resolved
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

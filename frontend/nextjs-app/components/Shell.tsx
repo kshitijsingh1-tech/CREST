@@ -11,6 +11,15 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     setMounted(true);
     const savedTheme = localStorage.getItem("crest-theme");
     if (savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
+
+    const handleThemeChange = (e: Event) => {
+      const newTheme = (e as CustomEvent).detail;
+      if (newTheme === "light" || newTheme === "dark") {
+        setTheme(newTheme);
+      }
+    };
+    window.addEventListener("crest-theme-change", handleThemeChange);
+    return () => window.removeEventListener("crest-theme-change", handleThemeChange);
   }, []);
 
   useEffect(() => {

@@ -15,6 +15,7 @@ from backend.utils.runtime import DEV_MOCK, is_truthy  # type: ignore
 from integrations.whatsapp.webhook import router as whatsapp_webhook_router  # type: ignore
 from backend.api.sms import router as sms_router # type: ignore
 from backend.api.twitter import router as twitter_router # type: ignore
+from backend.api.public import router as public_router # type: ignore
 
 logger = get_logger("crest.main")
 
@@ -85,6 +86,7 @@ app.include_router(insights_router)
 app.include_router(whatsapp_webhook_router)
 app.include_router(sms_router)
 app.include_router(twitter_router)
+app.include_router(public_router)
 app.include_router(users_router)
 app.include_router(auth_router)
 

@@ -1,6 +1,17 @@
+"use client";
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function Header({ theme, toggleTheme }: { theme: "dark" | "light", toggleTheme: () => void }) {
+  const pathname = usePathname();
+  
+  // Hide the admin header entirely for public customer pages
+  const publicRoutes = ["/", "/track", "/login", "/submit", "/ub_publicPortal", "/crest_publicPortal", "/ub_CREST/login"];
+  if (publicRoutes.includes(pathname)) {
+    return null;
+  }
+
   return (
     <header className="w-full transition-all duration-500 
       dark:bg-black/80 dark:backdrop-blur-xl dark:border-b dark:border-blue-900/30
@@ -28,11 +39,12 @@ export default function Header({ theme, toggleTheme }: { theme: "dark" | "light"
         </div>
       </div>
       
-      <nav className="hidden md:flex items-center gap-8">
-        <Link href="/" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Home</Link>
-        <Link href="/dashboard" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Dashboard</Link>
-        <Link href="/analytics" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Analytics</Link>
-        <Link href="/queue" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Live Queue</Link>
+      <nav className="hidden lg:flex items-center gap-6">
+        <Link href="/ub_CREST/home" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Command Center</Link>
+        <Link href="/ub_CREST/dashboard" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Analytics Hub</Link>
+        <Link href="/ub_CREST/management" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Management</Link>
+        <Link href="/ub_CREST/analytics" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Analytics</Link>
+        <Link href="/ub_CREST/queue" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Live Queue</Link>
       </nav>
 
       <div className="flex items-center gap-4">

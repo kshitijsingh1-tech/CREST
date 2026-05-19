@@ -47,3 +47,9 @@ backend/temp/
 temp_media/
 *.bak
 *.temp
+
+# --- Build & Scratch ---
+*.tsbuildinfo
+.tmp/
+scratch/
+

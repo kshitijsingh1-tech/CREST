@@ -28,6 +28,7 @@ from backend.models.complaint import ComplaintIngest, ComplaintOut, ResolveReque
 from backend.services.complaint_service import (
     ingest_complaint, get_priority_queue, assign_complaint,
     resolve_complaint, approve_draft, export_audit_trail, find_similar,
+    find_least_loaded_employee
 )
 from ai.embeddings.embedder import embed
 from ai.agents.classifier_agent import classify
@@ -150,9 +151,13 @@ def priority_queue(
 
     complaints = get_priority_queue(db, limit=limit, region_id=effective_region_id)
     
-    # If employee, further filter to assigned only? 
-    # Or maybe the queue shows all regional but highlights assigned?
-    # Requirement: "Employees see their assigned queue"
+    for c in complaints:
+        if c.assigned_employee_id is None and c.region_id is not None:
+            new_assignee = find_least_loaded_employee(db, c.region_id)
+            if new_assignee:
+                assign_complaint(db, str(c.id), str(new_assignee))
+                c.assigned_employee_id = new_assignee
+    
     if user.role == "EMPLOYEE":
         complaints = [c for c in complaints if c.assigned_employee_id == user.id]
 
@@ -201,8 +206,17 @@ def get_complaint(
     # Access Control check
     if user.role == "SUB_ADMIN" and c.region_id != user.region_id:
         raise HTTPException(status_code=403, detail="Access denied to other regions")
-    if user.role == "EMPLOYEE" and c.assigned_employee_id != user.id:
-         raise HTTPException(status_code=403, detail="Complaint not assigned to you")
+        
+    is_superior_takeover = False
+    if c.assigned_employee_id:
+        assigned_user = db.query(User).filter(User.id == c.assigned_employee_id).first()
+        if assigned_user and assigned_user.role in ["SUB_ADMIN", "ADMIN"]:
+            is_superior_takeover = True
+
+    if user.role == "EMPLOYEE":
+        if c.assigned_employee_id != user.id:
+            if not is_superior_takeover or c.region_id != user.region_id:
+                raise HTTPException(status_code=403, detail="Complaint not assigned to you")
 
     return {
         "id":              str(c.id),
@@ -229,6 +243,7 @@ def get_complaint(
         "draft_reply":     c.draft_reply,
         "draft_metadata":  c.draft_metadata,
         "draft_approved":  c.draft_approved,
+        "is_superior_takeover": is_superior_takeover,
         "resolution_note": c.resolution_note,
         "created_at":      c.created_at.isoformat(),
         "resolved_at":     c.resolved_at.isoformat() if c.resolved_at else None,

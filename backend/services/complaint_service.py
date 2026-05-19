@@ -253,11 +253,16 @@ def assign_complaint(db: Session, complaint_id: str, agent: str) -> Complaint:
         final_status = c.status if c.status in {"resolved", "closed"} else "resolved"
         raise ValueError(f"Complaint {complaint_id} is already {final_status} and cannot be reassigned")
 
-    if c.assigned_agent == agent and c.status == "in_progress":
+    try:
+        agent_id = int(agent)
+    except ValueError:
+        agent_id = None
+
+    if agent_id is not None and c.assigned_employee_id == agent_id and c.status == "in_progress":
         return c
 
-    old_agent = c.assigned_agent
-    c.assigned_agent = agent
+    old_agent = str(c.assigned_employee_id) if c.assigned_employee_id else None
+    c.assigned_employee_id = agent_id
     c.assigned_at    = datetime.now(timezone.utc)
     c.status         = "in_progress"
     _write_audit(db, c.id, agent, "assigned",
@@ -279,6 +284,10 @@ def resolve_complaint(
 ) -> Complaint:
     c = _get_or_raise(db, complaint_id)
     now = datetime.now(timezone.utc)
+
+    # Output a standard generic message if no custom note was provided
+    if not resolution_note or not resolution_note.strip():
+        resolution_note = "Resolved via standard regional protocol"
 
     # Determine final SLA status
     sla_status = "breached" if (c.sla_deadline and now > c.sla_deadline) else "resolved"
