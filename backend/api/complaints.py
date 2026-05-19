@@ -46,7 +46,7 @@ logger = get_logger("crest.api.complaints")
 
 async def ingest_complaint_logic(payload_dict: dict, db: Session):
     """
-    Core ingestion logic including AI pipeline with Bhashini bidirectional translation.
+    Core ingestion logic including AI pipeline with Bhashini bidirectional translation and auto-detection.
     Reused by SMS, WhatsApp, and testing endpoints.
     """
     body = payload_dict.get("body", "")
@@ -58,8 +58,13 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
         body_for_ai = await translator.translate(body, source_lang=language, target_lang="en")
         subject_for_ai = await translator.translate(subject, source_lang=language, target_lang="en")
     else:
-        body_for_ai = body
-        subject_for_ai = subject
+        # Auto-detect language for intake channels (Email, SMS, default Web calls)
+        body_for_ai, detected_lang = await translator.detect_and_translate(body, target_lang="en")
+        if detected_lang != "en":
+            language = detected_lang
+            subject_for_ai = await translator.translate(subject, source_lang=language, target_lang="en")
+        else:
+            subject_for_ai = subject
     
     classification  = classify(body_for_ai)
     entities        = extract(body_for_ai)
@@ -79,6 +84,7 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
         draft_reply_final = await translator.translate(draft_reply, source_lang="en", target_lang=language)
     else:
         draft_reply_final = draft_reply
+
     
     complaint = ingest_complaint(
         db            = db,

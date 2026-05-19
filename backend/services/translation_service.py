@@ -77,7 +77,44 @@ class BhashiniTranslator:
         print("--------------------------------------\n")
         return fallback_result
 
+    async def detect_and_translate(self, text: str, target_lang: str = "en") -> tuple[str, str]:
+        """
+        Detects the source language of the text and translates it to target_lang.
+        Returns a tuple of (translated_text, detected_language).
+        """
+        if not text:
+            return "", "en"
+            
+        print(f"\n--- [MeitY Bhashini Auto-Detect Pipeline] ---")
+        print(f"Ingested text for detection: '{text[:60]}...'")
+        
+        # Google Translate Single API handles both detection and translation in a single request
+        try:
+            url = "https://translate.googleapis.com/translate_a/single"
+            params = {
+                "client": "gtx",
+                "sl": "auto",
+                "tl": target_lang,
+                "dt": "t",
+                "q": text
+            }
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(url, params=params, timeout=5.0)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    translated_text = "".join([sentence[0] for sentence in data[0] if sentence[0]])
+                    detected_lang = data[2] if len(data) > 2 else "en"
+                    print(f"[Bhashini Auto-Detect Success] Detected: '{detected_lang}', Result: '{translated_text[:60]}...'")
+                    print("--------------------------------------------\n")
+                    return translated_text, detected_lang
+        except Exception as e:
+            print(f"[Bhashini Auto-Detect Error] Connection failed: {e}. Defaulting to English...")
+            
+        print("--------------------------------------------\n")
+        return text, "en"
+
     async def _fallback_translate(self, text: str, source: str, target: str) -> str:
+
         """
         Free, secure translation fallback via high-availability endpoints.
         """
