@@ -5,7 +5,7 @@ function Section({ id, title, subtitle, children }: { id: string; title: string;
   return (
     <section id={id} className="rounded-3xl border p-8 transition-all duration-500
       dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl
-      bg-white border-gray-200 shadow-xl">
+      bg-white/70 backdrop-blur-xl border-white/60 shadow-xl">
       <h2 className="text-base font-black uppercase tracking-widest mb-1 dark:text-white text-gray-900">{title}</h2>
       {subtitle && <p className="text-[10px] uppercase tracking-widest font-bold mb-6 dark:text-blue-400 text-blue-600">{subtitle}</p>}
       {!subtitle && <div className="mb-6" />}
@@ -17,8 +17,8 @@ function Section({ id, title, subtitle, children }: { id: string; title: string;
 function Card({ icon: Icon, color, title, body }: { icon: any; color: string; title: string; body: string }) {
   return (
     <div className="rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-1
-      dark:bg-white/5 dark:border-white/10 dark:hover:border-white/20
-      bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-md">
+      dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 dark:hover:border-white/20
+      bg-white/60 backdrop-blur-md border-white/50 hover:border-white/80 hover:shadow-md">
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 border ${color}`}>
         <Icon className="w-5 h-5" />
       </div>
@@ -30,7 +30,7 @@ function Card({ icon: Icon, color, title, body }: { icon: any; color: string; ti
 
 function RoleRow({ badge, role, who, can }: { badge: string; role: string; who: string; can: string[] }) {
   return (
-    <div className="rounded-2xl border p-5 dark:border-white/10 border-gray-200 dark:bg-white/5 bg-gray-50">
+    <div className="rounded-2xl border p-5 dark:border-white/10 dark:bg-white/5 dark:backdrop-blur-xl border-white/50 bg-white/60 backdrop-blur-md">
       <div className="flex flex-wrap items-center gap-3 mb-3">
         <code className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded border dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-300 bg-blue-50 border-blue-200 text-blue-700">{badge}</code>
         <span className="text-sm font-black dark:text-white text-gray-900">{role}</span>
@@ -69,7 +69,7 @@ export default function DocsPage() {
       {/* TOC */}
       <div className="rounded-3xl border p-6 mb-8 transition-all duration-500
         dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10
-        bg-gray-50 border-gray-200">
+        bg-white/70 backdrop-blur-xl border-white/60">
         <p className="text-[10px] font-black uppercase tracking-widest dark:text-slate-400 text-gray-500 mb-4 flex items-center gap-2">
           <BookOpen className="w-3.5 h-3.5" /> On This Page
         </p>
@@ -163,7 +163,7 @@ export default function DocsPage() {
               ["🐦", "Twitter / X", "Mention or DM the bank's handle. Social complaints are captured instantly."],
               ["🌐", "Web Portal", "Fill out the online complaint form at the public portal. No account needed — just your contact details."],
             ].map(([emoji, ch, desc]) => (
-              <div key={ch as string} className="rounded-2xl border p-4 dark:bg-white/5 dark:border-white/10 bg-gray-50 border-gray-200">
+              <div key={ch as string} className="rounded-2xl border p-4 dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 bg-white/60 backdrop-blur-md border-white/50">
                 <p className="text-2xl mb-2">{emoji}</p>
                 <p className="text-xs font-black uppercase tracking-widest mb-1 dark:text-white text-gray-900">{ch}</p>
                 <p className="text-[11px] leading-relaxed dark:text-slate-400 text-gray-500">{desc}</p>
@@ -283,8 +283,8 @@ export default function DocsPage() {
               { icon: BarChart3,   label: "Predictive Spike Signals",     body: "AI monitors complaint volume patterns and alerts administrators before a surge becomes a crisis — proactive, not reactive." },
             ] as const).map(({ icon: Icon, label, body }) => (
               <div key={label} className="flex items-start gap-4 p-5 rounded-2xl border transition-all duration-300
-                dark:bg-white/5 dark:border-white/10 dark:hover:border-white/20
-                bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-sm">
+                dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 dark:hover:border-white/20
+                bg-white/60 backdrop-blur-md border-white/50 hover:border-white/80 hover:shadow-sm">
                 <div className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border
                   dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400
                   bg-blue-50 border-blue-200 text-blue-600">
@@ -308,7 +308,7 @@ export default function DocsPage() {
               ["Laxya Gaba", "AI Logic"],
               ["Saanvi Aggarwal", "Database, Deployment & Audit"],
             ].map(([name, role]) => (
-              <div key={name} className="rounded-2xl border p-4 text-center dark:bg-white/5 dark:border-white/10 bg-gray-50 border-gray-200">
+              <div key={name} className="rounded-2xl border p-4 text-center dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 bg-white/60 backdrop-blur-md border-white/50">
                 <div className="w-10 h-10 rounded-full dark:bg-blue-500/20 bg-blue-100 flex items-center justify-center mx-auto mb-3 text-base font-black dark:text-blue-300 text-blue-700">
                   {(name as string)[0]}
                 </div>
@@ -320,7 +320,7 @@ export default function DocsPage() {
         </Section>
 
         {/* Footer note */}
-        <div className="rounded-2xl border p-5 text-center dark:border-white/10 dark:bg-white/5 bg-gray-50 border-gray-200">
+        <div className="rounded-2xl border p-5 text-center dark:border-white/10 dark:bg-white/5 dark:backdrop-blur-xl bg-white/60 backdrop-blur-md border-white/50">
           <p className="text-xs font-bold dark:text-slate-500 text-gray-400">
             CREST · Complaint Resolution & Escalation Smart Technology · Union Bank of India · iDEA 2.0 Hackathon · Team Gen Forge
           </p>
