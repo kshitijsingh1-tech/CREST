@@ -41,9 +41,8 @@ export default function Header({ theme, toggleTheme }: { theme: "dark" | "light"
       
       <nav className="hidden lg:flex items-center gap-6">
         <Link href="/ub_CREST/home" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Command Center</Link>
-        <Link href="/ub_CREST/dashboard" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Analytics Hub</Link>
-        <Link href="/ub_CREST/management" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Management</Link>
         <Link href="/ub_CREST/analytics" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Analytics</Link>
+        <Link href="/ub_CREST/management" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Management</Link>
         <Link href="/ub_CREST/queue" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Live Queue</Link>
       </nav>
 

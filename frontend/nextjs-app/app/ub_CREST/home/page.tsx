@@ -1,7 +1,7 @@
 import { getMe, getSpikeSignals } from "@/lib/api";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Activity, ShieldCheck, Zap, Users, BarChart3, ListFilter, Cpu, Radio } from "lucide-react";
+import { Activity, ShieldCheck, Zap, Users, ListFilter, Cpu, Radio } from "lucide-react";
 
 export default async function CommandCenterHome() {
   let user;
@@ -58,17 +58,6 @@ export default async function CommandCenterHome() {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Link href="/ub_CREST/dashboard" className="group rounded-3xl p-6 bg-slate-900/60 border border-slate-800 hover:border-blue-500/40 hover:bg-slate-900 transition-all duration-500 relative overflow-hidden backdrop-blur-xl hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] hover:-translate-y-1">
-              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-125 transition-transform duration-500 text-blue-400">
-                <BarChart3 className="w-20 h-20" />
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-6 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-                <BarChart3 className="w-6 h-6 text-blue-400" />
-              </div>
-              <h3 className="text-lg font-black text-white uppercase tracking-wider mb-2">Analytics Hub</h3>
-              <p className="text-xs text-slate-400 font-medium leading-relaxed">View detailed complaint metrics, performance histograms, and SLA breakdown diagnostics.</p>
-            </Link>
-
             <Link href="/ub_CREST/queue" className="group rounded-3xl p-6 bg-slate-900/60 border border-slate-800 hover:border-amber-500/40 hover:bg-slate-900 transition-all duration-500 relative overflow-hidden backdrop-blur-xl hover:shadow-[0_0_30px_rgba(245,158,11,0.15)] hover:-translate-y-1">
               <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-125 transition-transform duration-500 text-amber-400">
                 <ListFilter className="w-20 h-20" />
