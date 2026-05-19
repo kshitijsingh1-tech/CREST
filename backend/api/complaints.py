@@ -38,6 +38,7 @@ from asgiref.sync import async_to_sync
 from backend.utils.socket import broadcast_queue_update, broadcast_new_complaint
 from backend.api.deps import get_current_user
 from backend.models.user import User
+from backend.services.translation_service import translator
 
 router = APIRouter(prefix="/api/complaints", tags=["complaints"])
 logger = get_logger("crest.api.complaints")
@@ -45,34 +46,50 @@ logger = get_logger("crest.api.complaints")
 
 async def ingest_complaint_logic(payload_dict: dict, db: Session):
     """
-    Core ingestion logic including AI pipeline.
+    Core ingestion logic including AI pipeline with Bhashini bidirectional translation.
     Reused by SMS, WhatsApp, and testing endpoints.
     """
     body = payload_dict.get("body", "")
     subject = payload_dict.get("subject", "")
+    language = payload_dict.get("language", "en")
     
-    classification  = classify(body)
-    entities        = extract(body)
-    embedding       = embed(body)
+    # Bidirectional Pivot-Translation for regional Indian languages (MeitY Bhashini Gateway)
+    if language and language.strip().lower() != "en":
+        body_for_ai = await translator.translate(body, source_lang=language, target_lang="en")
+        subject_for_ai = await translator.translate(subject, source_lang=language, target_lang="en")
+    else:
+        body_for_ai = body
+        subject_for_ai = subject
+    
+    classification  = classify(body_for_ai)
+    entities        = extract(body_for_ai)
+    embedding       = embed(body_for_ai)
     rag_result      = generate_draft_reply(
-        complaint_body    = body,
-        complaint_subject = subject,
+        complaint_body    = body_for_ai,
+        complaint_subject = subject_for_ai,
         named_entities    = entities.to_dict(),
         category          = classification.category,
         embedding         = embedding,
         customer_name     = payload_dict.get("customer_name"),
     )
     
+    # Translate generated response back to customer's input language
+    draft_reply = rag_result["draft"]
+    if language and language.strip().lower() != "en" and draft_reply:
+        draft_reply_final = await translator.translate(draft_reply, source_lang="en", target_lang=language)
+    else:
+        draft_reply_final = draft_reply
+    
     complaint = ingest_complaint(
         db            = db,
         channel_name  = payload_dict.get("channel", "app"),
         customer_id   = payload_dict.get("customer_id", "unknown"),
-        body          = body,
+        body          = body,  # Keep the original typed regional text for compliance record
         embedding     = embedding,
         subject       = subject,
         customer_name = payload_dict.get("customer_name"),
         external_ref  = payload_dict.get("external_ref"),
-        language      = payload_dict.get("language", "en"),
+        language      = language,
         sla_hours     = payload_dict.get("sla_hours", 720),
         severity      = classification.severity,
         anger_score   = classification.anger_score,
@@ -80,7 +97,7 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
         category      = classification.category,
         sub_category  = classification.sub_category,
         named_entities= entities.to_dict(),
-        draft_reply   = rag_result["draft"],
+        draft_reply   = draft_reply_final,  # Store the back-translated draft!
         draft_metadata= rag_result["sources"],
         region_id     = payload_dict.get("region_id"),
     )
@@ -92,6 +109,7 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
         logger.error(f"WebSocket broadcast failed: {ws_err}")
 
     return complaint
+
 
 
 # ── Ingest (sync path — for testing; production uses Kafka → Celery) ──
