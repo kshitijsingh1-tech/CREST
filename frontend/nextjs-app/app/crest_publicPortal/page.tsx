@@ -86,12 +86,12 @@ export default function PublicPortalHub() {
       </div>
 
       {/* Dynamic Cover Banner */}
-      <div className="dark:bg-slate-950/50 bg-blue-900/10 backdrop-blur-2xl py-20 px-6 relative overflow-hidden border-b dark:border-slate-800/80 border-blue-900/10">
+      <div className="dark:bg-slate-950/50 bg-blue-50 backdrop-blur-2xl py-20 px-6 relative overflow-hidden border-b dark:border-slate-800/80 border-blue-200">
         <div className="max-w-5xl mx-auto text-center space-y-6 relative z-10 animate-fade-in-up">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border dark:border-slate-800/60 border-blue-200 dark:bg-slate-900/40 bg-blue-100 text-xs font-semibold tracking-wider dark:text-blue-200 text-blue-800 uppercase">
             <ShieldCheck className="w-4 h-4 text-red-500 animate-pulse" /> Official Public Portal
           </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight dark:text-white text-slate-900 animate-shimmer uppercase">
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight dark:animate-shimmer dark:text-white text-gray-900 uppercase">
             Customer Grievance & Care Hub
           </h1>
           <p className="text-sm md:text-base dark:text-slate-300 text-slate-700 max-w-2xl mx-auto font-medium leading-relaxed">
