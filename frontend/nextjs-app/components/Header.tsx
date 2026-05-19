@@ -40,11 +40,11 @@ export default function Header({ theme, toggleTheme }: { theme: "dark" | "light"
       </div>
       
       <nav className="hidden lg:flex items-center gap-6">
-        <Link href="/ub_CREST/home" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Command Center</Link>
+        <Link href="/ub_CREST/home" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Home</Link>
         <Link href="/ub_CREST/analytics" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Analytics</Link>
         <Link href="/ub_CREST/management" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Management</Link>
-        <Link href="/ub_CREST/docs" className="text-sm font-bold transition-all duration-300 dark:text-cyan-300 dark:hover:text-red-400 text-cyan-700 hover:text-red-600">Docs</Link>
         <Link href="/ub_CREST/queue" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Live Queue</Link>
+        <Link href="/ub_CREST/docs" className="text-sm font-bold transition-all duration-300 dark:text-cyan-300 dark:hover:text-red-400 text-cyan-700 hover:text-red-600">Docs</Link>
       </nav>
 
       <div className="flex items-center gap-4">
