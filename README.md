@@ -120,7 +120,7 @@ Designed for maximum ease-of-use and dynamic citizen redressal:
 
 ### **2. Corporate Hierarchy & Control Panel (`/ub_CREST`)**
 
-#### ** Super Administrator (`role: admin`)**
+#### ** Super Administrator (`role: SUPER_ADMIN`)**
 *   **Global Command Room:** Complete visual analytics of all bank branches and regions globally.
 *   **Staff Roster Directory:** Add, delete, suspend, or inspect all system users, regional administrators, and officers globally.
 *   **Global Superior Takeover:** Can claim any unresolved complaint across the entire bank. 
