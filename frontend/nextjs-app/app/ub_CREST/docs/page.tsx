@@ -1,62 +1,45 @@
 import Link from "next/link";
-import { BookOpen, Zap, Shield, Users, Mail, MessageSquare, BarChart3, Key, ChevronRight, Terminal, Globe, Lock } from "lucide-react";
+import { BookOpen, ShieldCheck, Zap, Users, Globe, Mail, MessageSquare, BarChart3, ChevronRight, CheckCircle2, AlertTriangle, Clock, Star } from "lucide-react";
 
-function Section({ id, icon: Icon, color, title, children }: { id: string; icon: any; color: string; title: string; children: React.ReactNode }) {
+function Section({ id, title, subtitle, children }: { id: string; title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="rounded-3xl border p-8 transition-all duration-500 dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl bg-white border-gray-200 shadow-xl">
-      <h2 className={`text-xs font-black uppercase tracking-widest mb-6 flex items-center gap-3 ${color}`}>
-        <Icon className="w-4 h-4" /> {title}
-      </h2>
+    <section id={id} className="rounded-3xl border p-8 transition-all duration-500
+      dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl
+      bg-white border-gray-200 shadow-xl">
+      <h2 className="text-base font-black uppercase tracking-widest mb-1 dark:text-white text-gray-900">{title}</h2>
+      {subtitle && <p className="text-[10px] uppercase tracking-widest font-bold mb-6 dark:text-blue-400 text-blue-600">{subtitle}</p>}
+      {!subtitle && <div className="mb-6" />}
       {children}
     </section>
   );
 }
 
-function Endpoint({ method, path, desc, auth, body, response }: { method: string; path: string; desc: string; auth?: string; body?: string; response?: string }) {
-  const mc: Record<string, string> = {
-    GET:   "dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30 bg-blue-50 text-blue-700 border-blue-200",
-    POST:  "dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30 bg-emerald-50 text-emerald-700 border-emerald-200",
-    PATCH: "dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30 bg-amber-50 text-amber-700 border-amber-200",
-    DELETE:"dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30 bg-red-50 text-red-700 border-red-200",
-  };
+function Card({ icon: Icon, color, title, body }: { icon: any; color: string; title: string; body: string }) {
   return (
-    <div className="border rounded-2xl overflow-hidden dark:border-white/10 border-gray-200 mb-4">
-      <div className="flex flex-wrap items-center gap-3 p-4 dark:bg-slate-900/50 bg-gray-50 border-b dark:border-white/10 border-gray-200">
-        <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${mc[method] ?? mc.GET}`}>{method}</span>
-        <code className="text-sm font-mono font-bold dark:text-white text-black">{path}</code>
-        {auth && <span className="ml-auto text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded border dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 bg-gray-100 border-gray-200 text-gray-500 flex items-center gap-1"><Lock className="w-3 h-3"/>{auth}</span>}
+    <div className="rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-1
+      dark:bg-white/5 dark:border-white/10 dark:hover:border-white/20
+      bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-md">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 border ${color}`}>
+        <Icon className="w-5 h-5" />
       </div>
-      <div className="p-4 space-y-3">
-        <p className="text-xs font-medium dark:text-slate-400 text-gray-600">{desc}</p>
-        {body && (
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest dark:text-slate-500 text-gray-400 mb-1">Request Body</p>
-            <pre className="text-xs rounded-xl p-3 dark:bg-slate-900 bg-gray-50 border dark:border-slate-800 border-gray-200 overflow-x-auto dark:text-emerald-300 text-emerald-700">{body}</pre>
-          </div>
-        )}
-        {response && (
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest dark:text-slate-500 text-gray-400 mb-1">Response</p>
-            <pre className="text-xs rounded-xl p-3 dark:bg-slate-900 bg-gray-50 border dark:border-slate-800 border-gray-200 overflow-x-auto dark:text-blue-300 text-blue-700">{response}</pre>
-          </div>
-        )}
-      </div>
+      <h3 className="text-sm font-black uppercase tracking-wide mb-2 dark:text-white text-gray-900">{title}</h3>
+      <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-500">{body}</p>
     </div>
   );
 }
 
-function RoleCard({ role, badge, color, perms }: { role: string; badge: string; color: string; perms: string[] }) {
+function RoleRow({ badge, role, who, can }: { badge: string; role: string; who: string; can: string[] }) {
   return (
-    <div className={`rounded-2xl border p-5 ${color}`}>
-      <div className="flex items-center gap-2 mb-3">
-        <Shield className="w-4 h-4" />
-        <span className="text-xs font-black uppercase tracking-widest">{role}</span>
-        <code className="ml-auto text-[9px] font-mono font-bold px-2 py-0.5 rounded border dark:bg-black/40 bg-white/60">{badge}</code>
+    <div className="rounded-2xl border p-5 dark:border-white/10 border-gray-200 dark:bg-white/5 bg-gray-50">
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <code className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded border dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-300 bg-blue-50 border-blue-200 text-blue-700">{badge}</code>
+        <span className="text-sm font-black dark:text-white text-gray-900">{role}</span>
+        <span className="text-[10px] dark:text-slate-500 text-gray-400 ml-auto">{who}</span>
       </div>
       <ul className="space-y-1.5">
-        {perms.map(p => (
-          <li key={p} className="flex items-start gap-2 text-[11px] font-medium opacity-80">
-            <ChevronRight className="w-3 h-3 mt-0.5 flex-shrink-0" />{p}
+        {can.map(c => (
+          <li key={c} className="flex items-start gap-2 text-xs dark:text-slate-400 text-gray-600">
+            <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-emerald-500" />{c}
           </li>
         ))}
       </ul>
@@ -67,28 +50,42 @@ function RoleCard({ role, badge, color, perms }: { role: string; badge: string; 
 export default function DocsPage() {
   return (
     <div className="flex-1 bg-transparent p-6 md:p-10 max-w-[90rem] mx-auto w-full animate-fade-in-up">
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
         <div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase dark:text-white text-black">Platform Docs</h1>
-          <p className="text-xs uppercase tracking-widest mt-2 font-bold dark:text-blue-300 text-gray-600">CREST · Complaint Resolution & Escalation Smart Technology</p>
+          <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase dark:text-white text-gray-900">Platform Guide</h1>
+          <p className="text-xs uppercase tracking-widest mt-2 font-bold dark:text-blue-400 text-blue-600">
+            CREST · Complaint Resolution & Escalation Smart Technology
+          </p>
         </div>
-        <Link href="/ub_CREST/home" className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-500 border shadow-sm dark:bg-blue-900/30 dark:border-blue-500/30 dark:text-blue-300 dark:hover:bg-blue-900/50 bg-gray-100 border-gray-300 text-black hover:bg-gray-200">
-          ← Command Center
+        <Link href="/ub_CREST/home" className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-500 border shadow-sm
+          dark:bg-white/5 dark:border-white/10 dark:text-white dark:hover:bg-white/10
+          bg-gray-100 border-gray-200 text-gray-800 hover:bg-gray-200">
+          ← Back to Home
         </Link>
       </div>
 
       {/* TOC */}
-      <div className="rounded-3xl border p-6 mb-8 dark:bg-slate-900/60 dark:border-white/10 bg-gray-50 border-gray-200">
-        <p className="text-[10px] font-black uppercase tracking-widest dark:text-slate-400 text-gray-500 mb-4 flex items-center gap-2"><BookOpen className="w-3.5 h-3.5"/>Table of Contents</p>
+      <div className="rounded-3xl border p-6 mb-8 transition-all duration-500
+        dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10
+        bg-gray-50 border-gray-200">
+        <p className="text-[10px] font-black uppercase tracking-widest dark:text-slate-400 text-gray-500 mb-4 flex items-center gap-2">
+          <BookOpen className="w-3.5 h-3.5" /> On This Page
+        </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {[
-            ["#overview","Platform Overview"],["#quickstart","Quick Start"],["#roles","User Hierarchy"],
-            ["#channels","Ingest Channels"],["#complaints","Complaints API"],["#analytics","Analytics API"],
-            ["#admin","Admin API"],["#auth","Authentication"],
+            ["#problem", "The Problem"],
+            ["#solution", "How CREST Solves It"],
+            ["#channels", "Complaint Channels"],
+            ["#journey", "Complaint Journey"],
+            ["#roles", "Who Uses CREST"],
+            ["#public", "Public Portal"],
+            ["#security", "Security & Compliance"],
+            ["#team", "Built By"],
           ].map(([href, label]) => (
-            <a key={href} href={href} className="text-xs font-bold flex items-center gap-1.5 dark:text-blue-300 dark:hover:text-white text-blue-700 hover:text-black transition-colors">
-              <ChevronRight className="w-3 h-3"/>{label}
+            <a key={href} href={href as string} className="text-xs font-bold flex items-center gap-1.5 dark:text-blue-300 dark:hover:text-white text-blue-700 hover:text-black transition-colors">
+              <ChevronRight className="w-3 h-3" />{label}
             </a>
           ))}
         </div>
@@ -96,203 +93,230 @@ export default function DocsPage() {
 
       <div className="space-y-8">
 
-        {/* Overview */}
-        <Section id="overview" icon={Zap} color="dark:text-blue-400 text-blue-600" title="Platform Overview">
-          <p className="text-sm dark:text-slate-400 text-gray-600 leading-relaxed mb-4">
-            CREST is India's first RBI-aligned, Gen-AI powered grievance intelligence platform for Union Bank of India. It ingests complaints from <strong className="dark:text-white text-black">Email, SMS, Twitter, and Web</strong>, then runs a full AI pipeline: NER extraction → sentiment classification → 768-dim SBERT vectorization → semantic deduplication → Emotion-Decay priority scoring → RAG-grounded auto-draft generation.
+        {/* The Problem */}
+        <Section id="problem" title="The Problem We're Solving" subtitle="Why CREST exists">
+          <p className="text-sm dark:text-slate-300 text-gray-700 leading-relaxed mb-6">
+            Union Bank of India serves <strong className="dark:text-white text-gray-900">millions of customers</strong> across every region of India. When something goes wrong — an ATM fails, a KYC application stalls, a loan query gets lost — customers expect fast, transparent, and consistent resolution. Traditional grievance systems fall short in three critical ways:
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
-              ["Complaint DNA", "Complaints converted to 768-dim vectors. Cosine similarity > 0.92 flags duplicates via pgvector instantly."],
-              ["Emotion-Decay Queue", "priority = severity × anger × MIN(3.0, 1 + LN(1 + hours_waiting/8)) — P0 cases rise to the top automatically."],
-              ["RAG Auto-Draft", "Grounded responses generated strictly from the Union Bank Service Manual PDF knowledge base."],
-            ].map(([t, d]) => (
-              <div key={t as string} className="rounded-2xl p-4 border dark:bg-slate-900/40 dark:border-slate-800 bg-gray-50 border-gray-200">
-                <p className="text-[10px] font-black uppercase tracking-widest dark:text-blue-400 text-blue-600 mb-2">{t}</p>
-                <p className="text-xs dark:text-slate-400 text-gray-600">{d}</p>
-              </div>
-            ))}
+              {
+                icon: MessageSquare,
+                color: "dark:bg-red-500/10 dark:border-red-500/20 dark:text-red-400 bg-red-50 border-red-200 text-red-600",
+                title: "The Duplicate Storm",
+                body: "The same complaint arrives via Email, WhatsApp, and the app simultaneously. Agents spend up to 30% of their time handling the exact same issue multiple times — wasted effort, frustrated customers.",
+              },
+              {
+                icon: Clock,
+                color: "dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-400 bg-amber-50 border-amber-200 text-amber-600",
+                title: "Static, Unfair Queues",
+                body: "Standard systems use FIFO — first in, first out. A low-urgency query from 9 AM blocks a P0 account-freeze emergency from 9:30 AM. High-emotion, time-sensitive cases decay unnoticed.",
+              },
+              {
+                icon: AlertTriangle,
+                color: "dark:bg-purple-500/10 dark:border-purple-500/20 dark:text-purple-400 bg-purple-50 border-purple-200 text-purple-600",
+                title: "Inconsistent Responses",
+                body: "Every officer drafts replies manually, leading to varying tone, missing compliance clauses, and quality risks. No two responses are the same even for identical issues.",
+              },
+            ].map(p => <Card key={p.title} {...p} />)}
           </div>
         </Section>
 
-        {/* Quick Start */}
-        <Section id="quickstart" icon={Terminal} color="dark:text-emerald-400 text-emerald-600" title="Quick Start">
-          <div className="space-y-4">
-            <p className="text-xs font-bold dark:text-slate-400 text-gray-500 uppercase tracking-widest">1 — Start the Backend</p>
-            <pre className="rounded-xl p-4 text-xs dark:bg-slate-900 bg-gray-900 text-emerald-400 overflow-x-auto border dark:border-slate-800 border-gray-700">
-{`# From project root
-uvicorn backend.main:socket_app --port 8000 --reload
-
-# Swagger UI available at:
-http://localhost:8000/docs`}
-            </pre>
-            <p className="text-xs font-bold dark:text-slate-400 text-gray-500 uppercase tracking-widest">2 — Start the Frontend</p>
-            <pre className="rounded-xl p-4 text-xs dark:bg-slate-900 bg-gray-900 text-blue-400 overflow-x-auto border dark:border-slate-800 border-gray-700">
-{`cd frontend/nextjs-app
-npm run dev
-# App runs at http://localhost:3000`}
-            </pre>
-            <p className="text-xs font-bold dark:text-slate-400 text-gray-500 uppercase tracking-widest">3 — Seed Demo Data</p>
-            <pre className="rounded-xl p-4 text-xs dark:bg-slate-900 bg-gray-900 text-amber-400 overflow-x-auto border dark:border-slate-800 border-gray-700">
-{`python -m backend.utils.reset_db
-# Seeds 50+ realistic grievances with pre-calculated sentiment metrics`}
-            </pre>
-            <p className="text-xs font-bold dark:text-slate-400 text-gray-500 uppercase tracking-widest">4 — Default Login</p>
-            <div className="rounded-xl p-4 border dark:bg-slate-900/40 dark:border-slate-800 bg-gray-50 border-gray-200 font-mono text-xs space-y-1">
-              <p><span className="dark:text-slate-500 text-gray-400">Email: </span><span className="dark:text-white text-black">admin@unionbank.com</span></p>
-              <p><span className="dark:text-slate-500 text-gray-400">Password: </span><span className="dark:text-white text-black">admin123</span></p>
-              <p><span className="dark:text-slate-500 text-gray-400">Role: </span><span className="dark:text-purple-400 text-purple-600">SUPER_ADMIN</span></p>
-            </div>
+        {/* How CREST Solves It */}
+        <Section id="solution" title="How CREST Solves It" subtitle="Three core innovations">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[
+              {
+                icon: Zap,
+                color: "dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400 bg-blue-50 border-blue-200 text-blue-600",
+                title: "Complaint DNA Fingerprinting",
+                body: "Every complaint is converted into a unique 768-dimensional AI fingerprint. When a new complaint arrives, CREST instantly checks if a near-identical one already exists — automatically flagging duplicates and linking them. Agents never handle the same case twice.",
+              },
+              {
+                icon: BarChart3,
+                color: "dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400 bg-emerald-50 border-emerald-200 text-emerald-600",
+                title: "Emotion-Decay Priority Queue",
+                body: "CREST scores every complaint using anger intensity, severity, and how long the customer has been waiting. The longer a high-urgency case waits, the more its priority multiplies. P0 emergencies always rise to the top automatically — no manual triage needed.",
+              },
+              {
+                icon: Star,
+                color: "dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-400 bg-amber-50 border-amber-200 text-amber-600",
+                title: "AI-Grounded Auto Drafts",
+                body: "Before an officer even opens a complaint, CREST has already generated a compliant draft reply — grounded strictly in the Union Bank Service Manual. Officers review, edit if needed, and approve. Response quality is always consistent and RBI-aligned.",
+              },
+            ].map(p => <Card key={p.title} {...p} />)}
           </div>
-        </Section>
-
-        {/* Roles */}
-        <Section id="roles" icon={Shield} color="dark:text-purple-400 text-purple-600" title="User Hierarchy & RBAC">
-          <p className="text-xs dark:text-slate-400 text-gray-600 mb-6">All endpoints enforce role-based access control at the FastAPI middleware layer. Claims are verified via JWT Bearer tokens.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <RoleCard role="Super Administrator" badge="SUPER_ADMIN" color="dark:bg-purple-900/20 dark:border-purple-500/20 dark:text-purple-300 bg-purple-50 border-purple-200 text-purple-800" perms={[
-              "Global visibility — all regions, all complaints",
-              "Create / delete Sub-Admins and Employees",
-              "Claim (takeover) any unresolved complaint globally",
-              "View full analytics and spike signals",
-            ]}/>
-            <RoleCard role="Regional Sub-Admin" badge="SUB_ADMIN" color="dark:bg-blue-900/20 dark:border-blue-500/20 dark:text-blue-300 bg-blue-50 border-blue-200 text-blue-800" perms={[
-              "Scoped to their designated region_id only",
-              "Create / manage Employees in their region",
-              "Regional superior takeover of open complaints",
-              "Regional analytics and team supervision",
-            ]}/>
-            <RoleCard role="Regional Employee" badge="EMPLOYEE" color="dark:bg-emerald-900/20 dark:border-emerald-500/20 dark:text-emerald-300 bg-emerald-50 border-emerald-200 text-emerald-800" perms={[
-              "Auto-assigned complaints via load balancing",
-              "Sees only their own assigned queue",
-              "Review & approve RAG-generated draft replies",
-              "Escalate complex cases to Sub-Admin",
-            ]}/>
+          <div className="mt-6 rounded-2xl border p-5 dark:bg-blue-500/5 dark:border-blue-500/20 bg-blue-50 border-blue-200">
+            <p className="text-xs font-bold dark:text-blue-300 text-blue-700 leading-relaxed">
+              🌐 <strong>Multilingual by Default</strong> — Powered by the MeitY Digital India Bhashini gateway, CREST automatically detects regional Indian languages (Hindi, Tamil, Bengali, Telugu, and more). Complaints are translated for AI processing and replies are sent back in the customer's own language — no manual effort required.
+            </p>
           </div>
         </Section>
 
         {/* Channels */}
-        <Section id="channels" icon={Mail} color="dark:text-amber-400 text-amber-600" title="Ingest Channels">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <Section id="channels" title="How Complaints Reach CREST" subtitle="Omnichannel ingestion">
+          <p className="text-sm dark:text-slate-400 text-gray-600 mb-6">Customers don't need to know anything about CREST. They simply use the channel they're most comfortable with — CREST listens everywhere.</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              ["📧 Email", "IMAP listener polls the grievance inbox (iscuteayushi@gmail.com). Unread emails are auto-parsed and POSTed to /api/complaints/ingest."],
-              ["💬 SMS", "Webhook at /api/integrations/sms/webhook. Supports Kafka-buffered ingest with direct fallback."],
-              ["🐦 Twitter/X", "Webhook at /api/integrations/twitter/webhook. Mentions and DMs auto-ingested."],
-              ["🌐 Web Portal", "Public form at /ub_publicPortal. Customers file complaints without login. OTP-protected live tracking included."],
-            ].map(([t, d]) => (
-              <div key={t as string} className="rounded-2xl p-4 border dark:bg-slate-900/40 dark:border-slate-800 bg-gray-50 border-gray-200">
-                <p className="text-sm font-black dark:text-white text-black mb-1">{t}</p>
-                <p className="text-xs dark:text-slate-400 text-gray-600">{d}</p>
+              ["📧", "Email", "Send a grievance to the bank's dedicated email address. CREST reads, classifies, and queues it within seconds."],
+              ["💬", "SMS", "Text a short message to the bank's SMS helpline. Works even on basic phones with no internet."],
+              ["🐦", "Twitter / X", "Mention or DM the bank's handle. Social complaints are captured instantly."],
+              ["🌐", "Web Portal", "Fill out the online complaint form at the public portal. No account needed — just your contact details."],
+            ].map(([emoji, ch, desc]) => (
+              <div key={ch as string} className="rounded-2xl border p-4 dark:bg-white/5 dark:border-white/10 bg-gray-50 border-gray-200">
+                <p className="text-2xl mb-2">{emoji}</p>
+                <p className="text-xs font-black uppercase tracking-widest mb-1 dark:text-white text-gray-900">{ch}</p>
+                <p className="text-[11px] leading-relaxed dark:text-slate-400 text-gray-500">{desc}</p>
               </div>
             ))}
           </div>
-          <div className="rounded-2xl p-4 border dark:bg-amber-900/10 dark:border-amber-500/20 bg-amber-50 border-amber-200">
-            <p className="text-[10px] font-black uppercase tracking-widest dark:text-amber-400 text-amber-700 mb-1">🌐 Bhashini Multilingual Gateway</p>
-            <p className="text-xs dark:text-slate-400 text-gray-600">All ingest channels support automatic language detection. Regional Indian languages (Hindi, Tamil, Bengali, etc.) are pivot-translated to English for AI processing via the MeitY Bhashini ULCA API, then back-translated for the customer reply draft.</p>
+        </Section>
+
+        {/* Journey */}
+        <Section id="journey" title="What Happens to Your Complaint" subtitle="Step-by-step lifecycle">
+          <ol className="space-y-4">
+            {[
+              ["Received", "Your complaint arrives via any channel and enters CREST within seconds."],
+              ["Understood", "AI reads the complaint, identifies the category (e.g. ATM / Loan / KYC), detects the language, extracts key entities like account numbers, and scores urgency and emotion."],
+              ["Deduplicated", "CREST checks if the same issue was already reported. If it's a duplicate, it's linked — so the original gets resolved faster and you're not left in a separate queue."],
+              ["Prioritised", "Your complaint is placed in a live queue ranked by urgency, anger score, and waiting time. Critical issues always surface to the top."],
+              ["Assigned", "The least-busy available officer in your regional branch is automatically assigned to your case."],
+              ["Draft Generated", "An AI draft response is prepared from the bank's official service manual — consistent, compliant, and ready for the officer."],
+              ["Reviewed & Resolved", "The officer reviews, personalises if needed, and sends the approved response. The case is marked resolved and logged in an immutable audit trail."],
+              ["Tracked", "At any point, you can track your complaint status using the reference ID and OTP verification on the public portal."],
+            ].map(([step, desc], i) => (
+              <li key={step as string} className="flex items-start gap-4">
+                <span className="flex-shrink-0 w-7 h-7 rounded-full border text-[10px] font-black flex items-center justify-center
+                  dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-400
+                  bg-blue-50 border-blue-200 text-blue-700">{i + 1}</span>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest mb-0.5 dark:text-white text-gray-900">{step}</p>
+                  <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-600">{desc}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </Section>
+
+        {/* Roles */}
+        <Section id="roles" title="Who Uses CREST" subtitle="Role-based access hierarchy">
+          <p className="text-sm dark:text-slate-400 text-gray-600 mb-6">CREST is a staff-facing platform with strict role-based access. Every officer sees only what they're authorised to see.</p>
+          <div className="space-y-4">
+            <RoleRow
+              badge="SUPER_ADMIN"
+              role="Super Administrator"
+              who="National HQ"
+              can={[
+                "Global visibility across all regions and branches",
+                "Create, manage, and suspend Sub-Admins and Officers",
+                "Take over any unresolved complaint anywhere in the country",
+                "Access full analytics and predictive spike signals",
+              ]}
+            />
+            <RoleRow
+              badge="SUB_ADMIN"
+              role="Regional Sub-Administrator"
+              who="State / Regional office"
+              can={[
+                "Manages complaints and officers within their assigned region only",
+                "Can create and supervise Regional Officers in their area",
+                "Can claim and takeover any unresolved complaint in their region",
+                "Regional analytics scoped to their jurisdiction",
+              ]}
+            />
+            <RoleRow
+              badge="EMPLOYEE"
+              role="Regional Officer"
+              who="Branch level"
+              can={[
+                "Sees only their personally assigned queue — no overload or distraction",
+                "New complaints are automatically distributed based on workload",
+                "Reviews, edits, and approves AI-generated draft replies",
+                "Can escalate complex cases upward to their Sub-Admin at any time",
+              ]}
+            />
           </div>
         </Section>
 
-        {/* Complaints API */}
-        <Section id="complaints" icon={MessageSquare} color="dark:text-blue-400 text-blue-600" title="Complaints API  ·  /api/complaints">
-          <Endpoint method="POST" path="/api/complaints/ingest" auth="Public" desc="Synchronous complaint ingest. Runs full AI pipeline: classify → embed → dedup → priority → RAG draft."
-            body={`{
-  "channel":       "email" | "sms" | "twitter" | "web",
-  "customer_id":   "user@example.com",
-  "customer_name": "John Doe",          // optional
-  "subject":       "ATM not working",
-  "body":          "Full complaint text...",
-  "region_id":     1,                   // optional
-  "language":      "hi",               // optional, ISO 639-1
-  "sla_hours":     72                  // optional, default 72
-}`}
-            response={`{
-  "complaint_id":   "uuid",
-  "category":       "ATM / Cash",
-  "severity":       2,
-  "priority_score": 4.82,
-  "is_duplicate":   false,
-  "duplicate_of":   null,
-  "sla_deadline":   "2026-05-22T14:30:00"
-}`}
-          />
-          <Endpoint method="GET" path="/api/complaints/queue?limit=50&region_id=1" auth="Bearer JWT" desc="Live Emotion-Decay Priority Queue. Returns open complaints ranked by priority_score DESC. Scoped by caller's role automatically." />
-          <Endpoint method="GET" path="/api/complaints/{id}" auth="Bearer JWT" desc="Full complaint detail including body, named entities, draft reply, audit metadata, and superior-takeover flag." />
-          <Endpoint method="GET" path="/api/complaints/{id}/similar?top_k=5" auth="Bearer JWT" desc="Returns semantically similar complaints using pgvector cosine similarity (threshold > 0.75). Used for DNA deduplication context." />
-          <Endpoint method="PATCH" path="/api/complaints/{id}/assign" auth="Bearer JWT" desc="Assign complaint to an employee."
-            body={`{ "employee_id": 3 }`} />
-          <Endpoint method="PATCH" path="/api/complaints/{id}/escalate" auth="Bearer JWT" desc="Employee escalates a complaint upward. Removes from employee queue, flags is_escalated=true, puts back in regional Sub-Admin pool."
-            body={`{ "employee_id": 3 }`} />
-          <Endpoint method="PATCH" path="/api/complaints/{id}/approve-draft?agent=Name" auth="Bearer JWT" desc="Agent approves the RAG-generated draft reply. Triggers audit log entry and queue broadcast." />
-          <Endpoint method="PATCH" path="/api/complaints/{id}/resolve" auth="Bearer JWT" desc="Mark complaint as resolved. Appends resolution to the PDF knowledge base for future RAG grounding."
-            body={`{
-  "agent":           "Officer Name",
-  "resolution_note": "Optional custom note...",
-  "add_to_kb":       true,
-  "csat":            5
-}`}
-            response={`{
-  "status":      "resolved",
-  "sla_status":  "met",
-  "resolved_at": "2026-05-19T15:00:00"
-}`}
-          />
-          <Endpoint method="GET" path="/api/complaints/{id}/audit" auth="Bearer JWT" desc="Full immutable RBI-compliant audit trail for every action taken on a complaint (ingest, assign, escalate, approve, resolve)." />
-          <Endpoint method="GET" path="/api/complaints/track/{id}" auth="Public" desc="Public status tracking endpoint. Returns status, category, and SLA deadline — no PII exposed." />
+        {/* Public Portal */}
+        <Section id="public" title="For Customers — The Public Portal" subtitle="No login required">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[
+              {
+                icon: Globe,
+                color: "dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400 bg-emerald-50 border-emerald-200 text-emerald-600",
+                title: "Lodge a Complaint",
+                body: "Visit the public portal and fill in your name, contact, and a description of your issue. No account or login needed. You'll receive a reference ID immediately.",
+              },
+              {
+                icon: ShieldCheck,
+                color: "dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400 bg-blue-50 border-blue-200 text-blue-600",
+                title: "Track Your Status",
+                body: "Use your reference ID and an OTP sent to your registered contact to check the live status of your complaint — at any time, from any device.",
+              },
+              {
+                icon: BookOpen,
+                color: "dark:bg-purple-500/10 dark:border-purple-500/20 dark:text-purple-400 bg-purple-50 border-purple-200 text-purple-600",
+                title: "Knowledge Corner",
+                body: "Browse a searchable FAQ covering your consumer rights, fraud prevention guidelines, and how to escalate if your complaint isn't resolved to your satisfaction.",
+              },
+            ].map(p => <Card key={p.title} {...p} />)}
+          </div>
+          <div className="mt-6">
+            <Link href="/ub_publicPortal" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all duration-300
+              dark:bg-emerald-500/10 dark:border dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-500/20
+              bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20">
+              Open Public Portal →
+            </Link>
+          </div>
         </Section>
 
-        {/* Analytics API */}
-        <Section id="analytics" icon={BarChart3} color="dark:text-indigo-400 text-indigo-600" title="Analytics API  ·  /api/analytics">
-          <Endpoint method="GET" path="/api/analytics/dashboard?region_id=1" auth="Bearer JWT" desc="KPI summary: total_open, p0_open, sla_breached, resolved_today, duplicates_caught, avg_resolution_hrs." />
-          <Endpoint method="GET" path="/api/analytics/by-category?days=30&region_id=1" auth="Bearer JWT" desc="Complaint count grouped by AI-classified category for the past N days." />
-          <Endpoint method="GET" path="/api/analytics/by-severity?region_id=1" auth="Bearer JWT" desc="Open complaint distribution across P0–P4 severity tiers." />
-          <Endpoint method="GET" path="/api/analytics/volume-trend?days=14&region_id=1" auth="Bearer JWT" desc="Daily complaint volumes for the past N days including duplicate and P0 counts." />
-          <Endpoint method="GET" path="/api/analytics/channel-distribution?days=30&region_id=1" auth="Bearer JWT" desc="Complaint count grouped by ingest channel (email, sms, twitter, web)." />
-          <Endpoint method="GET" path="/api/analytics/spike-signals?hours=48" auth="Bearer JWT" desc="AI-detected complaint surge signals with predicted_surge_pct and RCA insight." />
+        {/* Security */}
+        <Section id="security" title="Security & RBI Compliance" subtitle="Built to banking standards">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {[
+              ["🔒 Role-Based Access Control", "Every officer sees only what they are authorised to see. Access is gated at every level — regional, functional, and data."],
+              ["📋 Immutable Audit Trail", "Every action — assignment, escalation, draft approval, resolution — is permanently logged. Fully RBI-compliant and exportable."],
+              ["🛡️ PII Redaction", "Account numbers and phone numbers are automatically masked before any AI processing — your sensitive data never reaches an external model."],
+              ["⏱️ SLA Monitoring", "Every complaint has a service-level deadline. CREST tracks, warns, and escalates cases approaching or breaching their SLA automatically."],
+              ["🌐 Dual-Factor Tracking", "Public complaint tracking uses a visual CAPTCHA combined with OTP verification — preventing unauthorised status access."],
+              ["📊 Predictive Spike Signals", "AI monitors complaint volume patterns and alerts administrators before a surge becomes a crisis — proactive, not reactive."],
+            ].map(([title, body]) => (
+              <div key={title as string} className="flex items-start gap-3 p-4 rounded-2xl border dark:bg-white/5 dark:border-white/10 bg-gray-50 border-gray-200">
+                <p className="text-xl flex-shrink-0">{(title as string).split(" ")[0]}</p>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest mb-1 dark:text-white text-gray-900">{(title as string).slice(3)}</p>
+                  <p className="text-[11px] leading-relaxed dark:text-slate-400 text-gray-500">{body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </Section>
 
-        {/* Admin API */}
-        <Section id="admin" icon={Users} color="dark:text-emerald-400 text-emerald-600" title="Admin API  ·  /api/admin">
-          <Endpoint method="POST" path="/api/admin/users" auth="SUPER_ADMIN / SUB_ADMIN" desc="Create a new user account. SUB_ADMINs can only create EMPLOYEEs within their own region."
-            body={`{
-  "name":      "Inspector Ravi Kumar",
-  "email":     "ravi@unionbank.in",
-  "password":  "SecurePass123",
-  "role":      "EMPLOYEE" | "SUB_ADMIN",
-  "region_id": 2
-}`} />
-          <Endpoint method="GET" path="/api/admin/users" auth="Bearer JWT" desc="List users. SUPER_ADMIN sees all. SUB_ADMIN sees only EMPLOYEEs in their region." />
-          <Endpoint method="DELETE" path="/api/admin/users/{id}" auth="SUPER_ADMIN / SUB_ADMIN" desc="Delete a user. SUB_ADMINs restricted to their own regional employees." />
-          <Endpoint method="PATCH" path="/api/admin/users/status?is_active=true" auth="Bearer JWT" desc="Toggle the calling user's own on-shift / off-shift status." />
-          <Endpoint method="GET" path="/api/admin/regions" auth="Public" desc="List all regional hubs." />
-          <Endpoint method="POST" path="/api/admin/regions" auth="SUPER_ADMIN" desc="Create a new regional hub."
-            body={`{ "name": "Maharashtra Region" }`} />
-        </Section>
-
-        {/* Auth */}
-        <Section id="auth" icon={Key} color="dark:text-red-400 text-red-600" title="Authentication  ·  /api/auth">
-          <Endpoint method="POST" path="/api/auth/login" auth="Public" desc="Authenticate and receive a JWT Bearer token. Token expires in 1 hour. Store in cookie: crest_token."
-            body={`{
-  "email":    "admin@unionbank.com",
-  "password": "admin123"
-}`}
-            response={`{
-  "access_token": "eyJhbGci...",
-  "token_type":   "bearer",
-  "user_id":      1,
-  "role":         "SUPER_ADMIN",
-  "name":         "System Admin"
-}`}
-          />
-          <div className="rounded-2xl p-4 border dark:bg-red-900/10 dark:border-red-500/20 bg-red-50 border-red-200 mt-4">
-            <p className="text-[10px] font-black uppercase tracking-widest dark:text-red-400 text-red-700 mb-1">Authorization Header</p>
-            <pre className="text-xs dark:text-slate-300 text-gray-700 font-mono">Authorization: Bearer {"<access_token>"}</pre>
+        {/* Team */}
+        <Section id="team" title="Built By Team Gen Forge" subtitle="Union Bank iDEA 2.0 · Phase 2 · PS5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              ["Kshitij Singh", "Lead Backend & AI"],
+              ["Aayush Jaiswal", "Frontend & UI/UX"],
+              ["Laxya Gaba", "AI Logic"],
+              ["Saanvi Aggarwal", "Database, Deployment & Audit"],
+            ].map(([name, role]) => (
+              <div key={name} className="rounded-2xl border p-4 text-center dark:bg-white/5 dark:border-white/10 bg-gray-50 border-gray-200">
+                <div className="w-10 h-10 rounded-full dark:bg-blue-500/20 bg-blue-100 flex items-center justify-center mx-auto mb-3 text-base font-black dark:text-blue-300 text-blue-700">
+                  {(name as string)[0]}
+                </div>
+                <p className="text-xs font-black dark:text-white text-gray-900 mb-0.5">{name}</p>
+                <p className="text-[10px] dark:text-slate-500 text-gray-400">{role}</p>
+              </div>
+            ))}
           </div>
         </Section>
 
         {/* Footer note */}
-        <div className="rounded-2xl p-5 border dark:bg-slate-900/40 dark:border-slate-800 bg-gray-50 border-gray-200 text-center">
-          <p className="text-xs font-bold dark:text-slate-400 text-gray-500">
-            Interactive API explorer available at <code className="dark:text-blue-300 text-blue-700">http://localhost:8000/docs</code> (Swagger UI) · CREST · Union Bank of India iDEA 2.0 · Gen Forge
+        <div className="rounded-2xl border p-5 text-center dark:border-white/10 dark:bg-white/5 bg-gray-50 border-gray-200">
+          <p className="text-xs font-bold dark:text-slate-500 text-gray-400">
+            CREST · Complaint Resolution & Escalation Smart Technology · Union Bank of India · iDEA 2.0 Hackathon · Team Gen Forge
           </p>
         </div>
 
