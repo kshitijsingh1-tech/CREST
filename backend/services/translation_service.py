@@ -1,5 +1,15 @@
 import os
+import sys
 import httpx
+
+# Enforce UTF-8 on standard streams to avoid Windows charmap encoding errors
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 from typing import Optional
 
 class BhashiniTranslator:

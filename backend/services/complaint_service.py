@@ -23,6 +23,8 @@ from backend.utils.db import raw_conn, serialize_embedding
 from backend.utils.logger import get_logger
 from backend.utils.runtime import USE_PGVECTOR
 from integrations.email.sender import is_email_address, send_customer_reply
+from integrations.whatsapp.sender import send_whatsapp_reply
+from integrations.twitter.sender import send_twitter_reply
 
 logger = get_logger("crest.services.complaint")
 
@@ -322,45 +324,78 @@ def resolve_complaint(
 
 def approve_draft(db: Session, complaint_id: str, agent: str) -> dict:
     c = _get_or_raise(db, complaint_id)
-    recipient = _get_reply_recipient(c)
+    recipient = (c.customer_id or "").strip()
 
     if c.draft_approved:
         return {
             "status": "already_approved",
             "email_sent": False,
             "recipient": recipient,
-            "detail": "Draft was already approved earlier. No new outbound email was sent.",
+            "detail": "Draft was already approved earlier. No new outbound message was sent.",
         }
 
     if not c.draft_reply or not c.draft_reply.strip():
         raise ValueError("No AI draft reply is available for this complaint")
 
+    channel_name = c.channel.name.lower() if c.channel else "email"
     send_result = None
-    if recipient:
-        send_result = send_customer_reply(
-            recipient,
-            c.draft_reply,
-            subject=c.subject,
-            in_reply_to=c.external_ref,
-        )
+    sent_via = "unknown"
+
+    try:
+        if channel_name == "email" or is_email_address(recipient):
+            if is_email_address(recipient):
+                send_result = send_customer_reply(
+                    recipient,
+                    c.draft_reply,
+                    subject=c.subject,
+                    in_reply_to=c.external_ref,
+                )
+                sent_via = "email"
+        elif channel_name == "whatsapp":
+            send_result = send_whatsapp_reply(
+                recipient,
+                c.draft_reply,
+                external_ref=c.external_ref,
+            )
+            sent_via = "whatsapp"
+        elif channel_name == "twitter":
+            send_result = send_twitter_reply(
+                recipient,
+                c.draft_reply,
+                tweet_id=c.external_ref,
+            )
+            sent_via = "twitter"
+    except Exception as exc:
+        logger.error(f"Outbound dispatch failed for channel {channel_name} to {recipient}: {exc}", exc_info=True)
+        raise
 
     c.draft_approved = True
     _write_audit(db, c.id, agent, "draft_approved", None, {"draft_approved": True})
+    
     if send_result:
         _write_audit(db, c.id, agent, "reply_sent", None, {
-            "recipient": send_result["recipient"],
-            "subject": send_result["subject"],
+            "recipient": recipient,
+            "channel": sent_via,
+            "status": send_result.get("status", "sent"),
+            "ref_id": send_result.get("message_id") or send_result.get("tweet_id"),
         })
+
     db.commit()
     db.refresh(c)
-    if send_result:
-        detail = f"Draft approved and emailed to {send_result['recipient']}."
+
+    if sent_via == "email" and send_result:
+        detail = f"Draft approved and emailed to {recipient}."
+    elif sent_via == "whatsapp" and send_result:
+        detail = f"Draft approved and sent via WhatsApp to {recipient}."
+    elif sent_via == "twitter" and send_result:
+        detail = f"Draft approved and posted as public reply to Twitter handle {recipient}."
     else:
-        detail = "Draft approved. No deliverable customer email was available, so no outbound email was sent."
+        detail = f"Draft approved. No deliverable recipient was available for channel '{channel_name}'."
+
     return {
         "status": "draft_approved",
-        "email_sent": bool(send_result),
-        "recipient": send_result["recipient"] if send_result else None,
+        "email_sent": sent_via == "email" and bool(send_result),
+        "recipient": recipient,
         "detail": detail,
     }
 

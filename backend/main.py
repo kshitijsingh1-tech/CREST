@@ -1,4 +1,15 @@
 import os
+import sys
+
+# Globally enforce UTF-8 encoding on standard streams to prevent Windows console encoding crashes
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends

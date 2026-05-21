@@ -53,7 +53,7 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
     subject = payload_dict.get("subject", "")
     language = payload_dict.get("language", "en")
     
-    # Bidirectional Pivot-Translation for regional Indian languages (MeitY Bhashini Gateway)
+    # Bidirectional Pivot-Translation for regional Indian languages (MeitY Bhashini Gateway) abhi ke liye google translate fallback
     if language and language.strip().lower() != "en":
         body_for_ai = await translator.translate(body, source_lang=language, target_lang="en")
         subject_for_ai = await translator.translate(subject, source_lang=language, target_lang="en")
@@ -147,7 +147,7 @@ async def ingest(payload: ComplaintIngest, db: Optional[Session] = Depends(get_d
         raise HTTPException(status_code=500, detail="Ingest failed")
 
 
-# ── Priority Queue ────────────────────────────────────────────
+# --------------Priority Queue ------------------------
 
 @router.get("/queue", response_model=list[dict])
 def priority_queue(
@@ -202,13 +202,14 @@ def priority_queue(
             "assigned_employee_id": c.assigned_employee_id,
             "is_escalated":   c.is_escalated,
             "draft_approved": c.draft_approved,
+            "language":       c.language,
             "created_at":     c.created_at.isoformat(),
         }
         for c in complaints
     ]
 
 
-# ── Single Complaint ──────────────────────────────────────────
+# -------------- Single Complaint --------------------
 
 @router.get("/{complaint_id}", response_model=dict)
 def get_complaint(
@@ -267,6 +268,7 @@ def get_complaint(
         "draft_reply":     c.draft_reply,
         "draft_metadata":  c.draft_metadata,
         "draft_approved":  c.draft_approved,
+        "language":        c.language,
         "is_superior_takeover": is_superior_takeover,
         "resolution_note": c.resolution_note,
         "created_at":      c.created_at.isoformat(),
@@ -274,7 +276,7 @@ def get_complaint(
     }
 
 
-# ── Similar Complaints (DNA Fingerprint) ─────────────────────
+# ----------------- Similar Complaints (DNA Fingerprint) ------------------
 
 @router.get("/{complaint_id}/similar", response_model=list[dict])
 def similar_complaints(

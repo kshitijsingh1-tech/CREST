@@ -499,7 +499,7 @@ def _search_document_chunks_keyword(
                 continue
             ranked.append(
                 {
-                    "id": chunk.id,
+                    "id": str(chunk.id),
                     "source_path": chunk.source_path,
                     "source_name": chunk.source_name,
                     "document_title": chunk.document_title,

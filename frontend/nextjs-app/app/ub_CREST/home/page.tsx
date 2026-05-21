@@ -2,6 +2,7 @@ import { getMe, getSpikeSignals } from "@/lib/api";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Activity, ShieldCheck, Zap, Users, ListFilter, Cpu, Radio, BookOpen } from "lucide-react";
+import CrestScrollHero from "@/components/CrestScrollHero";
 
 export default async function CommandCenterHome() {
   let user;
@@ -18,12 +19,20 @@ export default async function CommandCenterHome() {
     user.role === "SUB_ADMIN"   ? "Regional Sub-Admin"  : "Regional Officer";
 
   return (
-    <div className="flex-1 bg-transparent p-6 md:p-10 space-y-10 max-w-[90rem] mx-auto w-full relative z-10 animate-fade-in-up">
+    <CrestScrollHero
+      heroImage="/crest_internal_hero.png"
+      title="CREST"
+      subtitle="Command & Escalation Intelligence Platform"
+      badgeText={`${roleLabel} Clearance Active`}
+      italicText={`“हर शिकायत, हर बार हल”`}
+      subText={`Bhashini AI • India AI Mission • RBI Ombudsman 2021 • DPDP Act 2023 • MeitY Aligned — Welcome, ${user.name}`}
+    >
+      <div className="flex-1 bg-transparent p-6 md:p-10 space-y-10 max-w-[90rem] mx-auto w-full relative z-10">
 
       {/* ── Hero Box ─────────────────────────────────────────── */}
-      <div className="relative rounded-[2rem] overflow-hidden border p-8 md:p-12 group transition-all duration-500
-        dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl dark:hover:shadow-[0_0_60px_rgba(59,130,246,0.12)]
-        bg-white border-gray-200 shadow-xl">
+      <div className="relative rounded-[2rem] overflow-hidden border p-8 md:p-12 group transition-all duration-700 ease-out
+        dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl dark:hover:shadow-[0_0_60px_rgba(59,130,246,0.15)]
+        bg-white border-gray-200 shadow-xl animate-fade-in-up hover:-translate-y-1 hover:border-blue-500/30">
 
         {/* Animated orbs */}
         <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full blur-[80px] pointer-events-none
@@ -39,33 +48,33 @@ export default async function CommandCenterHome() {
           animate-shimmer" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
+          <div className="space-y-2">
             {/* Clearance badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-4
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-2
               dark:bg-blue-500/10 dark:border dark:border-blue-500/20 dark:text-blue-400
-              bg-blue-50 border border-blue-200 text-blue-700">
-              <ShieldCheck className="w-3.5 h-3.5" />
+              bg-blue-50 border border-blue-200 text-blue-700 animate-[bounce_3s_infinite_ease-in-out]">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 animate-[pulse_1.5s_infinite]" />
               {roleLabel} Clearance Active
             </div>
 
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase mb-2
-              dark:text-white text-gray-900">
+              dark:text-white text-gray-900 animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.1s_both]">
               Command Center
             </h1>
             <p className="text-sm md:text-base font-bold uppercase tracking-widest
-              dark:text-slate-400 text-gray-500">
+              dark:text-slate-400 text-gray-500 animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.2s_both]">
               Welcome to the grid, {user.name}
             </p>
           </div>
 
           {/* Status chip */}
-          <div className="flex items-center gap-3 rounded-2xl p-4 shadow-sm border
+          <div className="flex items-center gap-3 rounded-2xl p-4 shadow-sm border transition-all duration-500 hover:scale-105 hover:border-emerald-500/30
             dark:bg-white/5 dark:border-white/10
-            bg-gray-50 border-gray-200">
+            bg-gray-50 border-gray-200 animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.3s_both]">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center border
               dark:bg-green-500/10 dark:border-green-500/20
               bg-green-50 border-green-200">
-              <Activity className="w-6 h-6 text-green-500 animate-pulse" />
+              <Activity className="w-6 h-6 text-green-500 animate-[pulse_1.5s_infinite]" />
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] uppercase tracking-widest font-bold dark:text-slate-500 text-gray-400">Infrastructure</span>
@@ -223,6 +232,7 @@ export default async function CommandCenterHome() {
 
         </div>
       </div>
-    </div>
+      </div>
+    </CrestScrollHero>
   );
 }

@@ -45,6 +45,8 @@ Thumbs.db
 integrations/email/temp/
 backend/temp/
 temp_media/
+docs/
+files/
 *.bak
 *.temp
 

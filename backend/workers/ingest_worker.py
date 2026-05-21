@@ -23,6 +23,8 @@ from ai.ner.extractor import extract
 from ai.embeddings.embedder import embed
 from ai.rag.retriever import generate_draft_reply
 from backend.services.complaint_service import ingest_complaint
+from asgiref.sync import async_to_sync
+from backend.services.translation_service import translator
 
 logger = get_logger("crest.workers.ingest")
 
@@ -49,21 +51,38 @@ def process_complaint(self, payload: dict) -> dict:
     logger.info(f"Processing complaint from channel={payload.get('channel')}")
 
     try:
+        body = payload["body"]
+        subject = payload.get("subject") or ""
+        language = payload.get("language", "en")
+
+        # Bidirectional Pivot-Translation for regional Indian languages in the background worker
+        if language and language.strip().lower() != "en":
+            body_for_ai = async_to_sync(translator.translate)(body, source_lang=language, target_lang="en")
+            subject_for_ai = async_to_sync(translator.translate)(subject, source_lang=language, target_lang="en")
+        else:
+            # Auto-detect language for intake channels (Email, SMS, default Web calls)
+            body_for_ai, detected_lang = async_to_sync(translator.detect_and_translate)(body, target_lang="en")
+            if detected_lang != "en":
+                language = detected_lang
+                subject_for_ai = async_to_sync(translator.translate)(subject, source_lang=language, target_lang="en")
+            else:
+                subject_for_ai = subject
+
         # ── Step 1: Classify ────────────────────────────────
-        classification = classify(payload["body"])
+        classification = classify(body_for_ai)
         logger.info(
             f"Classified: cat={classification.category} "
             f"severity=P{classification.severity} anger={classification.anger_score:.2f}"
         )
 
         # ── Step 2: NER ─────────────────────────────────────
-        entities = extract(payload["body"])
+        entities = extract(body_for_ai)
         entities_dict = entities.to_dict()
         logger.info(f"NER extracted: {list(entities_dict.keys())}")
 
         # ── Step 3: Embed ───────────────────────────────────
-        embedding = embed(payload["body"])
-        logger.info("Embedding generated (1536-dim)")
+        embedding = embed(body_for_ai)
+        logger.info("Embedding generated")
 
         # ── Step 4+5+7: Dedup + Persist + Audit ─────────────
         db = SessionLocal()
@@ -72,12 +91,12 @@ def process_complaint(self, payload: dict) -> dict:
                 db            = db,
                 channel_name  = payload["channel"],
                 customer_id   = payload["customer_id"],
-                body          = payload["body"],
+                body          = body,  # Keep the original typed regional text for compliance record
                 embedding     = embedding,
-                subject       = payload.get("subject"),
+                subject       = subject,
                 customer_name = payload.get("customer_name"),
                 external_ref  = payload.get("external_ref"),
-                language      = payload.get("language", "en"),
+                language      = language,
                 sla_hours     = payload.get("sla_hours", 720),
                 severity      = classification.severity,
                 anger_score   = classification.anger_score,
@@ -93,17 +112,25 @@ def process_complaint(self, payload: dict) -> dict:
             # Skip for duplicates (parent complaint already has a draft)
             if not complaint.is_duplicate:
                 rag_result = generate_draft_reply(
-                    complaint_body    = payload["body"],
-                    complaint_subject = payload.get("subject"),
+                    complaint_body    = body_for_ai,
+                    complaint_subject = subject_for_ai,
                     named_entities    = entities_dict,
                     category          = classification.category,
                     embedding         = embedding,
                     customer_name     = payload.get("customer_name"),
                 )
-                complaint.draft_reply = rag_result["draft"]
+                
+                # Back-translate generated response to customer's input language
+                draft_reply = rag_result["draft"]
+                if language and language.strip().lower() != "en" and draft_reply:
+                    draft_reply_final = async_to_sync(translator.translate)(draft_reply, source_lang="en", target_lang=language)
+                else:
+                    draft_reply_final = draft_reply
+
+                complaint.draft_reply = draft_reply_final
                 complaint.draft_metadata = rag_result["sources"]
                 db.commit()
-                logger.info("Draft reply and source metadata generated and saved")
+                logger.info("Draft reply and source metadata generated, back-translated, and saved")
 
             # ── Step 8: Trigger WebSocket Broadcast ────────────
             try:

@@ -82,6 +82,7 @@ export default function DocsPage() {
             ["#roles", "Who Uses CREST"],
             ["#public", "Public Portal"],
             ["#security", "Security & Compliance"],
+            ["#compliance", "AI Governance & Mandates"],
             ["#team", "Built By"],
           ].map(([href, label]) => (
             <a key={href} href={href as string} className="text-xs font-bold flex items-center gap-1.5 dark:text-blue-300 dark:hover:text-white text-blue-700 hover:text-black transition-colors">
@@ -296,6 +297,73 @@ export default function DocsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </Section>
+
+        {/* Compliance Mandates */}
+        <Section id="compliance" title="Regulatory Mandates & AI Governance" subtitle="What they dictate & their technical integration in CREST">
+          <div className="space-y-6">
+            <p className="text-sm dark:text-slate-300 text-gray-700 leading-relaxed">
+              CREST is architected from the ground up to align with the core regulatory frameworks set by the Government of India and the Reserve Bank of India. Here is exactly what these frameworks mandate, and how CREST technically implements them:
+            </p>
+            
+            <div className="grid grid-cols-1 gap-6">
+              {[
+                {
+                  badge: "Bhashini AI",
+                  framework: "National Language Translation Mission (NLTM)",
+                  what: "Mandates that public services and citizen redressal portals must be accessible to all Indians in their preferred native regional language.",
+                  how: "Automatically integrates with the Bhashini API to detect regional languages (e.g. Hindi, Tamil, Telugu) from inbound channels, translating them into English for standardized vector semantic analysis, and translating the approved draft replies back into the customer's native language."
+                },
+                {
+                  badge: "India AI Mission",
+                  framework: "Sovereign & Ethical AI Deployment",
+                  what: "Dictates the secure, unbiased, and responsible deployment of artificial intelligence inside critical national infrastructure (such as banking and financial systems).",
+                  how: "Uses local SBERT semantic sentence embeddings, fine-tuned classification nodes, and strictly sandboxed LLM prompts to prevent hallucination, eliminate decision bias, and ensure absolute model reproducibility."
+                },
+                {
+                  badge: "RBI Integrated Ombudsman Scheme 2021",
+                  framework: "Integrated Consumer Redressal Mandate",
+                  what: "Requires all commercial banks to maintain clear grievance redressal structures, cap resolution times under 30 days, implement clear escalation routes, and protect users with Zero-Liability rules.",
+                  how: "Powers our dynamic Emotion-Decay Priority Queue. P0 fraud reports trigger automatic SMS alerts, and unresolved branch complaints automatically escalate to regional Sub-Admins and HQ Nodal Officers prior to SLA breach."
+                },
+                {
+                  badge: "DPDP Act 2023",
+                  framework: "Digital Personal Data Protection",
+                  what: "Enforces strict customer data privacy, informed consent, immutable data trails, and the complete masking/protection of Personally Identifiable Information (PII).",
+                  how: "Pre-processes incoming text to redact and mask sensitive elements (such as debit card numbers, account numbers, and personal IDs) before dispatching any data to API gateways. Access to unmasked records is gated strictly by active JWT clearances."
+                },
+                {
+                  badge: "MeitY Aligned",
+                  framework: "IT Security & Certified Data Hosting Standards",
+                  what: "Specifies certified secure local database hosting, standardized web accessibility, active cyber threat tracking, and data encryption standards.",
+                  how: "Hosts all complaint databases locally in India with encrypted schema storage, implements secure two-factor public status tracking (CAPTCHA + SMS OTP), and records every staff action in an immutable audit trail."
+                }
+              ].map(({ badge, framework, what, how }) => (
+                <div key={badge} className="rounded-2xl border p-6 transition-all duration-300
+                  dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 dark:hover:border-blue-500/20
+                  bg-white/60 backdrop-blur-md border-white/50 hover:shadow-md hover:border-gray-300">
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                    <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-300 bg-blue-50 border-blue-200 text-blue-700">
+                      {badge}
+                    </span>
+                    <span className="text-xs font-black dark:text-slate-400 text-gray-500 uppercase tracking-wider">
+                      {framework}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-red-500 dark:text-red-400 mb-1">What It Dictates</p>
+                      <p className="text-xs leading-relaxed dark:text-slate-300 text-gray-700 font-semibold">{what}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400 mb-1">Technical Implementation in CREST</p>
+                      <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-600">{how}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </Section>
 

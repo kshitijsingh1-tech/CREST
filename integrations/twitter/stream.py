@@ -12,6 +12,7 @@ import time
 import requests
 from backend.utils.logger import get_logger
 from integrations.kafka.producer import publish
+from integrations.twitter.responder import fire_redirect_reply
 
 logger = get_logger("crest.integrations.twitter")
 
@@ -108,16 +109,30 @@ def run_stream(max_reconnects: int = 10) -> None:
                         includes = payload.get("includes", {})
 
                         author_id, name, body = _extract_complaint_text(tweet, includes)
+                        tweet_id = tweet.get("id")
 
                         if not body or len(body) < 10:
                             continue
 
+                        # ── Step 1: Immediately fire the public redirect reply ──
+                        # Tells the customer to move the conversation to a private
+                        # channel (email / portal) before we process the complaint.
+                        try:
+                            fire_redirect_reply(
+                                tweet_id=tweet_id,
+                                customer_name=name,
+                            )
+                        except Exception as reply_err:
+                            # Never let a failed reply block complaint ingestion
+                            logger.warning(f"Auto-reply failed for tweet {tweet_id}: {reply_err}")
+
+                        # ── Step 2: Ingest the complaint into the AI pipeline ──
                         publish(
                             channel       = "twitter",
                             customer_id   = f"TW_{author_id}",
                             body          = body,
                             customer_name = name,
-                            external_ref  = tweet.get("id"),
+                            external_ref  = tweet_id,
                             language      = tweet.get("lang", "en"),
                         )
 

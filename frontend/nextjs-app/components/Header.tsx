@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import GoogleTranslate from '@/components/GoogleTranslate';
 
 export default function Header({ theme, toggleTheme }: { theme: "dark" | "light", toggleTheme: () => void }) {
   const pathname = usePathname();
@@ -48,6 +49,13 @@ export default function Header({ theme, toggleTheme }: { theme: "dark" | "light"
       </nav>
 
       <div className="flex items-center gap-4">
+        {/* Language Selector */}
+        <div className="hidden md:flex items-center px-3 py-1.5 rounded-full border transition-all duration-300
+          dark:bg-blue-900/10 dark:border-blue-500/20 dark:hover:border-blue-500/40
+          bg-gray-50 border-gray-200 hover:border-blue-300 hover:bg-blue-50/50">
+          <GoogleTranslate />
+        </div>
+
         {/* Theme Toggle Button */}
         <button onClick={toggleTheme} className="p-2.5 rounded-full transition-all duration-300
           dark:bg-blue-900/20 dark:hover:bg-blue-900/40 dark:text-yellow-400 dark:border-transparent

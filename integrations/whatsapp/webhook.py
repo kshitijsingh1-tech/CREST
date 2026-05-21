@@ -90,13 +90,14 @@ async def receive_message(request: Request):
             contacts     = change.get("contacts", [{}])
             display_name = contacts[0].get("profile", {}).get("name") if contacts else None
 
+            detected_lang = await _detect_language(text)
             publish(
                 channel       = "whatsapp",
                 customer_id   = from_number,
                 body          = text,
                 customer_name = display_name,
                 external_ref  = msg_id,
-                language      = _detect_language(text),
+                language      = detected_lang,
             )
 
         return {"status": "ok"}
@@ -152,7 +153,15 @@ def _transcribe_audio(audio_id: str) -> str:
         return ""
 
 
-def _detect_language(text: str) -> str:
-    """Simple heuristic — extend with langdetect in production."""
-    hindi_chars = sum(1 for c in text if "\u0900" <= c <= "\u097F")
-    return "hi" if hindi_chars > len(text) * 0.2 else "en"
+async def _detect_language(text: str) -> str:
+    """
+    Detects language utilizing the central translation service with a heuristic fallback.
+    """
+    try:
+        from backend.services.translation_service import translator
+        _, detected_lang = await translator.detect_and_translate(text, target_lang="en")
+        return detected_lang or "en"
+    except Exception as exc:
+        logger.warning(f"Dynamic language detection failed: {exc}. Falling back to character heuristic.")
+        hindi_chars = sum(1 for c in text if "\u0900" <= c <= "\u097F")
+        return "hi" if hindi_chars > len(text) * 0.2 else "en"

@@ -7,7 +7,11 @@
   --teal: #0E7490;
 }
 
-body {
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: 100vw !important;
   background: #F8FAFC;
 }
 
@@ -48,6 +52,7 @@ body {
   .animate-shimmer {
     background: linear-gradient(90deg, #ffffff 0%, #93c5fd 25%, #ffffff 50%, #93c5fd 75%, #ffffff 100%);
     background-size: 200% auto;
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: shimmer 5s linear infinite;
