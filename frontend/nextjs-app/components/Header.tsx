@@ -1,15 +1,22 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import GoogleTranslate from '@/components/GoogleTranslate';
+import Cookies from 'js-cookie';
 
 export default function Header({ theme, toggleTheme }: { theme: "dark" | "light", toggleTheme: () => void }) {
   const pathname = usePathname();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    setIsAuthenticated(!!Cookies.get("crest_token"));
+  }, [pathname]);
   
-  // Hide the admin header entirely for public customer pages
+  // Hide the admin header entirely for public customer pages, or if accessing docs without an active admin session
   const publicRoutes = ["/", "/track", "/login", "/submit", "/ub_publicPortal", "/crest_publicPortal", "/ub_CREST/login"];
-  if (publicRoutes.includes(pathname)) {
+  if (publicRoutes.includes(pathname) || (pathname === "/ub_CREST/docs" && !isAuthenticated)) {
     return null;
   }
 
@@ -20,17 +27,11 @@ export default function Header({ theme, toggleTheme }: { theme: "dark" | "light"
       px-6 py-4 flex items-center justify-between sticky top-0 z-50">
       
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500
-          dark:bg-gradient-to-br dark:from-red-600 dark:to-blue-600 dark:shadow-[0_0_20px_rgba(255,0,0,0.4)]
-          bg-black shadow-md">
-          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
+        <div className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 overflow-hidden shadow-md">
+          <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
         </div>
         <div className="flex flex-col">
-          <h1 className="text-xl font-black tracking-tight leading-none transition-colors duration-500
-            dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-white dark:to-blue-200
-            text-black">
+          <h1 className="text-xl font-black tracking-tight leading-none transition-colors duration-500 bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #1a64ff, #7a22ff, #d8296a, #ff4d00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             CREST
           </h1>
           <p className="text-[9px] uppercase tracking-widest font-bold mt-1 transition-colors duration-500

@@ -145,19 +145,24 @@ export default function PublicPortalHub() {
         </div>
 
         {/* Title Details floating directly inside the single unified glassmorphic canvas */}
-        <div className="relative z-10 text-center space-y-4 max-w-4xl px-4">
+        <div className="relative z-10 text-center space-y-3 max-w-4xl px-4 flex flex-col items-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest backdrop-blur-md shadow-sm
             dark:border-white/10 dark:bg-white/5 dark:text-blue-300
             border-white/20 bg-white/10 text-gray-700">
             Bhashini AI • RBI Ombudsman 2021 • India AI Mission Aligned
           </div>
 
-          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-[#0d1b3e] dark:text-white leading-none drop-shadow-sm">
-            Union Bank Citizen Grievance Hub
+          {/* Centered Premium Logo */}
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg border dark:border-white/10 border-gray-200 mt-2 bg-white dark:bg-black/60 backdrop-blur-xl">
+            <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
+          </div>
+
+          <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tight leading-none drop-shadow-sm bg-clip-text text-transparent mt-2 animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.1s_both]" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #1a64ff, #7a22ff, #d8296a, #ff4d00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            CREST
           </h2>
 
-          <p className="text-xs md:text-sm font-bold uppercase tracking-wider text-gray-600/90 dark:text-slate-400 drop-shadow-sm">
-            Official Multi-Channel Support Redressal & Escalation Matrix
+          <p className="text-xs md:text-sm font-bold uppercase tracking-wider text-gray-600/90 dark:text-slate-400 drop-shadow-sm mt-1 animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.2s_both]">
+            Union Bank Citizen Grievance Hub & Redressal Matrix
           </p>
 
           {/* Laser-style glowing neon-gradient underline replacing static solid line */}
@@ -446,12 +451,12 @@ export default function PublicPortalHub() {
                   Official government grievance appellate committee for direct appeals if you are unsatisfied with internal bank decisions.
                 </p>
                 <div className="flex flex-col gap-2 mt-4">
-                  <a href="https://gac-portal.gov.in" target="_blank" rel="noopener noreferrer" className="w-full text-center py-2.5 rounded-full font-extrabold text-xs tracking-wider transition-all duration-300 shadow-sm border
+                  <a href="https://gac.gov.in/" target="_blank" rel="noopener noreferrer" className="w-full text-center py-2.5 rounded-full font-extrabold text-xs tracking-wider transition-all duration-300 shadow-sm border
                     bg-black border-black text-white hover:bg-gray-800 hover:border-gray-800
                     dark:bg-white dark:border-white dark:text-black dark:hover:bg-gray-200">
                     Visit GAC Portal
                   </a>
-                  <a href="https://gac-portal.gov.in/appeal-guidelines" target="_blank" rel="noopener noreferrer" className="w-full text-center py-2.5 rounded-full font-extrabold text-xs tracking-wider transition-all duration-300 shadow-sm border
+                  <a href="https://gac.gov.in/" target="_blank" rel="noopener noreferrer" className="w-full text-center py-2.5 rounded-full font-extrabold text-xs tracking-wider transition-all duration-300 shadow-sm border
                     bg-white border-gray-300 text-black hover:bg-gray-100
                     dark:bg-white/10 dark:border-white/10 dark:text-white dark:hover:bg-white/20">
                     Appeal Guidelines

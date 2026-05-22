@@ -114,6 +114,47 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
     except Exception as ws_err:
         logger.error(f"WebSocket broadcast failed: {ws_err}")
 
+    # Dispatch dynamic, polite region request auto-responses (EXCEPT for Twitter)
+    channel = (payload_dict.get("channel") or "app").lower().strip()
+    recipient = payload_dict.get("customer_id")
+    
+    if channel != "twitter" and recipient and recipient != "unknown":
+        ref = payload_dict.get("external_ref") or str(complaint.id)[:8]
+        msg = (
+            f"Hello! 👋 We have received your complaint (Ticket Ref: {ref}). "
+            f"To help us route this to the nearest nodal branch and provide you with faster support, "
+            f"could you please reply with your city or region? Thank you! 🙏"
+        )
+        
+        try:
+            if channel == "email" or "@" in recipient:
+                from integrations.email.sender import send_customer_reply
+                send_customer_reply(
+                    recipient=recipient,
+                    reply_body=msg,
+                    subject=f"Re: [Ticket Ref: {ref}] {complaint.subject or 'Complaint Registration'}",
+                    in_reply_to=payload_dict.get("external_ref")
+                )
+                logger.info(f"Polite region request email sent to {recipient}")
+            elif channel == "whatsapp":
+                from integrations.whatsapp.sender import send_whatsapp_reply
+                send_whatsapp_reply(
+                    recipient_phone=recipient,
+                    reply_body=msg,
+                    external_ref=payload_dict.get("external_ref")
+                )
+                logger.info(f"Polite region request WhatsApp sent to {recipient}")
+            elif channel == "sms":
+                from integrations.sms.sender import send_sms_reply
+                send_sms_reply(
+                    recipient_phone=recipient,
+                    reply_body=msg,
+                    external_ref=payload_dict.get("external_ref")
+                )
+                logger.info(f"Polite region request SMS sent to {recipient}")
+        except Exception as auto_err:
+            logger.error(f"Failed to dispatch polite region request for channel {channel}: {auto_err}")
+
     return complaint
 
 
@@ -139,6 +180,11 @@ async def ingest(payload: ComplaintIngest, db: Optional[Session] = Depends(get_d
             "is_duplicate":  complaint.is_duplicate,
             "duplicate_of":  str(complaint.duplicate_of) if complaint.duplicate_of else None,
             "sla_deadline":  complaint.sla_deadline.isoformat(),
+            "region_prompt": (
+                f"Hello! 👋 We have received your complaint (Ticket Ref: {str(complaint.id)[:8]}). "
+                f"To help us route this to the nearest nodal branch and provide you with faster support, "
+                f"could you please select or tell us your city or region?"
+            )
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

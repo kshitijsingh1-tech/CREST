@@ -132,6 +132,47 @@ def process_complaint(self, payload: dict) -> dict:
                 db.commit()
                 logger.info("Draft reply and source metadata generated, back-translated, and saved")
 
+            # Dispatch dynamic, polite region request auto-responses (EXCEPT for Twitter)
+            channel = (payload.get("channel") or "app").lower().strip()
+            recipient = payload.get("customer_id")
+            
+            if channel != "twitter" and recipient and recipient != "unknown":
+                ref = payload.get("external_ref") or str(complaint.id)[:8]
+                msg = (
+                    f"Hello! 👋 We have received your complaint (Ticket Ref: {ref}). "
+                    f"To help us route this to the nearest nodal branch and provide you with faster support, "
+                    f"could you please reply with your city or region? Thank you! 🙏"
+                )
+                
+                try:
+                    if channel == "email" or "@" in recipient:
+                        from integrations.email.sender import send_customer_reply
+                        send_customer_reply(
+                            recipient=recipient,
+                            reply_body=msg,
+                            subject=f"Re: [Ticket Ref: {ref}] {complaint.subject or 'Complaint Registration'}",
+                            in_reply_to=payload.get("external_ref")
+                        )
+                        logger.info(f"Polite region request email sent to {recipient}")
+                    elif channel == "whatsapp":
+                        from integrations.whatsapp.sender import send_whatsapp_reply
+                        send_whatsapp_reply(
+                            recipient_phone=recipient,
+                            reply_body=msg,
+                            external_ref=payload.get("external_ref")
+                        )
+                        logger.info(f"Polite region request WhatsApp sent to {recipient}")
+                    elif channel == "sms":
+                        from integrations.sms.sender import send_sms_reply
+                        send_sms_reply(
+                            recipient_phone=recipient,
+                            reply_body=msg,
+                            external_ref=payload.get("external_ref")
+                        )
+                        logger.info(f"Polite region request SMS sent to {recipient}")
+                except Exception as auto_err:
+                    logger.error(f"Failed to dispatch polite region request for channel {channel}: {auto_err}")
+
             # ── Step 8: Trigger WebSocket Broadcast ────────────
             try:
                 import requests

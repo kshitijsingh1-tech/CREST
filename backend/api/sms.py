@@ -1,50 +1,108 @@
+"""
+CREST — Twilio SMS Webhook Integration
+Receives incoming SMS from Twilio and publishes to the Kafka SMS topic.
+
+Endpoint: POST /api/integrations/sms/webhook
+"""
+
+from __future__ import annotations
+
+import hmac
+import hashlib
+import base64
 import os
-from fastapi import APIRouter, Depends, HTTPException, Header
-from pydantic import BaseModel
+
+from fastapi import APIRouter, Request, Response, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.utils.db import get_db_optional
+from backend.utils.logger import get_logger
 from backend.api.complaints import ingest_complaint_logic
 
 router = APIRouter(prefix="/api/integrations/sms", tags=["integrations"])
+logger = get_logger("crest.api.sms")
 
-SMS_WEBHOOK_KEY = os.getenv("SMS_WEBHOOK_KEY", "crest_sms_demo_key_2024")
+AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
 
-class SMSPayload(BaseModel):
-    from_number: str
-    text: str
-    msg_id: str
 
+def _verify_signature(url: str, params: dict, signature: str) -> bool:
+    """Validate Twilio's X-Twilio-Signature header."""
+    if not AUTH_TOKEN:
+        return True  # Skip validation in dev
+    
+    # Sort and concatenate params
+    data_str = url
+    for k in sorted(params.keys()):
+        data_str += k + params[k]
+        
+    mac = hmac.new(AUTH_TOKEN.encode("utf-8"), data_str.encode("utf-8"), hashlib.sha1)
+    computed = base64.b64encode(mac.digest()).decode("utf-8")
+    return hmac.compare_digest(computed, signature)
+
+
+# ── Incoming Twilio SMS Webhook ───────────────────────────────
 @router.post("/webhook")
 async def sms_webhook(
-    payload: SMSPayload, 
-    x_api_key: str = Header(None),
+    request: Request,
     db: Session = Depends(get_db_optional)
 ):
     """
-    Simulated SMS Webhook.
-    Supports Kafka pipeline with local fallback for stability.
+    Receives incoming SMS messages via webhook directly from Twilio.
+    Natively verifies the signature and publishes the payload.
     """
-    if x_api_key != SMS_WEBHOOK_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
+    form_data = await request.form()
+    params = {k: v for k, v in form_data.items()}
 
-    complaint_data = {
-        "channel": "sms",
-        "customer_id": payload.from_number,
-        "body": payload.text,
-        "subject": f"SMS from {payload.from_number}",
-        "external_ref": payload.msg_id
-    }
-
-    # 1. Attempt Kafka Pipeline (The "Scale" Way)
-    try:
-        from integrations.kafka.producer import publish
-        publish(**complaint_data)
-        return {"status": "queued", "method": "kafka"}
-    except Exception as k_err:
-        # 2. Fallback to Direct Ingest (The "Safe" Way)
-        try:
-            result = await ingest_complaint_logic(complaint_data, db)
-            return {"status": "accepted", "method": "direct", "complaint_id": result.id}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+    # Verify Twilio Signature
+    sig = request.headers.get("X-Twilio-Signature", "")
+    url = str(request.url)
+    
+    if sig:
+        verified = _verify_signature(url, params, sig)
+        if not verified:
+            # Proxy verification fallback (useful for ngrok/Cloudflare behind reverse proxies)
+            forwarded_proto = request.headers.get("x-forwarded-proto", "http")
+            forwarded_host = request.headers.get("x-forwarded-host")
+            if forwarded_host:
+                proxy_url = f"{forwarded_proto}://{forwarded_host}{request.url.path}"
+                if _verify_signature(proxy_url, params, sig):
+                    logger.info("Twilio SMS signature verified via proxy URL")
+                    verified = True
             
+            if not verified:
+                logger.warning("Twilio SMS signature validation failed")
+                raise HTTPException(status_code=401, detail="Invalid Twilio Signature")
+
+    try:
+        from_number = params.get("From", "unknown")
+        msg_id = params.get("MessageSid", "")
+        text = params.get("Body", "").strip()
+
+        if not text:
+            # Return blank TwiML to Twilio for empty texts
+            return Response(content="<Response></Response>", media_type="application/xml")
+
+        complaint_data = {
+            "channel": "sms",
+            "customer_id": from_number,
+            "body": text,
+            "subject": f"SMS from {from_number}",
+            "external_ref": msg_id
+        }
+
+        # 1. Attempt Kafka Pipeline (The "Scale" Way)
+        try:
+            from integrations.kafka.producer import publish
+            publish(**complaint_data)
+            logger.info(f"Twilio SMS {msg_id} successfully queued on Kafka.")
+        except Exception as k_err:
+            logger.warning(f"Kafka unavailable for SMS, falling back to direct ingestion: {k_err}")
+            # 2. Fallback to Direct Ingest (The "Safe" Way)
+            await ingest_complaint_logic(complaint_data, db)
+
+        # Return standard valid empty TwiML response back to Twilio
+        return Response(content="<Response></Response>", media_type="application/xml")
+
+    except Exception as e:
+        logger.error(f"Twilio SMS webhook processing failed: {e}", exc_info=True)
+        # Always return empty TwiML to prevent Twilio from repeating requests endlessly on backend errors
+        return Response(content="<Response></Response>", media_type="application/xml")

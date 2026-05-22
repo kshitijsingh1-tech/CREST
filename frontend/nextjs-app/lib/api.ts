@@ -108,6 +108,7 @@ export interface CategoryStat  { category: string;  count: number; }
 export interface SeverityStat  { severity: string;  count: number; }
 export interface ChannelStat   { channel:  string;  count: number; }
 export interface VolumeTrend   { date: string; total: number; duplicates: number; p0_count: number; }
+export interface RegionStat   { region: string; open: number; breached: number; total: number; }
 export interface SpikeSignal   {
   id:                  number;
   signal_type:         string;
@@ -204,6 +205,9 @@ export const getChannelDistribution = (days = 30, regionId?: number): Promise<Ch
 export const getSpikeSignals = (hours = 48): Promise<SpikeSignal[]> =>
   apiFetch(`/api/analytics/spike-signals?hours=${hours}`, { next: { revalidate: 120 } });
 
+export const getRegionDistribution = (): Promise<RegionStat[]> =>
+  apiFetch("/api/analytics/by-region", { next: { revalidate: 60 } });
+
 // ── Admin ─────────────────────────────────────────────────────
 
 export const getRegions = (): Promise<Region[]> =>
@@ -235,7 +239,7 @@ export const login = async (email: string, password: string): Promise<any> => {
     body: JSON.stringify({ email, password }),
   });
   if (typeof window !== "undefined") {
-    Cookies.set("crest_token", data.access_token, { expires: 1/24, secure: false }); // 1 hour
+    Cookies.set("crest_token", data.access_token, { expires: 1/24, secure: false, path: "/" }); // 1 hour
     localStorage.setItem("crest_user", JSON.stringify(data));
   }
   return data;
@@ -243,7 +247,7 @@ export const login = async (email: string, password: string): Promise<any> => {
 
 export const logout = () => {
   if (typeof window !== "undefined") {
-    Cookies.remove("crest_token");
+    Cookies.remove("crest_token", { path: "/" });
     localStorage.removeItem("crest_user");
     window.location.href = "/login";
   }

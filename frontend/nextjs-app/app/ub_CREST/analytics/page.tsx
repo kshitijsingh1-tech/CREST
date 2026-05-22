@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { 
   getDashboardSummary, getBySeverity, getVolumeTrend, 
-  getChannelDistribution, getByCategory, getSpikeSignals, getMe 
+  getChannelDistribution, getByCategory, getSpikeSignals, getMe,
+  getRegionDistribution, RegionStat
 } from "@/lib/api";
 import VolumeTrendChart from "@/components/charts/VolumeTrendChart";
 import PriorityQueue from "@/components/queue/PriorityQueue";
@@ -40,13 +41,14 @@ export default async function CrestAnalyticsPage() {
 
   const regionId = user.region_id ?? undefined;
 
-  const [summary, severities, trend, channels, categories, spikes] = await Promise.all([
+  const [summary, severities, trend, channels, categories, spikes, regions] = await Promise.all([
     getDashboardSummary(regionId),
     getBySeverity(regionId),
     getVolumeTrend(14, regionId),
     getChannelDistribution(30, regionId),
     getByCategory(30, regionId),
     getSpikeSignals(168),   // last 7 days (global)
+    user.role === "SUPER_ADMIN" ? getRegionDistribution() : Promise.resolve([] as RegionStat[]),
   ]);
 
   const totalComplaints = categories.reduce((sum, c) => sum + c.count, 0);
@@ -244,6 +246,70 @@ export default async function CrestAnalyticsPage() {
             )}
           </div>
         </div>
+
+        {/* --- REGIONAL MONITORING SECTION (SUPER ADMIN ONLY) --- */}
+        {user.role === "SUPER_ADMIN" && regions && regions.length > 0 && (
+          <div className="rounded-3xl border p-6 md:p-8 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] relative overflow-hidden group/regions
+            dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl hover:border-blue-500/40
+            bg-white border-gray-200 shadow-xl hover:border-black hover:shadow-2xl">
+            
+            {/* Ambient Background Glow on Hover */}
+            <div className="absolute -bottom-10 -right-10 w-44 h-44 bg-blue-500/5 dark:bg-blue-400/5 rounded-full blur-3xl scale-0 group-hover/regions:scale-[3] transition-transform duration-700 ease-out z-0 pointer-events-none"></div>
+            
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 relative z-10">
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-widest transition-colors duration-500 dark:text-white text-black">
+                  Regional Nodal Performance & SLA Health
+                </h3>
+                <p className="text-[10px] text-gray-500 dark:text-slate-400 mt-1 uppercase tracking-wider font-semibold">
+                  Live Global Status for Super Admin
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-[9px] uppercase font-bold tracking-widest dark:text-emerald-400 text-emerald-700">All Nodes Active</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 relative z-10">
+              {regions.map((r) => (
+                <div key={r.region} className="rounded-2xl border p-5 transition-all duration-500 group/card
+                  dark:bg-white/[0.02] dark:border-white/5 dark:hover:bg-white/[0.04] dark:hover:border-white/10
+                  bg-slate-50 border-gray-100 hover:bg-slate-100 hover:border-gray-200 hover:-translate-y-1">
+                  <p className="text-xs font-extrabold tracking-tight dark:text-white text-gray-900 truncate">{r.region}</p>
+                  
+                  <div className="mt-4 space-y-2.5">
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="font-semibold text-gray-500 dark:text-slate-400">Total Grievances</span>
+                      <span className="font-black dark:text-blue-400 text-blue-700">{r.total}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="font-semibold text-gray-500 dark:text-slate-400">Currently Active</span>
+                      <span className="font-black dark:text-amber-400 text-amber-600">{r.open}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="font-semibold text-gray-500 dark:text-slate-400">SLA Breached</span>
+                      <span className={`font-black ${r.breached > 0 ? 'text-red-500 animate-pulse font-extrabold' : 'text-gray-400 dark:text-slate-600'}`}>
+                        {r.breached}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Minimal progress bar indicators */}
+                  <div className="mt-4 w-full bg-gray-200 dark:bg-black/60 rounded-full h-1.5 overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-500 ${r.breached > 0 ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-blue-500'}`} 
+                      style={{ width: `${Math.min(100, Math.max(5, (r.open / (r.total || 1)) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

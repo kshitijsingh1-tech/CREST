@@ -73,7 +73,7 @@ export default function CrestLoginPage() {
       setError("Invalid administrative credentials");
       handleRefreshCaptcha();
       // Clean cookies just to be safe
-      Cookies.remove("crest_token");
+      Cookies.remove("crest_token", { path: "/" });
       localStorage.removeItem("crest_user");
     } finally {
       setLoading(false);
@@ -87,11 +87,14 @@ export default function CrestLoginPage() {
         
         {/* Branding & Subtitle */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl dark:bg-blue-950/40 dark:border-blue-500/20 bg-blue-50 border border-blue-200 shadow-xl mb-4">
-            <Cpu className="w-8 h-8 dark:text-blue-400 text-blue-600" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl dark:bg-blue-950/40 dark:border-blue-500/20 bg-blue-50 border border-blue-200 shadow-xl mb-4 overflow-hidden">
+            <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
           </div>
-          <h1 className="text-2xl font-black tracking-tight dark:text-white text-black uppercase">
-            ub_CREST
+          <h1 className="text-2xl font-black tracking-tight uppercase flex justify-center items-center gap-0.5">
+            <span className="text-[#0052ff]">ub_</span>
+            <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #1a64ff, #7a22ff, #d8296a, #ff4d00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              CREST
+            </span>
           </h1>
           <p className="text-xs uppercase tracking-widest dark:text-slate-400 text-slate-600 font-bold mt-1">
             Enterprise Authorization Gate

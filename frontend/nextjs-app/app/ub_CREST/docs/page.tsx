@@ -1,5 +1,9 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { BookOpen, ShieldCheck, Zap, Users, Globe, Mail, MessageSquare, BarChart3, ChevronRight, CheckCircle2, AlertTriangle, Clock, Star } from "lucide-react";
+import Cookies from "js-cookie";
 
 function Section({ id, title, subtitle, children }: { id: string; title: string; subtitle?: string; children: React.ReactNode }) {
   return (
@@ -48,6 +52,12 @@ function RoleRow({ badge, role, who, can }: { badge: string; role: string; who: 
 }
 
 export default function DocsPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    setIsAuthenticated(!!Cookies.get("crest_token"));
+  }, []);
+
   return (
     <div className="flex-1 bg-transparent p-6 md:p-10 max-w-[90rem] mx-auto w-full animate-fade-in-up">
 
@@ -59,10 +69,13 @@ export default function DocsPage() {
             CREST · Complaint Resolution & Escalation Smart Technology
           </p>
         </div>
-        <Link href="/ub_CREST/home" className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-500 border shadow-sm
-          dark:bg-white/5 dark:border-white/10 dark:text-white dark:hover:bg-white/10
-          bg-gray-100 border-gray-200 text-gray-800 hover:bg-gray-200">
-          ← Back to Home
+        <Link 
+          href={isAuthenticated ? "/ub_CREST/home" : "/crest_publicPortal"} 
+          className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-500 border shadow-sm
+            dark:bg-white/5 dark:border-white/10 dark:text-white dark:hover:bg-white/10
+            bg-gray-100 border-gray-200 text-gray-800 hover:bg-gray-200"
+        >
+          {isAuthenticated ? "← Back to Home" : "← Back to Portal"}
         </Link>
       </div>
 

@@ -287,7 +287,7 @@ export default function PublicTrackingPage() {
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
                 <h4 className="font-semibold text-sm text-slate-800 mb-1">Grievance Appellate Cell</h4>
                 <p className="text-xs text-slate-500 mb-2">Official GAC Citizen Appeals Portal</p>
-                <p className="text-sm font-bold text-indigo-700">gac-portal.gov.in</p>
+                <a href="https://gac.gov.in/" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-indigo-700 hover:underline">gac.gov.in</a>
               </div>
             </div>
           </div>

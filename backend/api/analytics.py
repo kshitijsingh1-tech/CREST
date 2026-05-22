@@ -232,3 +232,53 @@ def spike_signals(hours: int = Query(48, le=168), db: Session | None = Depends(g
         }
         for s in signals
     ]
+
+
+@router.get("/by-region")
+def complaints_by_region(db: Session | None = Depends(get_db_optional)):
+    if DEV_MOCK:
+        return [
+            {"region": "Mumbai Region", "open": 24, "breached": 2, "total": 140},
+            {"region": "Delhi Region", "open": 18, "breached": 3, "total": 98},
+            {"region": "Kolkata Region", "open": 12, "breached": 0, "total": 54},
+            {"region": "Bengaluru Region", "open": 15, "breached": 1, "total": 78},
+            {"region": "Chennai Region", "open": 8, "breached": 0, "total": 42},
+        ]
+
+    from backend.models.user import Region
+    from backend.models.complaint import Complaint
+
+    rows = (
+        db.query(
+            Region.name.label("region_name"),
+            func.count(Complaint.id).label("total_count"),
+            func.sum(func.case((Complaint.status != "resolved", 1), else_=0)).label("open_count"),
+            func.sum(func.case((Complaint.sla_status == "breached", 1), else_=0)).label("breached_count")
+        )
+        .join(Complaint, Complaint.region_id == Region.id)
+        .group_by(Region.name)
+        .order_by(func.count(Complaint.id).desc())
+        .all()
+    )
+    
+    result = []
+    for r in rows:
+        result.append({
+            "region": r.region_name,
+            "open": int(r.open_count or 0),
+            "breached": int(r.breached_count or 0),
+            "total": int(r.total_count or 0)
+        })
+        
+    unassigned_total = db.query(Complaint).filter(Complaint.region_id.is_(None)).count()
+    if unassigned_total > 0:
+        unassigned_open = db.query(Complaint).filter(Complaint.region_id.is_(None), Complaint.status != "resolved").count()
+        unassigned_breached = db.query(Complaint).filter(Complaint.region_id.is_(None), Complaint.sla_status == "breached").count()
+        result.append({
+            "region": "Unassigned / Central Nodal",
+            "open": unassigned_open,
+            "breached": unassigned_breached,
+            "total": unassigned_total
+        })
+
+    return result
