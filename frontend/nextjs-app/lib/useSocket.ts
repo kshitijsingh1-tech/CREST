@@ -10,7 +10,13 @@
 import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const getSocketUrl = () => {
+  if (typeof window === "undefined") {
+    return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  }
+  // Browser: connect socket.io via the Next.js reverse proxy (same origin, no CORS)
+  return window.location.origin;
+};
 
 interface SocketEvents {
   onQueueUpdated?:  (data: unknown) => void;
@@ -22,7 +28,7 @@ export function useSocket({ onQueueUpdated, onNewComplaint, onNewSpike }: Socket
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const socket = io(SOCKET_URL, {
+    const socket = io(getSocketUrl(), {
       transports:        ["websocket"],
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,

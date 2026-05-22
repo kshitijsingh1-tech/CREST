@@ -22,6 +22,16 @@ def initialize_database() -> None:
     import backend.models.knowledge  # noqa: F401
     import backend.models.user # noqa: F401
 
+    import os
+    from sqlalchemy import text
+    if os.getenv("CREST_USE_PGVECTOR", "1") == "1":
+        try:
+            with engine.begin() as conn:
+                conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            logger.info("Successfully ensured pgvector extension is enabled.")
+        except Exception as e:
+            logger.warning(f"Could not automatically enable pgvector extension: {e}")
+
     Base.metadata.create_all(bind=engine)
 
     db = SessionLocal()

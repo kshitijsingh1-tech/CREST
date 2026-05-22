@@ -7,10 +7,12 @@
 import Cookies from "js-cookie";
 
 const getBaseUrl = () => {
+  // Server-side (RSC / Node): call backend directly
   if (typeof window === "undefined") {
     return process.env.BACKEND_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
   }
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  // Browser: use relative URL — Next.js proxies /api/* → backend server-side (no CORS)
+  return "";
 };
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {

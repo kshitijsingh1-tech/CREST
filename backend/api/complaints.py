@@ -11,16 +11,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from backend.mock_store import (
-    approve_draft as mock_approve_draft,
-    assign_complaint as mock_assign_complaint,
-    export_audit_trail as mock_export_audit_trail,
-    find_similar as mock_find_similar,
-    get_complaint as mock_get_complaint,
-    get_priority_queue as mock_get_priority_queue,
-    ingest as mock_ingest,
-    resolve_complaint as mock_resolve_complaint,
-)
+
 from backend.utils.db import get_db_optional
 from backend.utils.logger import get_logger
 from backend.utils.runtime import DEV_MOCK, USE_PGVECTOR

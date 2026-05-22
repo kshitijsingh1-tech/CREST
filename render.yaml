@@ -1,5 +1,5 @@
 services:
-  # 1. The Backend (FastAPI API + Celery Workers)
+  # 1. The Backend API Gateway (FastAPI)
   - type: web
     name: crest-api
     env: docker
@@ -11,34 +11,45 @@ services:
       - key: PYTHONPATH
         value: /app
       - key: CREST_DB_URL
-        fromDatabase:
-          name: crest-db
-          property: connectionString
+        sync: false # Paste your existing Render PostgreSQL connection string here!
       - key: REDIS_URL
-        # Set this manually to your Upstash URL in the Render UI
-        sync: false 
-      - key: GROQ_API_KEY
-        sync: false
+        sync: false # Paste your existing Render Redis connection string here!
+      - key: CREST_USE_DIRECT_INGEST
+        value: "1" # Simplifies Render deployments by running direct synchronous ingestion
       - key: EMBEDDING_MODE
         value: local
+      - key: CREST_USE_PGVECTOR
+        value: "1"
+      - key: JWT_SECRET_KEY
+        generateValue: true # Securely generates a unique secret key on Render
+      - key: GROQ_API_KEY
+        sync: false # Set in Render Dashboard
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+      - key: SMS_WEBHOOK_KEY
+        sync: false
+      - key: CORS_ALLOW_ALL
+        value: "0"
+      - key: CORS_ORIGINS
+        value: "https://crest-ui-0uc4.onrender.com"
+      - key: PORT
+        value: "8000"
 
   # 2. The Frontend (Next.js UI)
   - type: web
     name: crest-ui
     env: docker
-    dockerContext: .
+    dockerContext: frontend/nextjs-app # Fixed build context to target correct folder
     dockerfilePath: infra/docker/Dockerfile.nextjs
     plan: free
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: crest-api
-          property: host
-
-databases:
-  - name: crest-db
-    plan: free
-    databaseName: crest
-    user: crest_user
-    # Note: Free databases are deleted after 90 days
+        value: https://crest-api-0uc4.onrender.com
+      - key: HOSTNAME
+        value: "0.0.0.0"
+      - key: PORT
+        value: "3000"

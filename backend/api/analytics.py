@@ -12,17 +12,9 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
-from backend.mock_store import (
-    channel_distribution as mock_channel_distribution,
-    complaints_by_category as mock_complaints_by_category,
-    complaints_by_severity as mock_complaints_by_severity,
-    dashboard_summary as mock_dashboard_summary,
-    get_priority_queue as mock_get_priority_queue,
-    spike_signals as mock_spike_signals,
-    volume_trend as mock_volume_trend,
-)
+
 from backend.utils.db import get_db_optional
-from backend.utils.runtime import DEV_MOCK
+
 
 if TYPE_CHECKING:
     from backend.models.complaint import Channel, Complaint
@@ -36,8 +28,7 @@ def dashboard_summary(
     region_id: int | None = Query(None),
     db: Session | None = Depends(get_db_optional)
 ):
-    if DEV_MOCK:
-        return mock_dashboard_summary()
+
 
     from backend.models.complaint import Complaint
 
@@ -82,8 +73,7 @@ def complaints_by_category(
     region_id: int | None = Query(None),
     db: Session | None = Depends(get_db_optional),
 ):
-    if DEV_MOCK:
-        return mock_complaints_by_category()
+
 
     from backend.models.complaint import Complaint
 
@@ -107,8 +97,7 @@ def complaints_by_severity(
     region_id: int | None = Query(None),
     db: Session | None = Depends(get_db_optional)
 ):
-    if DEV_MOCK:
-        return mock_complaints_by_severity()
+
 
     from backend.models.complaint import Complaint
 
@@ -132,8 +121,7 @@ def volume_trend(
     days: int = Query(14, le=90),
     db: Session | None = Depends(get_db_optional),
 ):
-    if DEV_MOCK:
-        return mock_volume_trend(days)
+
 
     rows = db.execute(
         text(
@@ -163,12 +151,7 @@ def volume_trend(
 
 @router.get("/sla-health")
 def sla_health(db: Session | None = Depends(get_db_optional)):
-    if DEV_MOCK:
-        counts: dict[str, int] = {}
-        for complaint in mock_get_priority_queue(limit=500):
-            status = complaint.get("sla_status", "unknown")
-            counts[status] = counts.get(status, 0) + 1
-        return [{"status": status, "count": count} for status, count in sorted(counts.items())]
+
 
     from backend.models.complaint import Complaint
 
@@ -187,8 +170,7 @@ def channel_distribution(
     region_id: int | None = Query(None),
     db: Session | None = Depends(get_db_optional),
 ):
-    if DEV_MOCK:
-        return mock_channel_distribution()
+
 
     from backend.models.complaint import Channel, Complaint
 
@@ -209,8 +191,7 @@ def channel_distribution(
 
 @router.get("/spike-signals")
 def spike_signals(hours: int = Query(48, le=168), db: Session | None = Depends(get_db_optional)):
-    if DEV_MOCK:
-        return mock_spike_signals(hours)
+
 
     from backend.models.knowledge import SpikeSignal
 
@@ -236,14 +217,7 @@ def spike_signals(hours: int = Query(48, le=168), db: Session | None = Depends(g
 
 @router.get("/by-region")
 def complaints_by_region(db: Session | None = Depends(get_db_optional)):
-    if DEV_MOCK:
-        return [
-            {"region": "Mumbai Region", "open": 24, "breached": 2, "total": 140},
-            {"region": "Delhi Region", "open": 18, "breached": 3, "total": 98},
-            {"region": "Kolkata Region", "open": 12, "breached": 0, "total": 54},
-            {"region": "Bengaluru Region", "open": 15, "breached": 1, "total": 78},
-            {"region": "Chennai Region", "open": 8, "breached": 0, "total": 42},
-        ]
+
 
     from backend.models.user import Region
     from backend.models.complaint import Complaint
