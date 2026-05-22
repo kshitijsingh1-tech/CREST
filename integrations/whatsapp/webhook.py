@@ -1,140 +1,141 @@
 """
-CREST — WhatsApp Cloud API Integration
-Receives incoming messages via webhook (Meta / Twilio WhatsApp Cloud API)
+CREST — Twilio WhatsApp Integration
+Receives incoming messages via webhook from Twilio WhatsApp API
 and publishes them to the Kafka whatsapp topic.
 
 Endpoint: POST /webhooks/whatsapp
-Verification: GET /webhooks/whatsapp (Meta hub.challenge handshake)
 """
 
 from __future__ import annotations
 
-import hashlib
 import hmac
+import hashlib
+import base64
 import os
 
-from fastapi import APIRouter, Request, Response, HTTPException, Query
+from fastapi import APIRouter, Request, Response, HTTPException
 from backend.utils.logger import get_logger
 from integrations.kafka.producer import publish
 
 router = APIRouter(prefix="/webhooks/whatsapp", tags=["integrations"])
 logger = get_logger("crest.integrations.whatsapp")
 
-VERIFY_TOKEN    = os.getenv("WA_VERIFY_TOKEN",    "crest_verify_2026")
-APP_SECRET      = os.getenv("WA_APP_SECRET",      "")    # Meta app secret for HMAC
+AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
 
 
-def _verify_signature(body: bytes, signature: str) -> bool:
-    """Validate Meta's X-Hub-Signature-256 header."""
-    if not APP_SECRET:
-        return True   # Skip in dev
-    expected = "sha256=" + hmac.new(
-        APP_SECRET.encode(), body, hashlib.sha256
-    ).hexdigest()
-    return hmac.compare_digest(expected, signature)
-
-
-# ── Meta webhook verification handshake ─────────────────────
-@router.get("")
-def verify_webhook(
-    hub_mode:       str = Query(..., alias="hub.mode"),
-    hub_challenge:  str = Query(..., alias="hub.challenge"),
-    hub_verify_token: str = Query(..., alias="hub.verify_token"),
-):
-    if hub_mode == "subscribe" and hub_verify_token == VERIFY_TOKEN:
-        logger.info("WhatsApp webhook verified by Meta")
-        return Response(content=hub_challenge, media_type="text/plain")
-    raise HTTPException(status_code=403, detail="Verification failed")
+def _verify_signature(url: str, params: dict, signature: str) -> bool:
+    """Validate Twilio's X-Twilio-Signature header."""
+    if not AUTH_TOKEN:
+        return True  # Skip verification in dev or if token is not set
+    
+    # Sort and concatenate params
+    data_str = url
+    for k in sorted(params.keys()):
+        data_str += k + params[k]
+        
+    mac = hmac.new(AUTH_TOKEN.encode("utf-8"), data_str.encode("utf-8"), hashlib.sha1)
+    computed = base64.b64encode(mac.digest()).decode("utf-8")
+    return hmac.compare_digest(computed, signature)
 
 
 # ── Incoming message handler ──────────────────────────────────
 @router.post("")
 async def receive_message(request: Request):
     """
-    Processes incoming WhatsApp messages and voice notes.
+    Processes incoming WhatsApp messages from Twilio.
     Text messages → published directly.
     Voice notes → transcribed via Whisper STT, then published.
     """
-    body_bytes = await request.body()
+    form_data = await request.form()
+    params = {k: v for k, v in form_data.items()}
 
-    # Validate HMAC signature
-    sig = request.headers.get("X-Hub-Signature-256", "")
-    if not _verify_signature(body_bytes, sig):
-        raise HTTPException(status_code=401, detail="Invalid signature")
+    # Validate signature if header exists
+    sig = request.headers.get("X-Twilio-Signature", "")
+    url = str(request.url)
+    
+    if sig:
+        verified = _verify_signature(url, params, sig)
+        if not verified:
+            # Try matching with forwarded host if behind a reverse proxy (e.g. ngrok/Render)
+            forwarded_proto = request.headers.get("x-forwarded-proto", "http")
+            forwarded_host = request.headers.get("x-forwarded-host")
+            if forwarded_host:
+                proxy_url = f"{forwarded_proto}://{forwarded_host}{request.url.path}"
+                if _verify_signature(proxy_url, params, sig):
+                    logger.info("Twilio webhook verified via proxy URL")
+                    verified = True
+            
+            if not verified:
+                logger.warning("Twilio signature validation failed")
+                raise HTTPException(status_code=401, detail="Invalid Twilio signature")
 
     try:
-        data   = await request.json()
-        entry  = data.get("entry", [{}])[0]
-        change = entry.get("changes", [{}])[0].get("value", {})
-        messages = change.get("messages", [])
+        from_number = params.get("From", "unknown")
+        msg_id = params.get("MessageSid", "")
+        text = params.get("Body", "").strip()
+        
+        # Clean "whatsapp:" prefix if present in the Sender's phone number
+        if from_number.startswith("whatsapp:"):
+            from_number = from_number.replace("whatsapp:", "")
 
-        for msg in messages:
-            msg_type   = msg.get("type", "text")
-            from_number = msg.get("from", "unknown")
-            msg_id     = msg.get("id", "")
+        # Check for Media (voice notes)
+        num_media = int(params.get("NumMedia", "0"))
+        if num_media > 0:
+            media_url = params.get("MediaUrl0")
+            media_type = params.get("MediaContentType0", "")
+            if media_url and "audio" in media_type:
+                logger.info(f"Downloading and transcribing Twilio audio: {media_url}")
+                transcription = _transcribe_twilio_audio(media_url)
+                if transcription:
+                    text = transcription
+                else:
+                    logger.warning("Failed to transcribe audio attachment")
 
-            if msg_type == "text":
-                text = msg["text"]["body"]
-            elif msg_type == "audio":
-                # Transcribe voice note via Whisper
-                audio_id = msg["audio"]["id"]
-                text = _transcribe_audio(audio_id)
-                if not text:
-                    logger.warning(f"Transcription failed for audio {audio_id}")
-                    continue
-            else:
-                logger.debug(f"Ignoring WhatsApp message type: {msg_type}")
-                continue
+        if not text:
+            # Return empty response to Twilio if body is empty and no audio transcribed
+            return Response(content="<Response></Response>", media_type="application/xml")
 
-            # Profile info (if available)
-            contacts     = change.get("contacts", [{}])
-            display_name = contacts[0].get("profile", {}).get("name") if contacts else None
+        # Profile info (ProfileName is provided by Twilio)
+        display_name = params.get("ProfileName", "WhatsApp User")
 
-            detected_lang = await _detect_language(text)
-            publish(
-                channel       = "whatsapp",
-                customer_id   = from_number,
-                body          = text,
-                customer_name = display_name,
-                external_ref  = msg_id,
-                language      = detected_lang,
-            )
+        detected_lang = await _detect_language(text)
+        publish(
+            channel="whatsapp",
+            customer_id=from_number,
+            body=text,
+            customer_name=display_name,
+            external_ref=msg_id,
+            language=detected_lang,
+        )
 
-        return {"status": "ok"}
+        # Return empty TwiML response to Twilio to acknowledge receipt
+        return Response(content="<Response></Response>", media_type="application/xml")
 
     except Exception as e:
-        logger.error(f"WhatsApp webhook error: {e}", exc_info=True)
-        # Always return 200 to Meta to prevent retries flooding
-        return {"status": "error", "message": str(e)}
+        logger.error(f"Twilio WhatsApp webhook error: {e}", exc_info=True)
+        # Always return successful empty TwiML to Twilio to prevent infinite retries
+        return Response(content="<Response></Response>", media_type="application/xml")
 
 
-def _transcribe_audio(audio_id: str) -> str:
+def _transcribe_twilio_audio(media_url: str) -> str:
     """
-    Download WhatsApp audio and transcribe via OpenAI Whisper STT.
+    Download Twilio audio and transcribe via OpenAI Whisper STT.
     Returns transcript string or empty string on failure.
     """
     try:
         import httpx, openai, tempfile, os
 
-        wa_token = os.getenv("WA_ACCESS_TOKEN", "")
-        # 1. Get download URL from Meta Graph API
-        info = httpx.get(
-            f"https://graph.facebook.com/v18.0/{audio_id}",
-            headers={"Authorization": f"Bearer {wa_token}"},
-            timeout=10,
-        ).json()
-        audio_url = info.get("url")
-        if not audio_url:
-            return ""
+        account_sid = os.getenv("TWILIO_ACCOUNT_SID", "")
+        auth_token = os.getenv("TWILIO_AUTH_TOKEN", "")
+        
+        # Download media using HTTP Basic Authentication if required by Twilio account settings
+        auth = (account_sid, auth_token) if account_sid and auth_token else None
+        
+        resp = httpx.get(media_url, auth=auth, timeout=30, follow_redirects=True)
+        resp.raise_for_status()
+        audio_bytes = resp.content
 
-        # 2. Download audio bytes
-        audio_bytes = httpx.get(
-            audio_url,
-            headers={"Authorization": f"Bearer {wa_token}"},
-            timeout=30,
-        ).content
-
-        # 3. Transcribe with Whisper
+        # Transcribe with Whisper
         client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY", ""))
         with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as f:
             f.write(audio_bytes)

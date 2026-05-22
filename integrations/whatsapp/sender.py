@@ -1,6 +1,6 @@
 """
 CREST - Outbound WhatsApp Integration
-Send approved customer replies via Meta WhatsApp Cloud API.
+Send approved customer replies via Twilio WhatsApp API.
 """
 
 from __future__ import annotations
@@ -19,65 +19,72 @@ def send_whatsapp_reply(
     external_ref: str | None = None,
 ) -> dict:
     """
-    Send approved customer replies via Meta WhatsApp Cloud API.
-    Uses WA_ACCESS_TOKEN and WA_PHONE_NUMBER_ID from environment.
+    Send approved customer replies via Twilio WhatsApp API.
+    Uses TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_WHATSAPP_FROM from environment.
     """
     recipient_phone = (recipient_phone or "").strip()
     if not recipient_phone:
         raise ValueError("No recipient phone number provided")
 
-    wa_token = os.getenv("WA_ACCESS_TOKEN", "").strip()
-    phone_number_id = os.getenv("WA_PHONE_NUMBER_ID", "").strip()
+    account_sid = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
+    from_number = os.getenv("TWILIO_WHATSAPP_FROM", "").strip()
 
-    logger.info(f"Preparing WhatsApp reply for {recipient_phone}")
+    # Format numbers for Twilio WhatsApp (must be prefixed with "whatsapp:")
+    to_formatted = recipient_phone
+    if not to_formatted.startswith("whatsapp:"):
+        if not to_formatted.startswith("+"):
+            to_formatted = f"whatsapp:+{to_formatted}"
+        else:
+            to_formatted = f"whatsapp:{to_formatted}"
+
+    from_formatted = from_number
+    if from_formatted and not from_formatted.startswith("whatsapp:"):
+        if not from_formatted.startswith("+"):
+            from_formatted = f"whatsapp:+{from_formatted}"
+        else:
+            from_formatted = f"whatsapp:{from_formatted}"
+
+    logger.info(f"Preparing Twilio WhatsApp reply for {recipient_phone}")
 
     # Visual logging for audit trails and presentations
-    print(f"\n--- [Outbound WhatsApp Cloud API Gateway] ---")
-    print(f"Recipient Phone : {recipient_phone}")
+    print(f"\n--- [Outbound Twilio WhatsApp API Gateway] ---")
+    print(f"Recipient Phone : {to_formatted}")
+    print(f"From Number     : {from_formatted}")
     print(f"Message Body    : '{reply_body[:120]}...'")
     print(f"External Ref    : {external_ref}")
 
-    if not wa_token or not phone_number_id:
-        print("[WhatsApp Sender Warning] WA_ACCESS_TOKEN or WA_PHONE_NUMBER_ID not set. Running in presentation/simulated mode.")
+    if not account_sid or not auth_token or not from_number:
+        print("[Twilio Sender Warning] TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN or TWILIO_WHATSAPP_FROM not set. Running in simulated mode.")
         print("-----------------------------------------------\n")
         return {
             "status": "simulated",
-            "recipient": recipient_phone,
+            "recipient": to_formatted,
             "body": reply_body,
         }
 
-    url = f"https://graph.facebook.com/v18.0/{phone_number_id}/messages"
-    headers = {
-        "Authorization": f"Bearer {wa_token}",
-        "Content-Type": "application/json",
-    }
-
-    # Meta permits free-text messaging within a 24-hour customer-initiated window.
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
+    auth = (account_sid, auth_token)
     payload = {
-        "messaging_product": "whatsapp",
-        "recipient_type": "individual",
-        "to": recipient_phone,
-        "type": "text",
-        "text": {
-            "preview_url": False,
-            "body": reply_body,
-        },
+        "From": from_formatted,
+        "To": to_formatted,
+        "Body": reply_body,
     }
 
     try:
-        resp = httpx.post(url, json=payload, headers=headers, timeout=12.0)
+        resp = httpx.post(url, data=payload, auth=auth, timeout=12.0)
         resp.raise_for_status()
         result = resp.json()
-        message_id = result.get("messages", [{}])[0].get("id", "unknown_wa_ref")
-        print(f"[WhatsApp API Success] Delivered message_id={message_id}")
+        message_id = result.get("sid", "unknown_twilio_ref")
+        print(f"[Twilio API Success] Delivered message_id={message_id}")
         print("-----------------------------------------------\n")
         return {
             "status": "sent",
-            "recipient": recipient_phone,
+            "recipient": to_formatted,
             "message_id": message_id,
         }
     except Exception as exc:
-        logger.error(f"WhatsApp API delivery failed to {recipient_phone}: {exc}", exc_info=True)
-        print(f"[WhatsApp API Error] Connection or authorization failed: {exc}")
+        logger.error(f"Twilio WhatsApp API delivery failed to {to_formatted}: {exc}", exc_info=True)
+        print(f"[Twilio API Error] Delivery failed: {exc}")
         print("-----------------------------------------------\n")
         raise
