@@ -303,7 +303,7 @@ def similar_complaints(
     return [s for s in similar if str(s["id"]) != complaint_id]
 
 
-# ── Assign ───────────────────────────────────────────────────
+#------- Assign to employee-------
 
 @router.patch("/{complaint_id}/assign", response_model=dict)
 def assign(complaint_id: str, body: AssignRequest, db: Optional[Session] = Depends(get_db_optional)):
@@ -344,7 +344,7 @@ def escalate(complaint_id: str, body: EscalateRequest, db: Optional[Session] = D
     return {"status": "escalated"}
 
 
-# ── Approve Draft ─────────────────────────────────────────────
+# ----------- Approve Draft-------------------
 
 @router.patch("/{complaint_id}/approve-draft", response_model=dict)
 def approve_draft_reply(complaint_id: str, agent: str = Query(...), db: Optional[Session] = Depends(get_db_optional)):
@@ -375,7 +375,7 @@ def approve_draft_reply(complaint_id: str, agent: str = Query(...), db: Optional
         raise HTTPException(status_code=502, detail=detail)
 
 
-# ── Resolve ───────────────────────────────────────────────────
+# --------------------- Resolve----------------------
 
 @router.patch("/{complaint_id}/resolve", response_model=dict)
 def resolve(complaint_id: str, body: ResolveRequest, db: Optional[Session] = Depends(get_db_optional)):
@@ -407,7 +407,7 @@ def resolve(complaint_id: str, body: ResolveRequest, db: Optional[Session] = Dep
         raise HTTPException(status_code=404, detail=str(e))
 
 
-# ── RBI Audit Export ──────────────────────────────────────────
+# ----------------- RBI Audit Export ---------------------------
 
 @router.get("/{complaint_id}/audit", response_model=list[dict])
 def audit_trail(complaint_id: str, db: Optional[Session] = Depends(get_db_optional)):
@@ -420,7 +420,7 @@ def audit_trail(complaint_id: str, db: Optional[Session] = Depends(get_db_option
     return export_audit_trail(db, complaint_id)
 
 
-# ── Public Tracking ───────────────────────────────────────────
+# --------------- Public Tracking ------------------------------
 
 @router.get("/track/{complaint_id}", response_model=dict)
 def track_complaint(complaint_id: str, db: Optional[Session] = Depends(get_db_optional)):
@@ -464,7 +464,7 @@ def track_complaint(complaint_id: str, db: Optional[Session] = Depends(get_db_op
     }
 
 
-# ── Internal Worker Hooks ─────────────────────────────────────
+# -------Internal Worker Hooks -----------------------
 
 from pydantic import BaseModel
 

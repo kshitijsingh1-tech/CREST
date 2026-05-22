@@ -28,8 +28,9 @@ Analyse the customer complaint and return ONLY a valid JSON object with these ex
 }
 
 Rules:
-- Assign P0 if customer mentions: Ombudsman, court, RBI complaint, fraud, unauthorized transaction, or account frozen
-- Assign anger_score > 0.8 if customer uses ALL CAPS, exclamations, or threatening language
+- Assign P0 if customer mentions: Ombudsman, court, RBI complaint, fraud, unauthorized transaction, account frozen, OR uses severe abusive/threatening language.
+- Assign P1 for extreme frustration, financial loss, or highly negative sentiment without legal threats.
+- Assign anger_score > 0.8 if customer uses abusive words, ALL CAPS, exclamations, or threatening language.
 - Return ONLY the JSON object, no markdown, no preamble
 """
 

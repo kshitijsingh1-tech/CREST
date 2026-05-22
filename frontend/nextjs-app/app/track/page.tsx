@@ -19,12 +19,12 @@ export default function PublicTrackingPage() {
   const [otp, setOtp] = useState("");
   const [captchaInput, setCaptchaInput] = useState("");
   const [captchaText, setCaptchaText] = useState("");
-  
+
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  
+
   const [complaintData, setComplaintData] = useState<any>(null);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function PublicTrackingPage() {
 
   const handleAction = async (action: string) => {
     if (!confirm(`Are you sure you want to ${action} this complaint?`)) return;
-    
+
     setLoading(true);
     try {
       const res = await submitPublicAction(reference, action);
@@ -111,7 +111,7 @@ export default function PublicTrackingPage() {
                 <p className="text-xs text-blue-200">Grievance Tracking Portal</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setComplaintData(null)}
               className="flex items-center gap-2 text-sm bg-white/10 hover:bg-white/20 px-4 py-2 rounded transition-colors"
             >
@@ -122,7 +122,7 @@ export default function PublicTrackingPage() {
 
         {/* Status Dashboard */}
         <main className="flex-grow max-w-5xl mx-auto w-full p-4 py-8 animate-fade-in-up">
-          
+
           {success && (
             <div className="mb-6 bg-emerald-50 text-emerald-700 p-4 rounded-md border border-emerald-200 flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5" />
@@ -170,7 +170,7 @@ export default function PublicTrackingPage() {
                 <div>
                   <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Tracking Timeline</h3>
                   <div className="space-y-6 relative before:absolute before:inset-0 before:ml-2.5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-                    
+
                     {/* Stage 1 */}
                     <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                       <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm ${complaintData.timeline.received ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
@@ -179,7 +179,7 @@ export default function PublicTrackingPage() {
                         <p className="text-xs text-slate-500">{new Date(complaintData.created_at).toLocaleString()}</p>
                       </div>
                     </div>
-                    
+
                     {/* Stage 2 */}
                     <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                       <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm ${complaintData.timeline.prioritized ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
@@ -222,19 +222,19 @@ export default function PublicTrackingPage() {
                 </div>
               )}
             </div>
-            
+
             {/* Actions Panel */}
             <div className="bg-slate-50 border-t border-slate-200 p-6">
               <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Customer Actions</h3>
               <div className="flex flex-wrap gap-4">
-                <button 
+                <button
                   onClick={() => alert("Downloading Official PDF Receipt...")}
                   className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50 transition-colors shadow-sm font-medium text-sm"
                 >
                   <Download className="w-4 h-4 text-blue-600" /> Download Status PDF
                 </button>
-                
-                <button 
+
+                <button
                   onClick={() => handleAction("upload")}
                   className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50 transition-colors shadow-sm font-medium text-sm"
                 >
@@ -242,7 +242,7 @@ export default function PublicTrackingPage() {
                 </button>
 
                 {complaintData.status === "open" && (
-                  <button 
+                  <button
                     onClick={() => handleAction("withdraw")}
                     className="flex items-center gap-2 px-4 py-2 bg-white border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-colors shadow-sm font-medium text-sm ml-auto"
                   >
@@ -251,7 +251,7 @@ export default function PublicTrackingPage() {
                 )}
 
                 {complaintData.status === "resolved" && (
-                  <button 
+                  <button
                     onClick={() => handleAction("appeal")}
                     className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-md hover:bg-amber-100 transition-colors shadow-sm font-medium text-sm ml-auto"
                   >
@@ -270,14 +270,14 @@ export default function PublicTrackingPage() {
             <p className="text-sm text-slate-600 mb-6">
               If you are not satisfied with the resolution remarks provided by the Assigned Support Desk, you can escalate the complaint via the regional Nodal Officers or appeal directly to the Grievance Appellate Committee:
             </p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
                 <h4 className="font-semibold text-sm text-slate-800 mb-1">National Helpline Center</h4>
                 <p className="text-xs text-slate-500 mb-2">Immediate Banking/Financial Fraud Helpline</p>
                 <p className="text-sm font-bold text-red-600">Hotline: 7905438724</p>
               </div>
-              
+
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
                 <h4 className="font-semibold text-sm text-slate-800 mb-1">Principal Nodal Officer</h4>
                 <p className="text-xs text-slate-500 mb-2">Central Grievance Office, Union Bank Mumbai</p>
@@ -301,7 +301,7 @@ export default function PublicTrackingPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
       <div className="w-full max-w-md animate-fade-in-up">
-        
+
         {/* Branding */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#0f2347] shadow-lg mb-4">
@@ -318,7 +318,7 @@ export default function PublicTrackingPage() {
               <Search className="w-5 h-5 text-red-400" /> Track Complaint Status
             </h2>
           </div>
-          
+
           <div className="p-6">
             {error && (
               <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">
@@ -339,8 +339,8 @@ export default function PublicTrackingPage() {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <FileText className="h-5 w-5 text-slate-400" />
                     </div>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       required
                       value={reference}
                       onChange={(e) => setReference(e.target.value)}
@@ -356,8 +356,8 @@ export default function PublicTrackingPage() {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Mail className="h-5 w-5 text-slate-400" />
                     </div>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       required
                       value={contact}
                       onChange={(e) => setContact(e.target.value)}
@@ -367,7 +367,7 @@ export default function PublicTrackingPage() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   type="submit"
                   disabled={loading}
                   className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0f2347] hover:bg-[#16305c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0f2347] disabled:opacity-70 transition-colors"
@@ -383,8 +383,8 @@ export default function PublicTrackingPage() {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <KeyRound className="h-5 w-5 text-slate-400" />
                     </div>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       required
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
@@ -399,13 +399,13 @@ export default function PublicTrackingPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Security Captcha</label>
                   <div className="flex gap-3 mb-2">
                     <div className="flex-grow bg-slate-100 rounded border border-slate-200 flex items-center justify-center overflow-hidden relative select-none">
-                       {/* Captcha Noise Background */}
-                       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
-                       <span className="relative z-10 font-mono text-2xl tracking-widest text-[#0f2347] font-bold mix-blend-multiply filter blur-[0.5px] italic">
-                         {captchaText}
-                       </span>
+                      {/* Captcha Noise Background */}
+                      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+                      <span className="relative z-10 font-mono text-2xl tracking-widest text-[#0f2347] font-bold mix-blend-multiply filter blur-[0.5px] italic">
+                        {captchaText}
+                      </span>
                     </div>
-                    <button 
+                    <button
                       type="button"
                       onClick={handleRefreshCaptcha}
                       className="p-2 border border-slate-300 rounded text-slate-600 hover:bg-slate-50 transition-colors"
@@ -414,8 +414,8 @@ export default function PublicTrackingPage() {
                       <RefreshCw className="w-5 h-5" />
                     </button>
                   </div>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     required
                     value={captchaInput}
                     onChange={(e) => setCaptchaInput(e.target.value)}
@@ -424,16 +424,16 @@ export default function PublicTrackingPage() {
                   />
                 </div>
 
-                <button 
+                <button
                   type="submit"
                   disabled={loading}
                   className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 disabled:opacity-70 transition-colors mt-6"
                 >
                   {loading ? "Authenticating..." : "Track Grievance"}
                 </button>
-                
+
                 <div className="text-center pt-2">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => { setOtpSent(false); setOtp(""); }}
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium"
@@ -444,7 +444,7 @@ export default function PublicTrackingPage() {
               </form>
             )}
           </div>
-          
+
           <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 space-y-4">
             {/* Quick Action Resources (Inspired by Govt portal) */}
             <div className="grid grid-cols-2 gap-2 pt-2 border-b border-slate-200 pb-4 text-xs font-semibold text-slate-600">
@@ -455,13 +455,13 @@ export default function PublicTrackingPage() {
                 <ShieldCheck className="w-4 h-4 text-emerald-500" /> Helpline Info
               </a>
             </div>
-            
+
             <p className="text-[10px] text-center text-slate-500 leading-relaxed">
               <strong>Official Notice:</strong> Please protect your session. System operations are monitored. Under Section 66D of the IT Act, unauthorized access attempt is a punishable offense.
             </p>
           </div>
         </div>
-        
+
       </div>
     </div>
   );

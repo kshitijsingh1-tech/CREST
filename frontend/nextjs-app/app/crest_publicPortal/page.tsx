@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { 
-  FileText, 
-  Search, 
-  BookOpen, 
-  PhoneCall, 
-  ShieldCheck, 
-  ChevronDown, 
-  ChevronUp, 
+import {
+  FileText,
+  Search,
+  BookOpen,
+  PhoneCall,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
   ArrowRight,
   ShieldAlert,
   Clock,
@@ -17,10 +17,12 @@ import {
 } from "lucide-react";
 import ColorBends from "@/components/ColorBends";
 import GoogleTranslate from "@/components/GoogleTranslate";
+import { FAQ_CATEGORIES } from "@/constants/faqs";
 
 export default function PublicPortalHub() {
   const [activeSection, setActiveSection] = useState<"none" | "learning" | "contact">("none");
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [openFaq, setOpenFaq] = useState<string | null>(null);
+  const [openCategory, setOpenCategory] = useState<number | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("light");
   const [scrollY, setScrollY] = useState(0);
 
@@ -35,7 +37,7 @@ export default function PublicPortalHub() {
 
     const update = () => {
       if (!active) return;
-      
+
       // Cushioned linear interpolation (lerp) formula:
       // Moves 12% of the remaining distance per frame, creating an ultra-smooth, premium liquid slide!
       const diff = targetScroll - currentScroll;
@@ -46,13 +48,13 @@ export default function PublicPortalHub() {
         currentScroll = targetScroll;
         setScrollY(currentScroll);
       }
-      
+
       requestAnimationFrame(update);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     requestAnimationFrame(update);
-    
+
     const savedTheme = localStorage.getItem("crest-theme");
     let currentTheme: "light" | "dark" = "light";
     if (savedTheme === "light" || savedTheme === "dark") {
@@ -63,7 +65,7 @@ export default function PublicPortalHub() {
     }
     setTheme(currentTheme);
     window.dispatchEvent(new CustomEvent("crest-theme-change", { detail: currentTheme }));
-    
+
     return () => {
       active = false;
       window.removeEventListener("scroll", handleScroll);
@@ -82,28 +84,14 @@ export default function PublicPortalHub() {
     window.dispatchEvent(new CustomEvent("crest-theme-change", { detail: nextTheme }));
   };
 
-  const toggleFaq = (index: number) => {
-    setOpenFaq(openFaq === index ? null : index);
+  const toggleFaq = (id: string) => {
+    setOpenFaq(openFaq === id ? null : id);
   };
 
-  const faqs = [
-    {
-      q: "What is the average timeline for resolving grievances?",
-      a: "Union Bank of India is committed to resolving all general complaints within 7-10 working days. Highly complex transactions or technical disputes are guaranteed to be resolved within 30 days, as per standard RBI guidance."
-    },
-    {
-      q: "Is my personal data (PII) safe on the public tracking portal?",
-      a: "Yes. Our public tracking portal enforces strict PII masking protocols. Supporting officer names, contact details, and account numbers are fully masked. Detailed status logs are only revealed after double-layered OTP verification."
-    },
-    {
-      q: "What is my liability limit for unauthorized bank transactions?",
-      a: "Per RBI Zero-Liability Guidelines, if you report unauthorized electronic banking transactions within 3 working days of the incident, your liability is strictly zero. Reporting within 4-7 days caps liability between ₹5,000 to ₹10,000."
-    },
-    {
-      q: "Can I appeal if I am not satisfied with the resolution remarks?",
-      a: "Absolutely. Once a Support Desk resolves a complaint, a 'File Appeal' action becomes active on your status tracking screen. Clicking this reopens the case and escalates it directly to the Principal Nodal Officer."
-    }
-  ];
+  const toggleCategory = (idx: number) => {
+    setOpenCategory(openCategory === idx ? null : idx);
+    setOpenFaq(null);
+  };
 
   // Shared card class — translucent glass, readable on both themes
   const cardClass = `rounded-3xl border p-8 flex flex-col justify-between min-h-[260px] transition-all duration-500 hover:-translate-y-1 backdrop-blur-xl
@@ -121,7 +109,7 @@ export default function PublicPortalHub() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-transparent relative">
-      
+
       {/* Floating Controls Bar (top-right) — Theme Toggle + Language Selector */}
       <div className="absolute top-6 right-6 z-50 flex items-center gap-2">
         {/* Language Selector Pill */}
@@ -136,26 +124,26 @@ export default function PublicPortalHub() {
           dark:bg-black/60 dark:hover:bg-black/80 dark:text-yellow-400 dark:border-white/10
           bg-white/80 hover:bg-white text-gray-700 border-gray-200" title="Toggle Theme">
           {theme === "dark" ? (
-             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
           ) : (
-             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
           )}
         </button>
       </div>
- 
+
       {/* 1. The Widescreen Title Banner with WebGL Red & Blue neon sweeps (Single Unified Classy Card) */}
       <div className="w-full max-w-6xl mx-auto px-6 mt-6 mb-10 relative overflow-hidden rounded-[2.5rem] border border-white/20 dark:border-white/10 h-[260px] flex items-center justify-center shadow-[0_25px_60px_-15px_rgba(59,130,246,0.12),0_15px_30px_rgba(0,0,0,0.06)] backdrop-blur-2xl bg-white/12 dark:bg-black/25">
         {/* ColorBends rendering beautiful WebGL neon red/blue sweeps in background */}
         <div className="absolute inset-0 opacity-45 pointer-events-none z-0">
-          <ColorBends 
-            colors={["#ef4444", "#3b82f6"]} 
-            speed={0.12} 
+          <ColorBends
+            colors={["#ef4444", "#3b82f6"]}
+            speed={0.12}
             warpStrength={0.6}
             iterations={2}
             bandWidth={4.5}
           />
         </div>
-        
+
         {/* Title Details floating directly inside the single unified glassmorphic canvas */}
         <div className="relative z-10 text-center space-y-4 max-w-4xl px-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest backdrop-blur-md shadow-sm
@@ -163,15 +151,15 @@ export default function PublicPortalHub() {
             border-white/20 bg-white/10 text-gray-700">
             Bhashini AI • RBI Ombudsman 2021 • India AI Mission Aligned
           </div>
-          
+
           <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-[#0d1b3e] dark:text-white leading-none drop-shadow-sm">
             Union Bank Citizen Grievance Hub
           </h2>
-          
+
           <p className="text-xs md:text-sm font-bold uppercase tracking-wider text-gray-600/90 dark:text-slate-400 drop-shadow-sm">
             Official Multi-Channel Support Redressal & Escalation Matrix
           </p>
-          
+
           {/* Laser-style glowing neon-gradient underline replacing static solid line */}
           <div className="h-0.5 w-24 bg-gradient-to-r from-transparent via-[#e31837] to-transparent shadow-[0_0_10px_rgba(227,24,55,0.6)] mx-auto mt-3 rounded-full" />
         </div>
@@ -179,7 +167,7 @@ export default function PublicPortalHub() {
 
       {/* 2. Anthropic-style Scroll-Expanding Showcase Banner (Aspect-locked 16:9 with zero height caps to guarantee 100% full-bleed, crop-free display!) */}
       <div className="w-full flex justify-center items-center my-12 bg-transparent relative z-20">
-        <div 
+        <div
           className="w-full aspect-[16/9] bg-[#002261] dark:bg-black overflow-hidden relative flex justify-center items-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-gray-200 dark:border-white/10"
           style={{
             width: `calc(100% - ${(1 - expandPercent) * 48}px)`,
@@ -187,9 +175,9 @@ export default function PublicPortalHub() {
             borderRadius: `${containerRadius}px`,
           }}
         >
-          <img 
-            src="/crest_public_hero.png" 
-            alt="CREST Platform System Preview" 
+          <img
+            src="/crest_public_hero.png"
+            alt="CREST Platform System Preview"
             className="w-full h-full object-cover object-center transition-transform duration-300 ease-out"
             style={{
               transform: `scale(${imgScale})`,
@@ -201,7 +189,7 @@ export default function PublicPortalHub() {
       </div>
 
       {/* 3. Main Content Section - UNDISSOLVES (fades, slides & unblurs) smoothly onto screen as we scroll! */}
-      <main 
+      <main
         className="max-w-6xl mx-auto w-full px-4 py-16 flex-grow transition-all duration-700 ease-out"
         style={{
           opacity: cardsScrollPercent,
@@ -209,7 +197,7 @@ export default function PublicPortalHub() {
           filter: `blur(${(1 - cardsScrollPercent) * 10}px)`,
         }}
       >
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           {/* Card 1: Lodge Complaint */}
           <div className={cardClass + " dark:hover:shadow-[0_0_30px_rgba(227,24,55,0.08)] dark:hover:border-white/20 hover:shadow-red-500/5 hover:border-gray-300"}>
@@ -272,7 +260,7 @@ export default function PublicPortalHub() {
               </p>
             </div>
             <div className="mt-8">
-              <button 
+              <button
                 onClick={() => setActiveSection(activeSection === "learning" ? "none" : "learning")}
                 className="inline-block px-6 py-2.5 rounded-full font-bold text-sm tracking-wide transition-all duration-300 shadow-md border
                   bg-black border-black text-white hover:bg-gray-800 hover:border-gray-800 hover:shadow-lg
@@ -287,7 +275,7 @@ export default function PublicPortalHub() {
           <div className={cardClass + " dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.08)] dark:hover:border-white/20 hover:shadow-emerald-500/5 hover:border-gray-300"}>
             <div>
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-2xl tracking-tight dark:text-white text-gray-900">Contact Nodal Authorities</h3>
+                <h3 className="font-bold text-2xl tracking-tight dark:text-white text-gray-900">Contact Admin</h3>
                 <PhoneCall className="w-8 h-8 dark:text-slate-400 text-gray-800" strokeWidth={1.5} />
               </div>
               <p className="text-sm font-semibold mb-2 dark:text-amber-400 text-emerald-700">
@@ -298,7 +286,7 @@ export default function PublicPortalHub() {
               </p>
             </div>
             <div className="mt-8">
-              <button 
+              <button
                 onClick={() => setActiveSection(activeSection === "contact" ? "none" : "contact")}
                 className="inline-block px-6 py-2.5 rounded-full font-bold text-sm tracking-wide transition-all duration-300 shadow-md border
                   bg-black border-black text-white hover:bg-gray-800 hover:border-gray-800 hover:shadow-lg
@@ -308,7 +296,7 @@ export default function PublicPortalHub() {
               </button>
             </div>
           </div>
-          
+
         </div>
 
         {/* Dynamic Section: Learning Corner */}
@@ -326,23 +314,43 @@ export default function PublicPortalHub() {
             </div>
 
             <div className="space-y-4">
-              {faqs.map((faq, idx) => (
-                <div key={idx} className="border rounded-2xl overflow-hidden transition-all duration-300
-                  dark:border-white/10 dark:hover:bg-white/5
-                  border-gray-200 hover:bg-gray-50/50">
-                  <button 
-                    onClick={() => toggleFaq(idx)}
-                    className="w-full flex items-center justify-between p-5 font-bold text-left text-sm
-                      dark:text-slate-200 text-gray-800"
+              {FAQ_CATEGORIES.map((cat, catIdx) => (
+                <div key={catIdx} className="border rounded-2xl overflow-hidden transition-all duration-300 dark:border-white/10 dark:hover:bg-white/5 border-gray-200 hover:bg-gray-50/50">
+                  <button
+                    onClick={() => toggleCategory(catIdx)}
+                    className="w-full flex items-center justify-between p-5 font-bold text-left text-lg
+                      dark:text-white text-gray-900 bg-gray-50 dark:bg-white/5"
                   >
-                    <span>{faq.q}</span>
-                    {openFaq === idx ? <ChevronUp className="w-4 h-4 dark:text-slate-500 text-gray-400" /> : <ChevronDown className="w-4 h-4 dark:text-slate-500 text-gray-400" />}
+                    <span>{cat.category}</span>
+                    {openCategory === catIdx ? <ChevronUp className="w-5 h-5 dark:text-slate-400 text-gray-500" /> : <ChevronDown className="w-5 h-5 dark:text-slate-400 text-gray-500" />}
                   </button>
-                  {openFaq === idx && (
-                    <div className="px-5 pb-5 pt-1 text-sm leading-relaxed border-t
-                      dark:border-white/10 dark:text-slate-300 dark:bg-white/5
-                      border-gray-100 text-gray-600 bg-gray-50/30">
-                      {faq.a}
+
+                  {openCategory === catIdx && (
+                    <div className="p-5 border-t dark:border-white/10 border-gray-200 space-y-3 bg-white dark:bg-black/20">
+                      {cat.faqs.map((faq, faqIdx) => {
+                        const faqId = `${catIdx}-${faqIdx}`;
+                        return (
+                          <div key={faqId} className="border rounded-xl overflow-hidden transition-all duration-300
+                            dark:border-white/10 dark:hover:bg-white/5
+                            border-gray-200 hover:bg-gray-50/50">
+                            <button
+                              onClick={() => toggleFaq(faqId)}
+                              className="w-full flex items-center justify-between p-4 font-bold text-left text-sm
+                                dark:text-slate-200 text-gray-800"
+                            >
+                              <span>{faq.q}</span>
+                              {openFaq === faqId ? <ChevronUp className="w-4 h-4 dark:text-slate-500 text-gray-400" /> : <ChevronDown className="w-4 h-4 dark:text-slate-500 text-gray-400" />}
+                            </button>
+                            {openFaq === faqId && (
+                              <div className="px-4 pb-4 pt-1 text-sm leading-relaxed border-t
+                                dark:border-white/10 dark:text-slate-300 dark:bg-transparent
+                                border-gray-100 text-gray-600 bg-transparent">
+                                {faq.a}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -351,7 +359,7 @@ export default function PublicPortalHub() {
           </div>
         )}
 
-        {/* Dynamic Section: Contact Directory - STYLED IN SAMSUNG LAYOUT */}
+
         {activeSection === "contact" && (
           <div className="backdrop-blur-xl rounded-[2rem] border shadow-2xl animate-fade-in-up mb-12 p-8 md:p-12
             dark:bg-black/60 dark:border-white/10
@@ -366,8 +374,8 @@ export default function PublicPortalHub() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              
-              {/* Samsung Card 1 */}
+
+              {/*Card 1 */}
               <div className="p-8 rounded-[1.5rem] border flex flex-col justify-between min-h-[300px] relative transition-all duration-300 hover:shadow-md
                 dark:bg-white/5 dark:border-white/10
                 bg-[#f4f4f4] border-gray-200">
@@ -395,13 +403,13 @@ export default function PublicPortalHub() {
                 </div>
               </div>
 
-              {/* Samsung Card 2 */}
+              {/*Card 2 */}
               <div className="p-8 rounded-[1.5rem] border flex flex-col justify-between min-h-[300px] relative transition-all duration-300 hover:shadow-md
                 dark:bg-white/5 dark:border-white/10
                 bg-[#f4f4f4] border-gray-200">
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
-                    <h3 className="font-extrabold text-xl tracking-tight dark:text-white text-gray-900">Principal Nodal Officer</h3>
+                    <h3 className="font-extrabold text-xl tracking-tight dark:text-white text-gray-900">Admin: Ayushi not aayush</h3>
                     <p className="text-xs font-semibold dark:text-blue-400 text-blue-700">Response: Within 48 Hours</p>
                   </div>
                   <Lock className="w-6 h-6 dark:text-slate-400 text-gray-800" strokeWidth={1.5} />
@@ -423,7 +431,7 @@ export default function PublicPortalHub() {
                 </div>
               </div>
 
-              {/* Samsung Card 3 */}
+              {/* Card 3 */}
               <div className="p-8 rounded-[1.5rem] border flex flex-col justify-between min-h-[300px] relative transition-all duration-300 hover:shadow-md
                 dark:bg-white/5 dark:border-white/10
                 bg-[#f4f4f4] border-gray-200">
@@ -465,7 +473,7 @@ export default function PublicPortalHub() {
           Grievance Operations comply strictly with the Reserve Bank of India (RBI) Integrated Ombudsman Scheme. Secure sessions are monitored for safety. Union Bank of India will never ask for your passwords, transaction PINs, or security OTPs.
         </p>
       </footer>
-      
+
     </div>
   );
 }

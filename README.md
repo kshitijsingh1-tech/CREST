@@ -10,11 +10,14 @@ Union Bank of India serves millions of customers across diverse regions. Current
 2. **Static Prioritization**: FIFO queues ignore high-emotion P0 cases and decaying SLAs.
 3. **Response Inconsistency**: Manual drafting leads to compliance and quality risks.
 
-### **The Three Core Innovations**
-- **Complaint DNA Fingerprinting**: converted into 768-dim vectors. Cosine similarity > 0.92 flags duplicates instantly via **pgvector**.
-- **Emotion-Decay Priority Queue**:
+### **Core Inventions & Features**
+- **Dual-RAG Intelligence Engine**: Combines official PDF manual chunks *and* vectorized history of past successful resolutions (`pgvector`) to feed Groq grounded context for generating highly consistent draft responses.
+- **Emotion-Decay Priority Queue**: 
   `priority_score = severity_weight × anger_score × MIN(3.0, 1 + LN(1 + hours_waiting / 8))`
-- **Grounded RAG Engine**: Auto-drafts responses strictly using the Union Bank Service Manual.
+  Combines severity, live frustration scores, and wait times to boost critical or abusive cases instantly to the top of the queue.
+- **Complaint DNA Fingerprinting**: Ingested tickets are vectorized into 768-dim vectors via local SBERT; cosine similarity > 0.92 flags cross-channel duplicates instantly.
+- **Twitter/X Auto-Redirect Responder**: Integrated OAuth 1.0a (User Context) to intercept mentions, dynamically reply, and direct customers to a secure tracking portal while maintaining DPDP compliance.
+- **Adaptive AI Severity Prompting**: Ingested messages with high anger, frustration, or severe abuse are dynamically escalated to P0/P1 to protect brand integrity.
 
 ### **Technical Workflow (Enterprise Hybrid Architecture)**
 ```mermaid
@@ -114,7 +117,7 @@ CREST divides portal scopes strictly between **Public Citizens** and **Enterpris
 Designed for maximum ease-of-use and dynamic citizen redressal:
 *   **Multi-Channel Lodging:** Lodge grievances natively via direct web forms, email integrations, SMS headers, or Twitter mentions.
 *   **Dual-Factor Live Tracking:** Track resolution status in real-time securely using the alphanumeric Visual Captcha (noise grid + distortion blur) combined with double-factor OTP authentication.
-*   **RAG Knowledge Corner:** Dynamic, searchable FAQ accordion explaining consumer rights, fraud prevention guidelines, and regional nodal escalation trees.
+*   **RAG Knowledge Corner:** central 34+ FAQ structured directory mapped into 4 collapsible categories (Account Problems, Cards/Digital, Escalations, Customer Rights) to maximize readability and reduce customer friction.
 
 ---
 

@@ -25,7 +25,7 @@ from integrations.twitter.sender import send_twitter_reply
 
 logger = get_logger("crest.integrations.twitter.responder")
 
-# ── Config ────────────────────────────────────────────────────────────────────
+#---------------- Config ---------------------------------------------
 
 BANK_EMAIL       = os.getenv("BANK_SUPPORT_EMAIL",  "grievance@unionbankofindia.com")
 PORTAL_URL       = os.getenv("CREST_PORTAL_URL",    "https://unionbank.crest.in/crest_publicPortal")
@@ -35,14 +35,10 @@ BANK_HANDLE      = os.getenv("TWITTER_BANK_HANDLE", "@UnionBankTweets")
 _replied: set[str] = set()
 _lock = Lock()
 
-# ── Reply templates ────────────────────────────────────────────────────────────
+#----------- Reply templates ----------------------------------------------\
 
 def _build_reply(customer_name: str) -> str:
-    """
-    Build a warm, professional public redirect reply.
-    Keeps the tone helpful, never dismissive.
-    Stays well within Twitter's 280-char limit.
-    """
+   
     first_name = (customer_name or "").split()[0] if customer_name else "there"
 
     return (
