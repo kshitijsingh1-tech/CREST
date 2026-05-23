@@ -49,6 +49,8 @@ services:
     envVars:
       - key: NEXT_PUBLIC_API_URL
         value: https://crest-api-0uc4.onrender.com
+      - key: BACKEND_INTERNAL_URL
+        value: http://crest-api:8000
       - key: HOSTNAME
         value: "0.0.0.0"
       - key: PORT
