@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { getRegions } from "@/lib/api";
-import Header from "@/components/Header";
-
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, Send, User, MapPin, AlignLeft, CheckCircle2, Search, Mail } from "lucide-react";
+import ColorBends from "@/components/ColorBends";
 
 export default function SubmitComplaint() {
   const [regions, setRegions] = useState<any[]>([]);
@@ -46,75 +45,176 @@ export default function SubmitComplaint() {
 
   if (result) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8">
-        <div className="w-full flex justify-start mb-4 max-w-md">
-          <Link href="/ub_publicPortal" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Back to Portal
+      <div className="min-h-screen bg-slate-50 dark:bg-black flex flex-col justify-center items-center p-4 relative overflow-hidden">
+        {/* Ambient background */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none z-0">
+          <ColorBends 
+            colors={["#ef4444", "#3b82f6"]} 
+            speed={0.08} 
+            warpStrength={0.4}
+            iterations={2}
+            bandWidth={4.5}
+          />
+        </div>
+
+        <div className="absolute top-6 left-6 md:top-8 md:left-8 z-30">
+          <Link href="/ub_publicPortal" className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors bg-white/80 dark:bg-black/60 backdrop-blur-md px-4 py-2.5 rounded-full shadow-md border border-slate-200 dark:border-white/10">
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Portal
           </Link>
         </div>
-        <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-2xl text-center border-4 border-black">
-          <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">✓</div>
-          <h2 className="text-2xl font-black mb-2">Complaint Submitted</h2>
-          <p className="text-gray-600 mb-6">Your reference ID is <b>{result.complaint_id}</b></p>
-          <p className="text-xs text-gray-400 mb-6 uppercase tracking-widest">Auto-assigned to regional staff</p>
-          <button onClick={() => window.location.reload()} className="w-full py-4 bg-black text-white font-black rounded-xl uppercase tracking-widest hover:scale-105 transition-transform">Submit Another</button>
+
+        <div className="w-full max-w-md animate-fade-in-up relative z-10 space-y-6">
+          <div className="bg-white/80 dark:bg-black/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200 dark:border-white/10 p-8 text-center relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
+            
+            <div className="w-16 h-16 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            
+            <h2 className="text-xl font-black mb-2 uppercase tracking-widest dark:text-white text-[#0f2347]">Grievance Lodged</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 uppercase tracking-widest font-semibold leading-relaxed">
+              Your reference ID is securely generated. Please keep it safe.
+            </p>
+            
+            <div className="mb-8 p-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl flex items-center justify-center select-all cursor-copy hover:border-blue-500/30 transition-colors">
+              <span className="font-mono text-lg font-black tracking-widest dark:text-blue-400 text-blue-700">
+                {result.complaint_id}
+              </span>
+            </div>
+            
+            <div className="space-y-3">
+              <Link href="/track" className="w-full flex items-center justify-center gap-2 py-4 bg-[#0f2347] dark:bg-blue-600 text-white font-black rounded-2xl uppercase tracking-widest hover:bg-[#16305c] dark:hover:bg-blue-700 transition-all duration-300 shadow-lg text-xs">
+                <Search className="w-4 h-4" /> Track Status Now
+              </Link>
+              <button onClick={() => window.location.reload()} className="w-full flex items-center justify-center py-4 bg-transparent border-2 border-slate-200 dark:border-white/10 dark:text-white text-[#0f2347] font-black rounded-2xl uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-300 text-xs">
+                Lodge Another
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 max-w-2xl mx-auto w-full py-12 px-6 relative">
-      <Link href="/ub_publicPortal" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors mb-6">
-        <ArrowLeft className="w-4 h-4" /> Back to Portal
-      </Link>
-      <h1 className="text-4xl font-black mb-8 tracking-tighter italic">LODGE A GRIEVANCE</h1>
-      
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Customer ID / Email</label>
-            <input required value={form.customer_id} onChange={e => setForm({...form, customer_id: e.target.value})} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none" />
+    <div className="min-h-screen bg-slate-50 dark:bg-black flex flex-col justify-center items-center p-4 py-12 relative overflow-hidden">
+      {/* Ambient background */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none z-0">
+        <ColorBends 
+          colors={["#ef4444", "#3b82f6"]} 
+          speed={0.08} 
+          warpStrength={0.4}
+          iterations={2}
+          bandWidth={4.5}
+        />
+      </div>
+
+      <div className="absolute top-6 left-6 md:top-8 md:left-8 z-30">
+        <Link href="/ub_publicPortal" className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors bg-white/80 dark:bg-black/60 backdrop-blur-md px-4 py-2.5 rounded-full shadow-md border border-slate-200 dark:border-white/10">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to Portal
+        </Link>
+      </div>
+
+      <div className="w-full max-w-2xl animate-fade-in-up relative z-10 space-y-6">
+        
+        {/* Branding */}
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white dark:bg-black/60 shadow-xl mb-4 border border-slate-200 dark:border-white/10 overflow-hidden">
+            <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
           </div>
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Full Name</label>
-            <input required value={form.customer_name} onChange={e => setForm({...form, customer_name: e.target.value})} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none" />
+          <h1 className="text-2xl font-black tracking-tight uppercase flex justify-center items-center gap-0.5 dark:text-white text-[#0f2347]">
+            <span className="text-[#0052ff]">ub_</span>
+            <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              CREST
+            </span>
+          </h1>
+          <p className="text-[10px] uppercase tracking-widest dark:text-slate-400 text-slate-500 font-extrabold mt-1">Grievance Lodging Gateway</p>
+        </div>
+
+        {/* Lodging Card */}
+        <div className="bg-white/80 dark:bg-black/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
+          <div className="bg-[#0f2347] dark:bg-white/5 px-6 py-4.5 border-b border-[#1c386b] dark:border-white/10 flex justify-between items-center">
+            <h2 className="text-sm font-black uppercase tracking-wider text-white dark:text-slate-200 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-red-500" /> Lodge a Grievance
+            </h2>
+            <Link href="/track" className="text-[10px] font-bold tracking-widest text-blue-300 hover:text-white transition-colors uppercase flex items-center gap-1.5">
+              Track Status <Search className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6.5 space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Customer ID / Email</label>
+                <div className="relative group rounded-2xl p-[1.5px] transition-all duration-300 bg-slate-200 dark:bg-white/10 focus-within:bg-gradient-to-r focus-within:from-[#0052ff] focus-within:to-[#e31837] focus-within:shadow-[0_0_15px_rgba(0,82,255,0.25)]">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                    <Mail className="h-4.5 w-4.5 text-slate-400" />
+                  </div>
+                  <input required value={form.customer_id} onChange={e => setForm({...form, customer_id: e.target.value})} className="block w-full pl-10 pr-3.5 py-4 bg-white dark:bg-black rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-colors text-sm" placeholder="user@example.com" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Full Name</label>
+                <div className="relative group rounded-2xl p-[1.5px] transition-all duration-300 bg-slate-200 dark:bg-white/10 focus-within:bg-gradient-to-r focus-within:from-[#0052ff] focus-within:to-[#e31837] focus-within:shadow-[0_0_15px_rgba(0,82,255,0.25)]">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                    <User className="h-4.5 w-4.5 text-slate-400" />
+                  </div>
+                  <input required value={form.customer_name} onChange={e => setForm({...form, customer_name: e.target.value})} className="block w-full pl-10 pr-3.5 py-4 bg-white dark:bg-black rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-colors text-sm" placeholder="John Doe" />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Region / Branch</label>
+              <div className="relative group rounded-2xl p-[1.5px] transition-all duration-300 bg-slate-200 dark:bg-white/10 focus-within:bg-gradient-to-r focus-within:from-[#0052ff] focus-within:to-[#e31837] focus-within:shadow-[0_0_15px_rgba(0,82,255,0.25)]">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <MapPin className="h-4.5 w-4.5 text-slate-400" />
+                </div>
+                <select required value={form.region_id} onChange={e => setForm({...form, region_id: e.target.value})} className="block w-full pl-10 pr-3.5 py-4 bg-white dark:bg-black rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-colors text-sm appearance-none">
+                  <option value="">Select your nearest region...</option>
+                  {regions.map(r => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Subject</label>
+              <div className="relative group rounded-2xl p-[1.5px] transition-all duration-300 bg-slate-200 dark:bg-white/10 focus-within:bg-gradient-to-r focus-within:from-[#0052ff] focus-within:to-[#e31837] focus-within:shadow-[0_0_15px_rgba(0,82,255,0.25)]">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                  <FileText className="h-4.5 w-4.5 text-slate-400" />
+                </div>
+                <input required value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} className="block w-full pl-10 pr-3.5 py-4 bg-white dark:bg-black rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-colors text-sm" placeholder="Brief summary of issue" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Detailed Complaint</label>
+              <div className="relative group rounded-2xl p-[1.5px] transition-all duration-300 bg-slate-200 dark:bg-white/10 focus-within:bg-gradient-to-r focus-within:from-[#0052ff] focus-within:to-[#e31837] focus-within:shadow-[0_0_15px_rgba(0,82,255,0.25)]">
+                <div className="absolute top-4 left-0 pl-3.5 flex items-start pointer-events-none z-10">
+                  <AlignLeft className="h-4.5 w-4.5 text-slate-400" />
+                </div>
+                <textarea required rows={5} value={form.body} onChange={e => setForm({...form, body: e.target.value})} className="block w-full pl-10 pr-3.5 py-4 bg-white dark:bg-black rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-colors text-sm resize-none" placeholder="Please describe the issue in detail..." />
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-4 px-4 border border-transparent rounded-2xl shadow-lg text-xs font-black uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 focus:outline-none disabled:opacity-70 transition-all duration-300 active:scale-[0.99] mt-6"
+            >
+              {loading ? "Processing..." : "Process Grievance"} <Send className="w-4 h-4 ml-1" />
+            </button>
+          </form>
+
+          <div className="bg-slate-50/50 dark:bg-white/5 px-6 py-5 border-t border-slate-200 dark:border-white/10 space-y-4">
+            <p className="text-[9px] text-center text-slate-500 dark:text-slate-400/80 leading-relaxed font-bold uppercase tracking-wider">
+              <strong>Official Notice:</strong> Please protect your session. Operations are monitored. Misuse of the grievance lodging portal may lead to action under applicable laws.
+            </p>
           </div>
         </div>
-
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Region / Branch</label>
-          <select 
-            required 
-            value={form.region_id} 
-            onChange={e => setForm({...form, region_id: e.target.value})}
-            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none appearance-none"
-          >
-            <option value="">Select your nearest region...</option>
-            {regions.map(r => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Subject</label>
-          <input required value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none" />
-        </div>
-
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Detailed Complaint</label>
-          <textarea required rows={5} value={form.body} onChange={e => setForm({...form, body: e.target.value})} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-black outline-none" />
-        </div>
-
-        <button 
-          type="submit" 
-          disabled={loading}
-          className="w-full py-5 bg-black text-white font-black rounded-2xl uppercase tracking-widest hover:bg-gray-800 transition-colors disabled:opacity-50"
-        >
-          {loading ? "Analyzing..." : "Process Grievance →"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }
