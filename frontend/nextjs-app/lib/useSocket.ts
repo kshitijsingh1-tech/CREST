@@ -11,8 +11,8 @@ import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 
 const getSocketUrl = () => {
-  if (typeof window !== "undefined") {
-    // In browser, NEXT_PUBLIC_API_URL is baked in if passed at build, otherwise fallback to prod
+  if (typeof window === "undefined") {
+    // Server-side / static build context fallback
     return process.env.NEXT_PUBLIC_API_URL ?? "https://crest-api-0uc4.onrender.com";
   }
   // Browser: connect socket.io via the Next.js reverse proxy (same origin, no CORS)
