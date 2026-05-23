@@ -11,12 +11,8 @@ import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 
 const getSocketUrl = () => {
-  if (typeof window === "undefined") {
-    // Server-side / static build context fallback
-    return process.env.NEXT_PUBLIC_API_URL ?? "https://crest-api-0uc4.onrender.com";
-  }
-  // Browser: connect socket.io via the Next.js reverse proxy (same origin, no CORS)
-  return window.location.origin;
+  // Connect directly to the live FastAPI backend Socket.IO server (Next.js proxy rewrites do not support WebSocket upgrades)
+  return process.env.NEXT_PUBLIC_API_URL ?? "https://crest-api-0uc4.onrender.com";
 };
 
 interface SocketEvents {
