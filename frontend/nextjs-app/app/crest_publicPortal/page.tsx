@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   FileText,
@@ -13,7 +13,11 @@ import {
   ArrowRight,
   ShieldAlert,
   Clock,
-  Lock
+  Lock,
+  MessageSquare,
+  Send,
+  X,
+  Sparkles
 } from "lucide-react";
 import ColorBends from "@/components/ColorBends";
 import GoogleTranslate from "@/components/GoogleTranslate";
@@ -23,6 +27,52 @@ export default function PublicPortalHub() {
   const [activeSection, setActiveSection] = useState<"none" | "learning" | "contact">("none");
   const [openFaq, setOpenFaq] = useState<string | null>(null);
   const [openCategory, setOpenCategory] = useState<number | null>(null);
+
+  // Chatbot State
+  const [chatOpen, setChatOpen] = useState(false);
+  const [alertVisible, setAlertVisible] = useState(true);
+  const [chatMessages, setChatMessages] = useState<any[]>([
+    { role: "assistant", content: "Hello! I am Cresty, your Union Bank support assistant. How can I help you resolve a dispute or find policy details today?" }
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages, chatOpen]);
+
+  const handleSendChatMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || chatLoading) return;
+    const userMsg = { role: "user", content: chatInput.trim() };
+    setChatMessages(prev => [...prev, userMsg]);
+    setChatInput("");
+    setChatLoading(true);
+
+    try {
+      const res = await fetch("/api/public/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...chatMessages, userMsg].map(m => ({ role: m.role, content: m.content }))
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setChatMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
+      } else {
+        setChatMessages(prev => [...prev, { role: "assistant", content: "I apologize, but I failed to reach the AI engine. Please try again!" }]);
+      }
+    } catch (err) {
+      setChatMessages(prev => [...prev, { role: "assistant", content: "Failed to connect to assistant. Please check your internet connection." }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
   const [theme, setTheme] = useState<"dark" | "light">("light");
   const [scrollY, setScrollY] = useState(0);
 
@@ -478,6 +528,139 @@ export default function PublicPortalHub() {
           Grievance Operations comply strictly with the Reserve Bank of India (RBI) Integrated Ombudsman Scheme. Secure sessions are monitored for safety. Union Bank of India will never ask for your passwords, transaction PINs, or security OTPs.
         </p>
       </footer>
+
+      {/* Floating Chatbot Widget */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end group">
+        {/* Expanded Chat Box */}
+        {chatOpen && (
+          <div className="w-80 md:w-96 h-[460px] rounded-3xl border shadow-2xl flex flex-col overflow-hidden mb-4 animate-in fade-in slide-in-from-bottom-5 duration-300 backdrop-blur-2xl
+            dark:bg-black/90 dark:border-white/10 dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)]
+            bg-white/95 border-gray-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)]">
+            
+            {/* Header */}
+            <div className="p-4 border-b flex items-center justify-between bg-gradient-to-r from-[#0052ff] via-[#9b1aff] to-[#ff2200] text-white rounded-t-3xl dark:border-white/10 shadow-md">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl overflow-hidden bg-white flex items-center justify-center relative border border-white/20 shadow-sm">
+                  <img src="/cresty.png" alt="Cresty Avatar" className="w-full h-full object-contain scale-[1.3]" />
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white"></span>
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-xs uppercase tracking-wider leading-none text-white/95">Cresty</h3>
+                  <span className="text-[10px] text-white/80 font-medium">RBI Assistant Bot</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setChatOpen(false)}
+                className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
+                title="Close chat"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin dark:bg-black/30">
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-200`}>
+                  <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed font-medium shadow-sm ${
+                    msg.role === 'user' 
+                      ? 'bg-blue-600 text-white rounded-tr-none' 
+                      : 'dark:bg-white/5 dark:text-slate-300 dark:border-white/5 bg-gray-100 text-gray-800 rounded-tl-none border border-gray-200/50'
+                  }`}>
+                    <p className="whitespace-pre-line">{msg.content}</p>
+                  </div>
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="flex justify-start animate-pulse">
+                  <div className="max-w-[85%] rounded-2xl rounded-tl-none px-4 py-3 dark:bg-white/5 bg-gray-100 text-gray-400 text-xs border dark:border-white/5 border-gray-200/50 flex items-center gap-1.5 font-bold uppercase tracking-widest text-[9px]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce delay-75"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce delay-150"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce delay-300"></span>
+                    Cresty typing...
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Input form */}
+            <form onSubmit={handleSendChatMessage} className="p-3 border-t dark:border-white/10 dark:bg-black/40 bg-gray-50 flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                placeholder="Ask Cresty about bank policies, refunds..."
+                className="flex-1 bg-white dark:bg-black border dark:border-white/10 border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:text-white"
+                disabled={chatLoading}
+              />
+              <button 
+                type="submit" 
+                disabled={chatLoading || !chatInput.trim()}
+                className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 transition-colors flex items-center justify-center"
+                title="Send message"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Tooltip Alert Bubble */}
+        {!chatOpen && alertVisible && (
+          <div className="mb-1 mr-1 bg-white/95 dark:bg-slate-900/95 border dark:border-white/10 border-gray-200/80 px-4 py-3 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.1)] flex items-center gap-3 animate-in slide-in-from-bottom-3 duration-300 relative max-w-[280px] group/alert border-b-2 border-r-2 border-b-indigo-500/20 border-r-indigo-500/20">
+            {/* Pulsing indicator */}
+            <span className="flex h-2.5 w-2.5 shrink-0 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff2200] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#ff2200]"></span>
+            </span>
+            <div className="text-left select-none">
+              <p className="text-[9px] font-black uppercase tracking-widest text-black dark:text-white opacity-60 leading-none mb-0.5">Assistant</p>
+              <p className="text-xs font-black bg-gradient-to-r from-[#0052ff] via-[#9b1aff] to-[#ff2200] bg-clip-text text-transparent leading-tight">
+                Chat with Cresty
+              </p>
+            </div>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setAlertVisible(false);
+              }}
+              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+              title="Dismiss alert"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            {/* Arrow pointing down at the button */}
+            <div className="absolute right-5 -bottom-1.5 w-3 h-3 bg-white dark:bg-slate-900 border-r border-b dark:border-white/10 border-gray-200 rotate-45"></div>
+          </div>
+        )}
+
+        {/* Custom CSS Hover Tooltip (rendered only after alert is dismissed) */}
+        {!chatOpen && !alertVisible && (
+          <div className="absolute right-0 bottom-16 bg-white dark:bg-slate-900/95 px-3.5 py-2 rounded-xl shadow-lg border border-gray-200 dark:border-white/10 text-[11px] font-extrabold whitespace-nowrap opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-50 select-none">
+            <span className="bg-gradient-to-r from-[#0052ff] via-[#9b1aff] to-[#ff2200] bg-clip-text text-transparent font-black">
+              Chat with Cresty
+            </span>
+            {/* Tiny arrow pointing down */}
+            <div className="absolute right-6 -bottom-1 w-2 h-2 bg-white dark:bg-slate-900 border-r border-b border-gray-200 dark:border-white/10 rotate-45"></div>
+          </div>
+        )}
+
+        {/* Toggle Button */}
+        <button
+          onClick={() => setChatOpen(!chatOpen)}
+          className="w-14 h-14 rounded-full bg-gradient-to-r from-[#0052ff] via-[#9b1aff] to-[#ff2200] shadow-[0_4px_25px_rgba(79,70,229,0.35)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.5)] hover:scale-110 active:scale-95 text-white flex items-center justify-center transition-all duration-300 relative overflow-hidden border border-white/10"
+        >
+          {chatOpen ? (
+            <X className="w-6 h-6 animate-in spin-in duration-200" />
+          ) : (
+            <div className="w-full h-full p-1.5 flex items-center justify-center bg-white">
+              <img src="/cresty.png" alt="Cresty logo" className="w-full h-full object-contain scale-[1.2] group-hover:scale-[1.3] transition-transform duration-300" />
+            </div>
+          )}
+          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#ff2200] border-2 border-white rounded-full flex items-center justify-center text-[7px] text-white font-black animate-bounce shadow-sm">1</span>
+        </button>
+      </div>
 
     </div>
   );
