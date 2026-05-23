@@ -121,23 +121,41 @@ def volume_trend(
     days: int = Query(14, le=90),
     db: Session | None = Depends(get_db_optional),
 ):
+    if db.bind.dialect.name == "sqlite":
+        # SQLite compatible trend query
+        rows = db.execute(
+            text(
+                """
+                SELECT date(created_at) AS day,
+                       COUNT(*) AS total,
+                       SUM(CASE WHEN is_duplicate = 1 THEN 1 ELSE 0 END) AS duplicates,
+                       SUM(CASE WHEN severity = 0 THEN 1 ELSE 0 END) AS p0_count
+                FROM complaints
+                WHERE created_at >= datetime('now', '-' || :days || ' days')
+                GROUP BY day
+                ORDER BY day ASC
+                """
+            ),
+            {"days": days},
+        ).fetchall()
+    else:
+        # PostgreSQL compatible trend query
+        rows = db.execute(
+            text(
+                """
+                SELECT DATE(created_at AT TIME ZONE 'Asia/Kolkata') AS day,
+                       COUNT(*) AS total,
+                       COUNT(*) FILTER (WHERE is_duplicate = TRUE) AS duplicates,
+                       COUNT(*) FILTER (WHERE severity = 0) AS p0_count
+                FROM complaints
+                WHERE created_at >= NOW() - make_interval(days => :days)
+                GROUP BY day
+                ORDER BY day ASC
+                """
+            ),
+            {"days": days},
+        ).fetchall()
 
-
-    rows = db.execute(
-        text(
-            """
-            SELECT DATE(created_at AT TIME ZONE 'Asia/Kolkata') AS day,
-                   COUNT(*) AS total,
-                   COUNT(*) FILTER (WHERE is_duplicate = TRUE) AS duplicates,
-                   COUNT(*) FILTER (WHERE severity = 0) AS p0_count
-            FROM complaints
-            WHERE created_at >= NOW() - make_interval(days => :days)
-            GROUP BY day
-            ORDER BY day ASC
-            """
-        ),
-        {"days": days},
-    ).fetchall()
     return [
         {
             "date": str(r.day),
@@ -147,6 +165,7 @@ def volume_trend(
         }
         for r in rows
     ]
+
 
 
 @router.get("/sla-health")

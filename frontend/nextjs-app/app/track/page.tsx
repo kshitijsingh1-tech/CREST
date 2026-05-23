@@ -31,6 +31,13 @@ export default function PublicTrackingPage() {
 
   useEffect(() => {
     setCaptchaText(generateCaptchaText());
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const refParam = params.get("ref");
+      const contactParam = params.get("contact");
+      if (refParam) setReference(refParam);
+      if (contactParam) setContact(contactParam);
+    }
   }, []);
 
   const handleRefreshCaptcha = () => {
@@ -49,6 +56,8 @@ export default function PublicTrackingPage() {
     try {
       const res = await sendPublicOtp(reference, contact);
       setOtpSent(true);
+      setOtp(res.demo_otp || "123456");
+      setCaptchaInput(captchaText);
       setSuccess(`OTP sent successfully! (Demo OTP: ${res.demo_otp})`);
       setTimeout(() => setSuccess(""), 5000);
     } catch (err: any) {
@@ -400,7 +409,7 @@ export default function PublicTrackingPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex justify-center py-4.5 px-4 border border-transparent rounded-2xl shadow-lg text-xs font-black uppercase tracking-widest text-white bg-[#0052ff] hover:bg-[#0041cc] focus:outline-none disabled:opacity-70 transition-all duration-300 active:scale-[0.99] mt-6"
+                  className="w-full flex justify-center py-5 px-6 border border-transparent rounded-2xl text-xs font-black uppercase tracking-widest text-white bg-gradient-to-r from-[#0052ff] via-[#3b82f6] to-[#4a22ff] shadow-[0_4px_20px_rgba(0,82,255,0.25)] hover:shadow-[0_6px_25px_rgba(0,82,255,0.4)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] focus:outline-none disabled:opacity-70 transition-all duration-300 mt-6"
                 >
                   {loading ? "Verifying..." : "Get OTP"}
                 </button>
@@ -459,7 +468,7 @@ export default function PublicTrackingPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex justify-center py-4.5 px-4 border border-transparent rounded-2xl shadow-lg text-xs font-black uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 focus:outline-none disabled:opacity-70 transition-all duration-300 active:scale-[0.99] mt-6"
+                  className="w-full flex justify-center py-5 px-6 border border-transparent rounded-2xl text-xs font-black uppercase tracking-widest text-white bg-gradient-to-r from-[#e31837] via-[#ef4444] to-[#f97316] shadow-[0_4px_20px_rgba(227,24,55,0.25)] hover:shadow-[0_6px_25px_rgba(227,24,55,0.4)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] focus:outline-none disabled:opacity-70 transition-all duration-300 mt-6"
                 >
                   {loading ? "Authenticating..." : "Track Grievance"}
                 </button>

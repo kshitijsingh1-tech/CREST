@@ -12,7 +12,14 @@ export default async function CommandCenterHome() {
     redirect("/ub_CREST/login");
   }
 
-  const spikes = await getSpikeSignals(24).catch(() => []);
+  let spikes: Awaited<ReturnType<typeof getSpikeSignals>> = [];
+  let spikesUnavailable = false;
+  try {
+    spikes = await getSpikeSignals(24);
+  } catch (error) {
+    spikesUnavailable = true;
+    console.error("Failed to load spike signals for command center home", error);
+  }
 
   const roleLabel =
     user.role === "SUPER_ADMIN" ? "Super Administrator" :
@@ -202,7 +209,13 @@ export default async function CommandCenterHome() {
               </svg>
               Recent AI Spikes (24H)
             </h2>
-            {spikes.length === 0 ? (
+            {spikesUnavailable ? (
+              <div className="h-full flex items-center justify-center text-center">
+                <p className="text-[10px] font-bold uppercase tracking-widest dark:text-red-400/70 text-red-500">
+                  Spike signal feed unavailable.
+                </p>
+              </div>
+            ) : spikes.length === 0 ? (
               <div className="h-full flex items-center justify-center text-center">
                 <p className="text-[10px] font-bold uppercase tracking-widest dark:text-red-500/50 text-red-400">Zero active spikes detected.</p>
               </div>

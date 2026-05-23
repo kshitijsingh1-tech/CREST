@@ -12,7 +12,13 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 from sqlalchemy import Boolean, Column, DateTime, Index, Integer, Numeric, String, Text, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+import os
+db_url = os.getenv("CREST_DB_URL", "")
+if "sqlite" in db_url.lower() or os.getenv("CREST_USE_PGVECTOR", "1") == "0":
+    from sqlalchemy import JSON as JSONB
+    from sqlalchemy import UUID
+else:
+    from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from backend.utils.db import Base
 from backend.utils.runtime import USE_PGVECTOR

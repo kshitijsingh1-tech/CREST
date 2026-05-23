@@ -31,11 +31,16 @@ export default function SubmitComplaint() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          channel: "web_portal",
+          channel: "web",
           region_id: form.region_id ? Number(form.region_id) : null,
         }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        alert(data.detail || "Failed to submit complaint");
+        setLoading(false);
+        return;
+      }
       setResult(data);
     } catch (err) {
       alert("Failed to submit complaint");
@@ -85,10 +90,10 @@ export default function SubmitComplaint() {
             </div>
             
             <div className="space-y-3 pt-2">
-              <Link href="/track" className="w-full flex items-center justify-center gap-2 py-4 bg-[#0052ff] hover:bg-[#0041cc] text-white font-black rounded-2xl uppercase tracking-widest transition-all duration-300 shadow-lg text-xs">
+              <Link href={`/track?ref=${encodeURIComponent(result.complaint_id)}&contact=${encodeURIComponent(form.customer_id)}`} className="w-full flex items-center justify-center gap-2 py-5 px-6 bg-gradient-to-r from-[#0052ff] via-[#3b82f6] to-[#4a22ff] shadow-[0_4px_20px_rgba(0,82,255,0.25)] hover:shadow-[0_6px_25px_rgba(0,82,255,0.4)] text-white font-black rounded-2xl uppercase tracking-widest hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 text-xs">
                 <Search className="w-4 h-4" /> Track Status Now
               </Link>
-              <button onClick={() => window.location.reload()} className="w-full flex items-center justify-center py-4 bg-transparent border border-slate-200 dark:border-white/10 dark:text-white text-slate-700 font-black rounded-2xl uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-300 text-xs">
+              <button onClick={() => window.location.reload()} className="w-full flex items-center justify-center py-5 px-6 bg-transparent border border-slate-200 dark:border-white/10 dark:text-white text-slate-700 font-black rounded-2xl uppercase tracking-widest hover:bg-slate-100/50 dark:hover:bg-white/10 active:scale-[0.98] transition-all duration-300 text-xs">
                 Lodge Another
               </button>
             </div>
@@ -205,7 +210,7 @@ export default function SubmitComplaint() {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-4.5 px-4 border border-transparent rounded-2xl shadow-lg text-xs font-black uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 focus:outline-none disabled:opacity-70 transition-all duration-300 active:scale-[0.99] mt-6"
+              className="w-full flex items-center justify-center gap-2 py-5 px-6 border border-transparent rounded-2xl text-xs font-black uppercase tracking-widest text-white bg-gradient-to-r from-[#e31837] via-[#ef4444] to-[#f97316] shadow-[0_4px_20px_rgba(227,24,55,0.25)] hover:shadow-[0_6px_25px_rgba(227,24,55,0.4)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] focus:outline-none disabled:opacity-70 transition-all duration-300 mt-6"
             >
               {loading ? "Processing..." : "Process Grievance"} <Send className="w-4 h-4 ml-1" />
             </button>

@@ -14,7 +14,13 @@ from sqlalchemy import (
     Boolean, Column, DateTime, ForeignKey, Integer,
     Numeric, SmallInteger, String, Text, func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+import os
+db_url = os.getenv("CREST_DB_URL", "")
+if "sqlite" in db_url.lower() or os.getenv("CREST_USE_PGVECTOR", "1") == "0":
+    from sqlalchemy import JSON as JSONB
+    from sqlalchemy import UUID
+else:
+    from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from backend.utils.db import Base
