@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Search, KeyRound, ShieldCheck, Mail, RefreshCw, FileText, ArrowLeft, Download, XCircle, RotateCcw, UploadCloud, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { sendPublicOtp, trackPublicComplaint, submitPublicAction } from "@/lib/api";
+import ColorBends from "@/components/ColorBends";
 
 const generateCaptchaText = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
@@ -300,74 +301,92 @@ export default function PublicTrackingPage() {
 
   // Phase 1: Verification Gateway
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4 relative">
-      <div className="absolute top-6 left-6 md:top-8 md:left-8">
-        <Link href="/ub_publicPortal" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200">
-          <ArrowLeft className="w-4 h-4" /> Back to Portal
+    <div className="min-h-screen bg-slate-50 dark:bg-black flex flex-col justify-center items-center p-4 relative overflow-hidden">
+      
+      {/* Ambient background neon sweeps matching other public portal elements */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none z-0">
+        <ColorBends 
+          colors={["#ef4444", "#3b82f6"]} 
+          speed={0.08} 
+          warpStrength={0.4}
+          iterations={2}
+          bandWidth={4.5}
+        />
+      </div>
+
+      <div className="absolute top-6 left-6 md:top-8 md:left-8 z-30">
+        <Link href="/ub_publicPortal" className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors bg-white/80 dark:bg-black/60 backdrop-blur-md px-4 py-2.5 rounded-full shadow-md border border-slate-200 dark:border-white/10">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to Portal
         </Link>
       </div>
-      <div className="w-full max-w-md animate-fade-in-up">
+
+      <div className="w-full max-w-md animate-fade-in-up relative z-10 space-y-6">
 
         {/* Branding */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#0f2347] shadow-lg mb-4">
-            <ShieldCheck className="w-8 h-8 text-red-500" />
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white dark:bg-black/60 shadow-xl mb-4 border border-slate-200 dark:border-white/10 overflow-hidden">
+            <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
           </div>
-          <h1 className="text-2xl font-bold text-[#0f2347]">Union Bank of India</h1>
-          <p className="text-slate-500">Official Grievance Tracking Portal</p>
+          <h1 className="text-2xl font-black tracking-tight uppercase flex justify-center items-center gap-0.5 dark:text-white text-[#0f2347]">
+            <span className="text-[#0052ff]">ub_</span>
+            <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              CREST
+            </span>
+          </h1>
+          <p className="text-[10px] uppercase tracking-widest dark:text-slate-400 text-slate-500 font-extrabold mt-1">Grievance Tracking Gateway</p>
         </div>
 
         {/* Tracking Card */}
-        <div className="bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden">
-          <div className="bg-[#0f2347] px-6 py-4 border-b border-[#1c386b]">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Search className="w-5 h-5 text-red-400" /> Track Complaint Status
+        <div className="bg-white/80 dark:bg-black/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
+          <div className="bg-[#0f2347] dark:bg-white/5 px-6 py-4.5 border-b border-[#1c386b] dark:border-white/10">
+            <h2 className="text-sm font-black uppercase tracking-wider text-white dark:text-slate-200 flex items-center gap-2">
+              <Search className="w-4 h-4 text-red-500" /> Track Grievance Status
             </h2>
           </div>
 
-          <div className="p-6">
+          <div className="p-6.5 space-y-5">
             {error && (
-              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">
+              <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 dark:text-red-400 text-xs font-bold rounded-2xl uppercase tracking-wider text-center animate-pulse">
                 {error}
               </div>
             )}
             {success && (
-              <div className="mb-4 p-3 bg-emerald-50 text-emerald-700 text-sm rounded-md border border-emerald-100 font-medium">
-                {success}
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold rounded-2xl uppercase tracking-wider text-center flex items-center justify-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> {success}
               </div>
             )}
 
             {!otpSent ? (
               <form onSubmit={handleSendOtp} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Acknowledgement Number / Token</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FileText className="h-5 w-5 text-slate-400" />
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Acknowledgement Number / Token</label>
+                  <div className="relative group rounded-2xl p-[1.5px] transition-all duration-300 bg-slate-200 dark:bg-white/10 focus-within:bg-gradient-to-r focus-within:from-[#0052ff] focus-within:to-[#e31837] focus-within:shadow-[0_0_15px_rgba(0,82,255,0.25)]">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <FileText className="h-4.5 w-4.5 text-slate-400" />
                     </div>
                     <input
                       type="text"
                       required
                       value={reference}
                       onChange={(e) => setReference(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      className="block w-full pl-10 pr-3.5 py-4 bg-white dark:bg-black rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-colors text-sm"
                       placeholder="e.g. UBI-GRV-XXXX or UUID"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Registered Email ID / Mobile</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-slate-400" />
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Registered Email ID / Mobile</label>
+                  <div className="relative group rounded-2xl p-[1.5px] transition-all duration-300 bg-slate-200 dark:bg-white/10 focus-within:bg-gradient-to-r focus-within:from-[#0052ff] focus-within:to-[#e31837] focus-within:shadow-[0_0_15px_rgba(0,82,255,0.25)]">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <Mail className="h-4.5 w-4.5 text-slate-400" />
                     </div>
                     <input
                       type="text"
                       required
                       value={contact}
                       onChange={(e) => setContact(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-md text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      className="block w-full pl-10 pr-3.5 py-4 bg-white dark:bg-black rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-colors text-sm"
                       placeholder="Email or Mobile No."
                     />
                   </div>
@@ -376,7 +395,7 @@ export default function PublicTrackingPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0f2347] hover:bg-[#16305c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0f2347] disabled:opacity-70 transition-colors"
+                  className="w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl shadow-lg text-xs font-black uppercase tracking-widest text-white bg-[#0f2347] dark:bg-blue-600 hover:bg-[#16305c] dark:hover:bg-blue-700 focus:outline-none disabled:opacity-70 transition-all duration-300 active:scale-[0.99] mt-6"
                 >
                   {loading ? "Verifying..." : "Get OTP"}
                 </button>
@@ -384,56 +403,59 @@ export default function PublicTrackingPage() {
             ) : (
               <form onSubmit={handleTrack} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Enter OTP</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <KeyRound className="h-5 w-5 text-slate-400" />
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Enter OTP</label>
+                  <div className="relative group rounded-2xl p-[1.5px] transition-all duration-300 bg-slate-200 dark:bg-white/10 focus-within:bg-gradient-to-r focus-within:from-[#0052ff] focus-within:to-[#e31837] focus-within:shadow-[0_0_15px_rgba(0,82,255,0.25)]">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <KeyRound className="h-4.5 w-4.5 text-slate-400" />
                     </div>
                     <input
                       type="text"
                       required
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-md text-slate-900 tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                      className="block w-full pl-10 pr-3.5 py-4 bg-white dark:bg-black rounded-2xl text-slate-900 dark:text-white tracking-widest font-mono focus:outline-none transition-colors text-sm"
                       placeholder="••••••"
                     />
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">OTP sent to {contact}</p>
+                  <p className="text-[10px] text-slate-500 mt-1.5 font-semibold">OTP sent to {contact}</p>
                 </div>
 
-                <div className="pt-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Security Captcha</label>
-                  <div className="flex gap-3 mb-2">
-                    <div className="flex-grow bg-slate-100 rounded border border-slate-200 flex items-center justify-center overflow-hidden relative select-none">
+                <div className="pt-1">
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Security Captcha</label>
+                  <div className="flex gap-3 mb-3">
+                    <div className="flex-grow bg-slate-100 dark:bg-black/90 rounded-2xl border border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden relative select-none py-3">
                       {/* Captcha Noise Background */}
-                      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
-                      <span className="relative z-10 font-mono text-2xl tracking-widest text-[#0f2347] font-bold mix-blend-multiply filter blur-[0.5px] italic">
+                      <div className="absolute inset-0 opacity-15" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+                      <span className="relative z-10 font-mono text-2xl tracking-widest text-[#0f2347] dark:text-blue-400 font-bold mix-blend-multiply dark:mix-blend-screen filter blur-[0.5px] italic">
                         {captchaText}
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={handleRefreshCaptcha}
-                      className="p-2 border border-slate-300 rounded text-slate-600 hover:bg-slate-50 transition-colors"
+                      className="p-3 border border-slate-300 dark:border-white/10 rounded-2xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
                       title="Refresh Captcha"
                     >
                       <RefreshCw className="w-5 h-5" />
                     </button>
                   </div>
-                  <input
-                    type="text"
-                    required
-                    value={captchaInput}
-                    onChange={(e) => setCaptchaInput(e.target.value)}
-                    className="block w-full px-3 py-2 border border-slate-300 rounded-md text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                    placeholder="Enter captcha text"
-                  />
+                  
+                  <div className="relative group rounded-2xl p-[1.5px] transition-all duration-300 bg-slate-200 dark:bg-white/10 focus-within:bg-gradient-to-r focus-within:from-[#0052ff] focus-within:to-[#e31837] focus-within:shadow-[0_0_15px_rgba(0,82,255,0.25)]">
+                    <input
+                      type="text"
+                      required
+                      value={captchaInput}
+                      onChange={(e) => setCaptchaInput(e.target.value)}
+                      className="block w-full px-4 py-4 bg-white dark:bg-black rounded-2xl text-slate-900 dark:text-white focus:outline-none transition-colors text-sm"
+                      placeholder="Enter captcha text"
+                    />
+                  </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 disabled:opacity-70 transition-colors mt-6"
+                  className="w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl shadow-lg text-xs font-black uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 focus:outline-none disabled:opacity-70 transition-all duration-300 active:scale-[0.99] mt-6"
                 >
                   {loading ? "Authenticating..." : "Track Grievance"}
                 </button>
@@ -442,7 +464,7 @@ export default function PublicTrackingPage() {
                   <button
                     type="button"
                     onClick={() => { setOtpSent(false); setOtp(""); }}
-                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-black uppercase tracking-widest"
                   >
                     &larr; Use different details
                   </button>
@@ -451,19 +473,19 @@ export default function PublicTrackingPage() {
             )}
           </div>
 
-          <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 space-y-4">
+          <div className="bg-slate-50/50 dark:bg-white/5 px-6 py-5 border-t border-slate-200 dark:border-white/10 space-y-4">
             {/* Quick Action Resources (Inspired by Govt portal) */}
-            <div className="grid grid-cols-2 gap-2 pt-2 border-b border-slate-200 pb-4 text-xs font-semibold text-slate-600">
-              <a href="#" onClick={(e) => { e.preventDefault(); alert("Opening Citizen Grievance Redressal Manual..."); }} className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
+            <div className="grid grid-cols-2 gap-2 pt-1 border-b border-slate-200 dark:border-white/10 pb-4 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+              <a href="#" onClick={(e) => { e.preventDefault(); alert("Opening Citizen Grievance Redressal Manual..."); }} className="flex items-center gap-1.5 hover:text-blue-700 dark:hover:text-blue-400 transition-colors">
                 <FileText className="w-4 h-4 text-red-500" /> Redressal Manual
               </a>
-              <a href="#" onClick={(e) => { e.preventDefault(); alert("Contacting National Grievance Cell Helpline..."); }} className="flex items-center gap-1.5 hover:text-blue-700 transition-colors">
+              <a href="#" onClick={(e) => { e.preventDefault(); alert("Contacting National Grievance Cell Helpline..."); }} className="flex items-center gap-1.5 hover:text-blue-700 dark:hover:text-blue-400 transition-colors">
                 <ShieldCheck className="w-4 h-4 text-emerald-500" /> Helpline Info
               </a>
             </div>
 
-            <p className="text-[10px] text-center text-slate-500 leading-relaxed">
-              <strong>Official Notice:</strong> Please protect your session. System operations are monitored. Under Section 66D of the IT Act, unauthorized access attempt is a punishable offense.
+            <p className="text-[9px] text-center text-slate-500 dark:text-slate-400/80 leading-relaxed font-bold uppercase tracking-wider">
+              <strong>Official Notice:</strong> Please protect your session. Operations are monitored. Under Section 66D of the IT Act, unauthorized access attempt is a punishable offense.
             </p>
           </div>
         </div>
