@@ -41,14 +41,24 @@ export default async function CrestAnalyticsPage() {
 
   const regionId = user.region_id ?? undefined;
 
+  // Wrap each call individually so a backend failure shows empty data instead of crashing
+  let backendError = false;
+  const safe = async <T,>(fn: () => Promise<T>, fallback: T): Promise<T> => {
+    try { return await fn(); } catch { backendError = true; return fallback; }
+  };
+
+  const emptySummary = { total_open: 0, p0_open: 0, sla_breached: 0, resolved_today: 0, duplicates_caught: 0, avg_resolution_hrs: 0 };
+
   const [summary, severities, trend, channels, categories, spikes, regions] = await Promise.all([
-    getDashboardSummary(regionId),
-    getBySeverity(regionId),
-    getVolumeTrend(14, regionId),
-    getChannelDistribution(30, regionId),
-    getByCategory(30, regionId),
-    getSpikeSignals(168),   // last 7 days (global)
-    user.role === "SUPER_ADMIN" ? getRegionDistribution() : Promise.resolve([] as RegionStat[]),
+    safe(() => getDashboardSummary(regionId), emptySummary),
+    safe(() => getBySeverity(regionId), [] as ReturnType<typeof getBySeverity> extends Promise<infer T> ? T : never[]),
+    safe(() => getVolumeTrend(14, regionId), []),
+    safe(() => getChannelDistribution(30, regionId), []),
+    safe(() => getByCategory(30, regionId), []),
+    safe(() => getSpikeSignals(168), []),
+    user.role === "SUPER_ADMIN"
+      ? safe(() => getRegionDistribution(), [] as RegionStat[])
+      : Promise.resolve([] as RegionStat[]),
   ]);
 
   const totalComplaints = categories.reduce((sum, c) => sum + c.count, 0);
@@ -75,6 +85,23 @@ export default async function CrestAnalyticsPage() {
           </Link>
         </div>
       </div>
+
+      {backendError && (
+        <div className="flex items-start gap-4 rounded-2xl border px-6 py-4 mb-2 transition-colors duration-500
+          bg-amber-50 border-amber-200 text-amber-800
+          dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-300">
+          <svg className="w-5 h-5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <div>
+            <p className="font-black text-xs uppercase tracking-widest mb-1">Backend Unreachable</p>
+            <p className="text-xs font-medium leading-relaxed">
+              The CREST API did not respond. Metrics below show last-known or empty data.
+              Ensure the backend is running and <code className="font-mono bg-amber-100 dark:bg-amber-900/40 px-1 rounded">NEXT_PUBLIC_API_URL</code> is correctly set.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-8">
         

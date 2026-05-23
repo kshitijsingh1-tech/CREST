@@ -24,7 +24,7 @@ export default function SubmitComplaint() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/complaints/ingest", {
+      const res = await fetch("/api/complaints/ingest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -31,7 +31,7 @@ export default function Header({ theme, toggleTheme }: { theme: "dark" | "light"
           <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
         </div>
         <div className="flex flex-col">
-          <h1 className="text-xl font-black tracking-tight leading-none transition-colors duration-500 bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #1a64ff, #7a22ff, #d8296a, #ff4d00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <h1 className="text-xl font-black tracking-tight leading-none transition-colors duration-500 bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             CREST
           </h1>
           <p className="text-[9px] uppercase tracking-widest font-bold mt-1 transition-colors duration-500

@@ -9,7 +9,8 @@ import Cookies from "js-cookie";
 const getBaseUrl = () => {
   // Server-side (RSC / Node): call backend directly
   if (typeof window === "undefined") {
-    return process.env.BACKEND_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+    // We check BACKEND_INTERNAL_URL (Docker network), then NEXT_PUBLIC_API_URL, then default to Render prod URL
+    return process.env.BACKEND_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "https://crest-api-0uc4.onrender.com";
   }
   // Browser: use relative URL — Next.js proxies /api/* → backend server-side (no CORS)
   return "";
