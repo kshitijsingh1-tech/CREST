@@ -95,7 +95,7 @@ export default function CrestScrollHero({
             </div>
           )}
           
-          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight leading-none drop-shadow-sm animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.1s_both] bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #1a64ff, #7a22ff, #d8296a, #ff4d00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight leading-none drop-shadow-sm animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.1s_both] bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             {title}
           </h2>
           
