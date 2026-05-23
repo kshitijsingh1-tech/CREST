@@ -20,7 +20,13 @@ EMBEDDING_DIM = 768
 
 
 def _get_mode() -> str:
-    return os.getenv("EMBEDDING_MODE", "openai").strip().lower()
+    mode = os.getenv("EMBEDDING_MODE", "openai").strip().lower()
+    # On Render's memory-constrained Free Tier, force 'mock' mode if 'local' is configured.
+    # This prevents the container from loading SentenceTransformer (which downloads a 430MB model
+    # and spikes memory over 512MB, causing a persistent OOM-kill and 502 Bad Gateway).
+    if os.getenv("RENDER") == "true" and mode in {"local", "groq"}:
+        return "mock"
+    return mode
 
 
 def get_embedding_mode() -> str:
