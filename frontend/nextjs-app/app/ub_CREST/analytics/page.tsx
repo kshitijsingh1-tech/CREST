@@ -42,27 +42,44 @@ export default async function CrestAnalyticsPage() {
   const regionId = user.region_id ?? undefined;
 
   // Wrap each call individually so a backend failure shows empty data instead of crashing
-  let backendError = false;
-  const safe = async <T,>(fn: () => Promise<T>, fallback: T): Promise<T> => {
-    try { return await fn(); } catch { backendError = true; return fallback; }
+  let coreBackendError = false;
+  let regionBackendError = false;
+  const safe = async <T,>(fn: () => Promise<T>, fallback: T, onError?: () => void): Promise<T> => {
+    try {
+      return await fn();
+    } catch {
+      onError?.();
+      return fallback;
+    }
   };
 
   const emptySummary = { total_open: 0, p0_open: 0, sla_breached: 0, resolved_today: 0, duplicates_caught: 0, avg_resolution_hrs: 0 };
 
   const [summary, severities, trend, channels, categories, spikes, regions] = await Promise.all([
-    safe(() => getDashboardSummary(regionId), emptySummary),
-    safe(() => getBySeverity(regionId), [] as ReturnType<typeof getBySeverity> extends Promise<infer T> ? T : never[]),
-    safe(() => getVolumeTrend(14, regionId), []),
-    safe(() => getChannelDistribution(30, regionId), []),
-    safe(() => getByCategory(30, regionId), []),
-    safe(() => getSpikeSignals(168), []),
+    safe(() => getDashboardSummary(regionId), emptySummary, () => { coreBackendError = true; }),
+    safe(() => getBySeverity(regionId), [] as ReturnType<typeof getBySeverity> extends Promise<infer T> ? T : never[], () => { coreBackendError = true; }),
+    safe(() => getVolumeTrend(14, regionId), [], () => { coreBackendError = true; }),
+    safe(() => getChannelDistribution(30, regionId), [], () => { coreBackendError = true; }),
+    safe(() => getByCategory(30, regionId), [], () => { coreBackendError = true; }),
+    safe(() => getSpikeSignals(168), [], () => { coreBackendError = true; }),
     user.role === "SUPER_ADMIN"
-      ? safe(() => getRegionDistribution(), [] as RegionStat[])
+      ? safe(() => getRegionDistribution(), [] as RegionStat[], () => { regionBackendError = true; })
       : Promise.resolve([] as RegionStat[]),
   ]);
 
   const totalComplaints = categories.reduce((sum, c) => sum + c.count, 0);
   const totalChannels   = channels.reduce((sum, c) => sum + c.count, 0);
+  const hasPrimaryData =
+    summary.total_open > 0 ||
+    summary.p0_open > 0 ||
+    summary.sla_breached > 0 ||
+    summary.resolved_today > 0 ||
+    summary.duplicates_caught > 0 ||
+    trend.length > 0 ||
+    severities.length > 0 ||
+    channels.length > 0 ||
+    categories.length > 0 ||
+    spikes.length > 0;
 
   return (
     <div className="flex-1 bg-transparent p-6 md:p-10 space-y-10 max-w-[90rem] mx-auto w-full animate-fade-in-up">
@@ -86,7 +103,7 @@ export default async function CrestAnalyticsPage() {
         </div>
       </div>
 
-      {backendError && (
+      {coreBackendError && (
         <div className="flex items-start gap-4 rounded-2xl border px-6 py-4 mb-2 transition-colors duration-500
           bg-amber-50 border-amber-200 text-amber-800
           dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-300">
@@ -98,6 +115,22 @@ export default async function CrestAnalyticsPage() {
             <p className="text-xs font-medium leading-relaxed">
               The CREST API did not respond. Metrics below show last-known or empty data.
               Ensure the backend is running and <code className="font-mono bg-amber-100 dark:bg-amber-900/40 px-1 rounded">NEXT_PUBLIC_API_URL</code> is correctly set.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!coreBackendError && !hasPrimaryData && (
+        <div className="flex items-start gap-4 rounded-2xl border px-6 py-4 mb-2 transition-colors duration-500
+          bg-blue-50 border-blue-200 text-blue-900
+          dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-200">
+          <svg className="w-5 h-5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 6.75a9 9 0 110 18 9 9 0 010-18z" />
+          </svg>
+          <div>
+            <p className="font-black text-xs uppercase tracking-widest mb-1">No Analytics Data Yet</p>
+            <p className="text-xs font-medium leading-relaxed">
+              The analytics services are responding, but this production environment does not yet have enough complaint activity to draw charts.
             </p>
           </div>
         </div>
@@ -275,6 +308,17 @@ export default async function CrestAnalyticsPage() {
         </div>
 
         {/* --- REGIONAL MONITORING SECTION (SUPER ADMIN ONLY) --- */}
+        {user.role === "SUPER_ADMIN" && regionBackendError && (
+          <div className="rounded-3xl border px-6 py-4 transition-all duration-500
+            bg-amber-50 border-amber-200 text-amber-800
+            dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-300">
+            <p className="font-black text-xs uppercase tracking-widest mb-1">Regional Panel Temporarily Unavailable</p>
+            <p className="text-xs font-medium leading-relaxed">
+              Core analytics loaded, but the region-level summary query did not complete. Redeploy the API service after the latest backend analytics fix.
+            </p>
+          </div>
+        )}
+
         {user.role === "SUPER_ADMIN" && regions && regions.length > 0 && (
           <div className="rounded-3xl border p-6 md:p-8 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] relative overflow-hidden group/regions
             dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl hover:border-blue-500/40

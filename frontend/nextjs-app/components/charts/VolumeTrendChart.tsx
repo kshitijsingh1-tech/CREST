@@ -40,6 +40,15 @@ export default function VolumeTrendChart({ data }: Props) {
       <h3 className="text-xs font-black uppercase tracking-widest mb-8 transition-colors duration-500 dark:text-white text-black">
         Daily Complaint Volume
       </h3>
+      {formatted.length === 0 ? (
+        <div className="h-[300px] flex items-center justify-center text-center rounded-2xl border border-dashed
+          dark:border-white/10 dark:text-slate-400
+          border-gray-200 text-gray-500">
+          <p className="text-xs font-bold uppercase tracking-widest px-6">
+            No complaint volume has been recorded for the selected period yet.
+          </p>
+        </div>
+      ) : (
       <div className="w-full h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={formatted} margin={{ top: 4, right: 12, left: -20, bottom: 0 }}>
@@ -57,6 +66,7 @@ export default function VolumeTrendChart({ data }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </div>
+      )}
     </div>
   );
 }
