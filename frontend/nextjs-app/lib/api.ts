@@ -242,7 +242,8 @@ export const login = async (email: string, password: string): Promise<any> => {
     body: JSON.stringify({ email, password }),
   });
   if (typeof window !== "undefined") {
-    Cookies.set("crest_token", data.access_token, { expires: 1/24, secure: false, path: "/" }); // 1 hour
+    const isSecure = window.location.protocol === "https:";
+    Cookies.set("crest_token", data.access_token, { expires: 1/24, secure: isSecure, path: "/" }); // 1 hour
     localStorage.setItem("crest_user", JSON.stringify(data));
   }
   return data;
