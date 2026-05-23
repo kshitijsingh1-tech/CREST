@@ -6,11 +6,21 @@
 
 import Cookies from "js-cookie";
 
+const normalizeServiceUrl = (value?: string | null) => {
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value)) return value;
+  return `http://${value}`;
+};
+
 const getBaseUrl = () => {
   // Server-side (RSC / Node): call backend directly
   if (typeof window === "undefined") {
     // We check BACKEND_INTERNAL_URL (Docker network), then NEXT_PUBLIC_API_URL, then default to Render prod URL
-    return process.env.BACKEND_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "https://crest-api-0uc4.onrender.com";
+    return (
+      normalizeServiceUrl(process.env.BACKEND_INTERNAL_URL) ??
+      normalizeServiceUrl(process.env.NEXT_PUBLIC_API_URL) ??
+      "https://crest-api-0uc4.onrender.com"
+    );
   }
   // Browser: use relative URL — Next.js proxies /api/* → backend server-side (no CORS)
   return "";
@@ -243,7 +253,7 @@ export const login = async (email: string, password: string): Promise<any> => {
   });
   if (typeof window !== "undefined") {
     const isSecure = window.location.protocol === "https:";
-    Cookies.set("crest_token", data.access_token, { expires: 1/24, secure: isSecure, path: "/" }); // 1 hour
+    Cookies.set("crest_token", data.access_token, { expires: 1 / 24, secure: isSecure, sameSite: "lax", path: "/" }); // 1 hour
     localStorage.setItem("crest_user", JSON.stringify(data));
   }
   return data;
@@ -253,7 +263,7 @@ export const logout = () => {
   if (typeof window !== "undefined") {
     Cookies.remove("crest_token", { path: "/" });
     localStorage.removeItem("crest_user");
-    window.location.href = "/login";
+    window.location.href = "/ub_CREST/login";
   }
 };
 
@@ -295,4 +305,3 @@ export const createPublicComplaint = (payload: {
       sla_hours: 720
     }),
   });
-

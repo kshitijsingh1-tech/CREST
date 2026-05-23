@@ -80,7 +80,7 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
       console.error("Queue refresh failed:", err);
       if (err.message.includes("401")) {
         // Token expired or missing
-        window.location.href = "/login";
+        window.location.href = "/ub_CREST/login";
       }
     } finally {
       setLoading(false);

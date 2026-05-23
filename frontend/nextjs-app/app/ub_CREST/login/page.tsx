@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { login } from "@/lib/api";
-import { useRouter } from "next/navigation";
 import { 
   ShieldCheck, 
   Lock, 
@@ -34,7 +33,6 @@ export default function CrestLoginPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   // Initialize Captcha
   useEffect(() => {
@@ -67,7 +65,7 @@ export default function CrestLoginPage() {
       
       setSuccess("Operational clearance confirmed!");
       setTimeout(() => {
-        router.push("/ub_CREST");
+        window.location.assign("/ub_CREST/home");
       }, 600);
     } catch (err) {
       setError("Invalid administrative credentials");

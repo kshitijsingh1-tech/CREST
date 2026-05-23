@@ -3,6 +3,20 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://crest-api-0uc4.o
 
 const nextConfig = {
   output: "standalone",
+  async redirects() {
+    return [
+      {
+        source: '/ub_crest',
+        destination: '/ub_CREST',
+        permanent: false,
+      },
+      {
+        source: '/ub_crest/:path*',
+        destination: '/ub_CREST/:path*',
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {
