@@ -26,8 +26,8 @@ export default function Header({ theme, toggleTheme }: { theme: "dark" | "light"
       bg-white border-b border-gray-200 shadow-sm hover:border-black
       px-6 py-4 flex items-center justify-between sticky top-0 z-50">
       
-      <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 overflow-hidden shadow-md">
+      <Link href="/ub_CREST/home" className="flex items-center gap-4 group">
+        <div className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 overflow-hidden shadow-md group-hover:scale-[1.03]">
           <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
         </div>
         <div className="flex flex-col">
@@ -35,11 +35,11 @@ export default function Header({ theme, toggleTheme }: { theme: "dark" | "light"
             CREST
           </h1>
           <p className="text-[9px] uppercase tracking-widest font-bold mt-1 transition-colors duration-500
-            dark:text-red-400 text-gray-600">
+            dark:text-red-400 text-gray-600 group-hover:text-red-600 dark:group-hover:text-red-300">
             Union Bank of India
           </p>
         </div>
-      </div>
+      </Link>
       
       <nav className="hidden lg:flex items-center gap-6">
         <Link href="/ub_CREST/home" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Home</Link>
