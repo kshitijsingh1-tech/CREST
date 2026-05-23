@@ -5,6 +5,10 @@ export function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  if (pathname === '/ub_CREST') {
+    return NextResponse.redirect(new URL(token ? '/ub_CREST/home' : '/ub_CREST/login', request.url));
+  }
+
   if (pathname === '/ub_crest' || pathname.startsWith('/ub_crest/')) {
     const correctedPath = pathname.replace('/ub_crest', '/ub_CREST');
     return NextResponse.redirect(new URL(`${correctedPath}${request.nextUrl.search}`, request.url));
@@ -28,6 +32,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/ub_CREST',
     '/ub_crest', '/ub_crest/:path*',
     '/dashboard', '/dashboard/:path*',
     '/queue', '/queue/:path*',
