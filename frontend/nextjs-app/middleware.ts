@@ -5,6 +5,11 @@ export function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  if (pathname === '/ub_crest' || pathname.startsWith('/ub_crest/')) {
+    const correctedPath = pathname.replace('/ub_crest', '/ub_CREST');
+    return NextResponse.redirect(new URL(`${correctedPath}${request.nextUrl.search}`, request.url));
+  }
+
   // 1. If trying to access dashboard/queue/analytics without a token, redirect to login
   const protectedRoutes = ['/dashboard', '/queue', '/analytics', '/complaints'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
@@ -23,6 +28,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/ub_crest', '/ub_crest/:path*',
     '/dashboard', '/dashboard/:path*',
     '/queue', '/queue/:path*',
     '/analytics', '/analytics/:path*',
