@@ -92,7 +92,7 @@ export default function CrestLoginPage() {
           </div>
           <h1 className="text-2xl font-black tracking-tight uppercase flex justify-center items-center gap-0.5">
             <span className="text-[#0052ff]">ub_</span>
-            <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #1a64ff, #7a22ff, #d8296a, #ff4d00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               CREST
             </span>
           </h1>
