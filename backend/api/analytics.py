@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, text
+from sqlalchemy import case, func, text
 from sqlalchemy.orm import Session
 
 
@@ -224,13 +224,14 @@ def complaints_by_region(db: Session | None = Depends(get_db_optional)):
 
     rows = (
         db.query(
+            Region.id.label("region_id"),
             Region.name.label("region_name"),
             func.count(Complaint.id).label("total_count"),
-            func.sum(func.case((Complaint.status != "resolved", 1), else_=0)).label("open_count"),
-            func.sum(func.case((Complaint.sla_status == "breached", 1), else_=0)).label("breached_count")
+            func.sum(case((Complaint.status != "resolved", 1), else_=0)).label("open_count"),
+            func.sum(case((Complaint.sla_status == "breached", 1), else_=0)).label("breached_count"),
         )
-        .join(Complaint, Complaint.region_id == Region.id)
-        .group_by(Region.name)
+        .outerjoin(Complaint, Complaint.region_id == Region.id)
+        .group_by(Region.id, Region.name)
         .order_by(func.count(Complaint.id).desc())
         .all()
     )
