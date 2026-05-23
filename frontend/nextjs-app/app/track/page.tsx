@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Search, KeyRound, ShieldCheck, Mail, RefreshCw, FileText, ArrowLeft, Download, XCircle, RotateCcw, UploadCloud, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 import { sendPublicOtp, trackPublicComplaint, submitPublicAction } from "@/lib/api";
 
 const generateCaptchaText = () => {
@@ -299,7 +300,12 @@ export default function PublicTrackingPage() {
 
   // Phase 1: Verification Gateway
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4 relative">
+      <div className="absolute top-6 left-6 md:top-8 md:left-8">
+        <Link href="/ub_publicPortal" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200">
+          <ArrowLeft className="w-4 h-4" /> Back to Portal
+        </Link>
+      </div>
       <div className="w-full max-w-md animate-fade-in-up">
 
         {/* Branding */}

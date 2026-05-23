@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { getRegions } from "@/lib/api";
 import Header from "@/components/Header";
 
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
 export default function SubmitComplaint() {
   const [regions, setRegions] = useState<any[]>([]);
   const [form, setForm] = useState({
@@ -44,6 +47,11 @@ export default function SubmitComplaint() {
   if (result) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8">
+        <div className="w-full flex justify-start mb-4 max-w-md">
+          <Link href="/ub_publicPortal" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Back to Portal
+          </Link>
+        </div>
         <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-2xl text-center border-4 border-black">
           <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">✓</div>
           <h2 className="text-2xl font-black mb-2">Complaint Submitted</h2>
@@ -56,7 +64,10 @@ export default function SubmitComplaint() {
   }
 
   return (
-    <div className="flex-1 max-w-2xl mx-auto w-full py-12 px-6">
+    <div className="flex-1 max-w-2xl mx-auto w-full py-12 px-6 relative">
+      <Link href="/ub_publicPortal" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-colors mb-6">
+        <ArrowLeft className="w-4 h-4" /> Back to Portal
+      </Link>
       <h1 className="text-4xl font-black mb-8 tracking-tighter italic">LODGE A GRIEVANCE</h1>
       
       <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
