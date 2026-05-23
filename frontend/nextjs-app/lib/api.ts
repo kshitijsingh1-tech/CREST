@@ -12,58 +12,85 @@ const normalizeServiceUrl = (value?: string | null) => {
   return `http://${value}`;
 };
 
-const getBaseUrl = () => {
-  // Server-side (RSC / Node): call backend directly
-  if (typeof window === "undefined") {
-    // We check BACKEND_INTERNAL_URL (Docker network), then NEXT_PUBLIC_API_URL, then default to Render prod URL
-    return (
-      normalizeServiceUrl(process.env.BACKEND_INTERNAL_URL) ??
-      normalizeServiceUrl(process.env.NEXT_PUBLIC_API_URL) ??
-      "https://crest-api-0uc4.onrender.com"
-    );
+const PROD_API_URL = "https://crest-api-0uc4.onrender.com";
+
+const getBaseUrls = () => {
+  if (typeof window !== "undefined") {
+    // Browser: use relative URL — Next.js proxies /api/* → backend server-side (no CORS)
+    return [""];
   }
-  // Browser: use relative URL — Next.js proxies /api/* → backend server-side (no CORS)
-  return "";
+
+  // Server-side (RSC / Node): prefer internal networking, but fall back to public URLs if that path is misconfigured.
+  return Array.from(new Set([
+    normalizeServiceUrl(process.env.BACKEND_INTERNAL_URL),
+    normalizeServiceUrl(process.env.NEXT_PUBLIC_API_URL),
+    PROD_API_URL,
+  ].filter((value): value is string => Boolean(value))));
 };
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const baseUrl = getBaseUrl();
-  try {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    
-    let token: string | undefined;
+  const baseUrls = getBaseUrls();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  
+  let token: string | undefined;
 
-    if (typeof window !== "undefined") {
-      // Client-side
-      token = Cookies.get("crest_token");
-    } else {
-      // Server-side (RSC)
-      const { cookies } = await import("next/headers");
-      token = cookies().get("crest_token")?.value;
-    }
-
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const res = await fetch(`${baseUrl}${path}`, {
-      headers,
-      credentials: "include", // Essential for sending cookies to the backend
-      ...init,
-    });
-
-    if (!res.ok) {
-      // Handle 401 specifically if possible
-      if (res.status === 401 && typeof window !== "undefined") {
-        console.warn("Unauthorized API call, redirecting to login");
-        // We don't redirect immediately here to avoid loops, 
-        // but we throw so the component can handle it.
-      }
-      throw new Error(`API ${path} failed with status ${res.status}`);
-    }
-    return res.json() as Promise<T>;
-  } catch (error) {
-    console.error(`[API Fetch Error] ${path}:`, error);
-    throw error;
+  if (typeof window !== "undefined") {
+    // Client-side
+    token = Cookies.get("crest_token");
+  } else {
+    // Server-side (RSC)
+    const { cookies } = await import("next/headers");
+    token = cookies().get("crest_token")?.value;
   }
+
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  let lastError: unknown;
+
+  for (const [index, baseUrl] of baseUrls.entries()) {
+    try {
+      const res = await fetch(`${baseUrl}${path}`, {
+        headers,
+        credentials: "include", // Essential for sending cookies to the backend
+        ...init,
+      });
+
+      if (!res.ok) {
+        if (res.status === 401 && typeof window !== "undefined") {
+          console.warn("Unauthorized API call, redirecting to login");
+          // We don't redirect immediately here to avoid loops, 
+          // but we throw so the component can handle it.
+        }
+
+        const shouldRetryOnServer =
+          typeof window === "undefined" &&
+          index < baseUrls.length - 1 &&
+          res.status >= 500;
+
+        if (shouldRetryOnServer) {
+          console.warn(`[API Fetch Retry] ${path}: ${baseUrl} returned ${res.status}, trying next backend URL`);
+          continue;
+        }
+
+        throw new Error(`API ${path} failed with status ${res.status}`);
+      }
+
+      return res.json() as Promise<T>;
+    } catch (error) {
+      lastError = error;
+      const shouldRetryOnServer =
+        typeof window === "undefined" &&
+        index < baseUrls.length - 1;
+
+      if (shouldRetryOnServer) {
+        console.warn(`[API Fetch Retry] ${path}: ${baseUrl} failed, trying next backend URL`, error);
+        continue;
+      }
+    }
+  }
+
+  console.error(`[API Fetch Error] ${path}:`, lastError);
+  throw lastError;
 }
 
 // ── Types ─────────────────────────────────────────────────────
