@@ -30,6 +30,44 @@ function KPICard({ label, value, sub, color }: {
   );
 }
 
+const SEVERITY_COLORS: Record<string, { light: string; dark: string }> = {
+  "P0 Critical": { 
+    light: "bg-red-500", 
+    dark: "dark:bg-gradient-to-r dark:from-red-600 dark:to-red-400 dark:shadow-[0_0_10px_rgba(239,68,68,0.5)]" 
+  },
+  "P1 High": { 
+    light: "bg-orange-500", 
+    dark: "dark:bg-gradient-to-r dark:from-orange-500 dark:to-orange-400 dark:shadow-[0_0_10px_rgba(249,115,22,0.5)]" 
+  },
+  "P2 Medium": { 
+    light: "bg-amber-500", 
+    dark: "dark:bg-gradient-to-r dark:from-amber-500 dark:to-amber-300 dark:shadow-[0_0_10px_rgba(245,158,11,0.5)]" 
+  },
+  "P3 Low": { 
+    light: "bg-blue-500", 
+    dark: "dark:bg-gradient-to-r dark:from-blue-600 dark:to-blue-400 dark:shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
+  },
+  "P4 Info": { 
+    light: "bg-slate-400", 
+    dark: "dark:bg-gradient-to-r dark:from-slate-500 dark:to-slate-400" 
+  },
+};
+
+const CHANNEL_ICONS: Record<string, React.ReactNode> = {
+  web: <img src="/crest_logo.png" className="w-4 h-4 rounded-sm object-cover" alt="CREST" />,
+  whatsapp: (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="24" height="24" rx="5" fill="#25D366" />
+      <path fillRule="evenodd" clipRule="evenodd" d="M12.03 5C8.15 5 5 8.15 5 12.03c0 1.27.34 2.5.98 3.58L5 20l4.52-.95c1.04.57 2.2.87 3.5.87 3.88 0 7.03-3.15 7.03-7.03C20.06 8.15 16.9 5 12.03 5zm3.62 10.05c-.15.42-.76.81-1.05.86-.29.05-.65.08-1.89-.43-1.6-.66-2.61-2.28-2.69-2.39-.08-.11-.68-.9-.68-1.72s.43-1.22.58-1.37c.15-.15.34-.19.45-.19.1 0 .26 0 .4.3.15.35.53 1.27.57 1.35.04.09.07.19.02.3-.06.11-.09.19-.17.28-.08.09-.18.21-.25.29-.08.08-.17.18-.08.35.1.18.46.76.99 1.23.68.6 1.25.79 1.43.87.18.08.28-.02.39-.13.1-.11.45-.52.57-.7.12-.18.24-.15.41-.09.17.06 1.07.5 1.25.6.18.09.3.14.34.22.04.08.04.44-.1.86z" fill="white" />
+    </svg>
+  ),
+  email: <svg className="w-4 h-4 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+  sms: <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
+  app: <svg className="w-4 h-4 text-purple-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+  twitter: <svg className="w-4 h-4 text-gray-900 dark:text-white shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>,
+  voice: <svg className="w-4 h-4 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>,
+};
+
 export default async function CrestAnalyticsPage() {
   let user;
   try {
@@ -178,25 +216,12 @@ export default async function CrestAnalyticsPage() {
               <h3 className="text-xs font-black uppercase tracking-widest mb-8 transition-colors duration-500 dark:text-white text-black">Open by Severity</h3>
               <div className="space-y-6">
                 {severities.map(s => {
-                  const colors_dark: Record<string, string> = {
-                    "P0 Critical": "from-red-600 to-red-400 shadow-[0_0_10px_rgba(244,63,94,0.8)]",
-                    "P1 High":     "from-orange-500 to-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.8)]",
-                    "P2 Medium":   "from-amber-500 to-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.8)]",
-                    "P3 Low":      "from-blue-600 to-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.8)]",
-                    "P4 Info":     "from-slate-500 to-slate-400 shadow-[0_0_10px_rgba(148,163,184,0.8)]",
-                  };
-                  const colors_light: Record<string, string> = {
-                    "P0 Critical": "bg-red-600",
-                    "P1 High":     "bg-orange-500",
-                    "P2 Medium":   "bg-amber-400",
-                    "P3 Low":      "bg-black",
-                    "P4 Info":     "bg-gray-400",
-                  };
+                  const severityStyle = SEVERITY_COLORS[s.severity] || { light: "bg-gray-400", dark: "dark:bg-slate-400" };
                   return (
                     <Link href={`/ub_CREST/queue?severity=${s.severity.split(" ")[0].replace("P", "")}`} key={s.severity} className="flex items-center gap-4 group cursor-pointer">
                       <span className="text-[10px] font-bold w-24 uppercase tracking-wider transition-colors duration-300 dark:text-blue-300 dark:group-hover:text-white text-gray-500 group-hover:text-black">{s.severity}</span>
                       <div className="flex-1 rounded-full h-3 overflow-hidden border transition-colors duration-500 dark:bg-black/80 dark:shadow-inner dark:border-blue-900/50 bg-gray-100 border-gray-300">
-                        <div className={`h-full rounded-full transition-all duration-500 dark:bg-gradient-to-r dark:${colors_dark[s.severity] ?? "from-gray-500 to-gray-400"} ${colors_light[s.severity] ?? "bg-black"}`}
+                        <div className={`h-full rounded-full transition-all duration-500 ${severityStyle.light} ${severityStyle.dark}`}
                           style={{ width: `${Math.max(5, (s.count / (severities[0]?.count || 1)) * 100)}%` }} />
                       </div>
                       <span className="text-xs font-black w-10 text-right transition-colors duration-500 dark:text-white text-black group-hover:text-blue-600 dark:group-hover:text-blue-400">{s.count}</span>
@@ -222,13 +247,14 @@ export default async function CrestAnalyticsPage() {
             <div className="space-y-6">
               {channels.map(c => {
                 const pct = Math.round((c.count / (totalChannels || 1)) * 100);
-                const icons: Record<string, string> = { email: "📧", whatsapp: "💬", app: "📱", twitter: "🐦", voice: "📞", branch: "🏦", web: "🌐" };
+                const displayChannel = c.channel === "web" ? "Public Portal" : c.channel.charAt(0).toUpperCase() + c.channel.slice(1);
                 return (
                   <Link href={`/ub_CREST/queue?channel=${c.channel}`} key={c.channel} className="flex flex-col gap-2 group cursor-pointer block">
                     <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider transition-colors duration-300
                       dark:text-blue-300 dark:group-hover:text-white text-gray-500 group-hover:text-black">
                       <span className="flex items-center gap-2">
-                        {icons[c.channel] ?? "•"} {c.channel === "web" ? "Public Portal" : c.channel.charAt(0).toUpperCase() + c.channel.slice(1)}
+                        {CHANNEL_ICONS[c.channel] ?? <span className="w-4 h-4 bg-gray-250 dark:bg-gray-800 rounded-full" />}
+                        {displayChannel}
                       </span>
                       <span className="group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{c.count} ({pct}%)</span>
                     </div>

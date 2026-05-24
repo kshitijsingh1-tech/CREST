@@ -77,6 +77,17 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
   const [filterCategory, setFilterCategory] = useState<string | null>(initialCategory);
   const [filterChannel, setFilterChannel] = useState<string | null>(initialChannel);
 
+  // Sync state with URL search params changes dynamically
+  useEffect(() => {
+    setFilterSeverity(searchParams.get("severity"));
+    setFilterCategory(searchParams.get("category"));
+    setFilterChannel(searchParams.get("channel"));
+    const reg = searchParams.get("region_id");
+    if (reg) {
+      setCurrentRegion(Number(reg));
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("crest_user");
@@ -226,6 +237,57 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
           </div>
         </div>
       </div>
+
+      {(filterSeverity || filterCategory || filterChannel) && (
+        <div className="flex flex-wrap gap-2 mb-6 items-center">
+          <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mr-2">Active Filters:</span>
+          {filterSeverity && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200/50 dark:border-red-900/30">
+              Severity: P{filterSeverity}
+              <button onClick={() => {
+                setFilterSeverity(null);
+                const params = new URLSearchParams(window.location.search);
+                params.delete("severity");
+                window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+              }} className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-red-200/60 dark:hover:bg-red-800/40 text-[10px] font-black">×</button>
+            </span>
+          )}
+          {filterCategory && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 border border-teal-200/50 dark:border-teal-900/30">
+              Category: {filterCategory}
+              <button onClick={() => {
+                setFilterCategory(null);
+                const params = new URLSearchParams(window.location.search);
+                params.delete("category");
+                window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+              }} className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-teal-200/60 dark:hover:bg-teal-800/40 text-[10px] font-black">×</button>
+            </span>
+          )}
+          {filterChannel && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/30">
+              Channel: {filterChannel}
+              <button onClick={() => {
+                setFilterChannel(null);
+                const params = new URLSearchParams(window.location.search);
+                params.delete("channel");
+                window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+              }} className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-blue-200/60 dark:hover:bg-blue-800/40 text-[10px] font-black">×</button>
+            </span>
+          )}
+          <button onClick={() => { 
+            setFilterSeverity(null); 
+            setFilterCategory(null); 
+            setFilterChannel(null);
+            const params = new URLSearchParams(window.location.search);
+            params.delete("severity");
+            params.delete("category");
+            params.delete("channel");
+            window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+          }} className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white px-2 py-1 rounded-lg hover:bg-gray-150 dark:hover:bg-white/5 transition-all">
+            Clear All
+          </button>
+        </div>
+      )}
 
       {flash && (
         <div className="mb-3 px-4 py-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm animate-pulse">
