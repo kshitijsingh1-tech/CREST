@@ -25,8 +25,8 @@ logger = get_logger("crest.integrations.email")
 
 IMAP_HOST     = os.getenv("EMAIL_IMAP_HOST",     "imap.gmail.com")
 IMAP_PORT     = int(os.getenv("EMAIL_IMAP_PORT", "993"))
-IMAP_USER     = os.getenv("EMAIL_IMAP_USER",     "ayushiiscute@gmail.com")
-IMAP_PASSWORD = os.getenv("EMAIL_IMAP_PASSWORD", "obqrclyncutnuuot")
+IMAP_USER     = os.getenv("EMAIL_IMAP_USER",     "iscuteayushi@gmail.com")
+IMAP_PASSWORD = os.getenv("EMAIL_IMAP_PASSWORD", "smtjsysroqwxzlsj")
 POLL_INTERVAL = int(os.getenv("EMAIL_POLL_INTERVAL_SECS", "60"))
 
 
