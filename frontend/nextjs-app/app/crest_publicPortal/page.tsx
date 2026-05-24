@@ -65,10 +65,10 @@ export default function PublicPortalHub() {
       if (res.ok) {
         setChatMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
       } else {
-        setChatMessages(prev => [...prev, { role: "assistant", content: "I apologize, but I failed to reach the AI engine. Please try again!" }]);
+        setChatMessages(prev => [...prev, { role: "assistant", content: "Cresty is waking up (Render Free Tier Cold Start). Please wait 10 seconds and resend your message!" }]);
       }
     } catch (err) {
-      setChatMessages(prev => [...prev, { role: "assistant", content: "Failed to connect to assistant. Please check your internet connection." }]);
+      setChatMessages(prev => [...prev, { role: "assistant", content: "Cresty is waking up (Render Free Tier Cold Start). Please wait 10 seconds and resend your message!" }]);
     } finally {
       setChatLoading(false);
     }
