@@ -36,6 +36,7 @@ export default function PublicPortalHub() {
   ]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [backendStatus, setBackendStatus] = useState<"checking" | "online" | "waking" | "error">("checking");
   
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -45,33 +46,84 @@ export default function PublicPortalHub() {
     }
   }, [chatMessages, chatOpen]);
 
+  // Proactive background wakeup ping on mount
+  useEffect(() => {
+    let active = true;
+    const wakeBackend = async () => {
+      try {
+        const res = await fetch("/api/health");
+        if (res.ok && active) {
+          setBackendStatus("online");
+        } else if (active) {
+          setBackendStatus("waking");
+          setTimeout(wakeBackend, 5000);
+        }
+      } catch (err) {
+        if (active) {
+          setBackendStatus("waking");
+          setTimeout(wakeBackend, 5000);
+        }
+      }
+    };
+    wakeBackend();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const handleSendChatMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim() || chatLoading) return;
     const userMsg = { role: "user", content: chatInput.trim() };
+    const currentMessages = [...chatMessages, userMsg];
     setChatMessages(prev => [...prev, userMsg]);
     setChatInput("");
     setChatLoading(true);
 
-    try {
-      const res = await fetch("/api/public/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [...chatMessages, userMsg].map(m => ({ role: m.role, content: m.content }))
-        })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setChatMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
-      } else {
-        setChatMessages(prev => [...prev, { role: "assistant", content: "Cresty is waking up (Render Free Tier Cold Start). Please wait 10 seconds and resend your message!" }]);
+    const maxRetries = 4;
+    const delay = 5000; // 5 seconds between retries
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const res = await fetch("/api/public/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: currentMessages.map(m => ({ role: m.role, content: m.content }))
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setChatMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
+          setBackendStatus("online");
+          setChatLoading(false);
+          return;
+        }
+
+        // If not ok (e.g. 502 / 504 / 503) and we have retries left
+        if (attempt < maxRetries) {
+          setBackendStatus("waking");
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          setChatMessages(prev => [...prev, {
+            role: "assistant",
+            content: "Cresty is taking a little longer to wake up. This is a Render Free Tier cold start limitation. Please try sending your message again in a few seconds! ☕"
+          }]);
+        }
+      } catch (err) {
+        if (attempt < maxRetries) {
+          setBackendStatus("waking");
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          setChatMessages(prev => [...prev, {
+            role: "assistant",
+            content: "Cresty is taking a little longer to wake up. This is a Render Free Tier cold start limitation. Please try sending your message again in a few seconds! ☕"
+          }]);
+        }
       }
-    } catch (err) {
-      setChatMessages(prev => [...prev, { role: "assistant", content: "Cresty is waking up (Render Free Tier Cold Start). Please wait 10 seconds and resend your message!" }]);
-    } finally {
-      setChatLoading(false);
     }
+    setChatLoading(false);
   };
   const [theme, setTheme] = useState<"dark" | "light">("light");
   const [scrollY, setScrollY] = useState(0);
@@ -546,11 +598,23 @@ export default function PublicPortalHub() {
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl overflow-hidden bg-white flex items-center justify-center relative border border-white/20 shadow-sm">
                   <img src="/cresty.png" alt="Cresty Avatar" className="w-full h-full object-contain scale-[1.3]" />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white"></span>
+                  <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-white transition-all duration-300 ${
+                    backendStatus === "online" 
+                      ? "bg-emerald-500 animate-pulse" 
+                      : backendStatus === "waking" 
+                        ? "bg-amber-500 animate-ping" 
+                        : "bg-gray-400"
+                  }`}></span>
                 </div>
                 <div>
                   <h3 className="font-extrabold text-xs uppercase tracking-wider leading-none text-white/95">Cresty</h3>
-                  <span className="text-[10px] text-white/80 font-medium">RBI Assistant Bot</span>
+                  <span className="text-[10px] text-white/80 font-medium transition-all duration-300">
+                    {backendStatus === "online" 
+                      ? "RBI Assistant Bot (Active)" 
+                      : backendStatus === "waking" 
+                        ? "Waking Up... Please wait" 
+                        : "Checking Status..."}
+                  </span>
                 </div>
               </div>
               <button 
@@ -581,7 +645,7 @@ export default function PublicPortalHub() {
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce delay-75"></span>
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce delay-150"></span>
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce delay-300"></span>
-                    Cresty typing...
+                    {backendStatus === "waking" ? "Cresty is waking up..." : "Cresty typing..."}
                   </div>
                 </div>
               )}
