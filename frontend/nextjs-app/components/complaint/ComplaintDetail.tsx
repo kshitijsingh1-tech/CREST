@@ -27,6 +27,11 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
   const [agent, setAgent]   = useState("");
   const [note, setNote]     = useState("");
 
+  const [csat, setCsat]     = useState<number | "">("");
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg]       = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [userRole, setUserRole] = useState("");
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("crest_user");
@@ -34,13 +39,11 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
         try {
           const user = JSON.parse(stored);
           setAgent(user.user_id?.toString() || "");
+          setUserRole(user.role || "");
         } catch {}
       }
     }
   }, []);
-  const [csat, setCsat]     = useState<number | "">("");
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg]       = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   const flash = (type: "ok" | "err", text: string) => {
     setMsg({ type, text });
@@ -291,10 +294,12 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                     Assign to Me
                   </button>
                 )}
-                <button onClick={handleEscalate} disabled={loading || !agent || c.is_escalated}
-                  className="text-xs px-3 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded border border-red-100 dark:border-red-900/30 transition-colors disabled:opacity-50">
-                  Escalate to Head
-                </button>
+                {userRole !== "SUPER_ADMIN" && (
+                  <button onClick={handleEscalate} disabled={loading || !agent || c.is_escalated}
+                    className="text-xs px-3 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded border border-red-100 dark:border-red-900/30 transition-colors disabled:opacity-50">
+                    Escalate to Head
+                  </button>
+                )}
                 {c.draft_reply && !c.draft_approved && !(c as any).is_superior_takeover && (
                   <button onClick={handleApproveDraft} disabled={loading || !agent}
                     className="text-xs px-3 py-2 bg-indigo-100 dark:bg-indigo-900/60 hover:bg-indigo-200 dark:hover:bg-indigo-800 text-indigo-700 dark:text-indigo-300 rounded transition-colors disabled:opacity-50">
@@ -317,7 +322,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
 
                   <div className="flex items-center gap-3">
                     <div>
-                      <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">CSAT (1–5)</label>
+                      <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Customer Satisfaction Score (CSAT 1–5)</label>
                       <input type="number" min={1} max={5} value={csat}
                         onChange={e => setCsat(e.target.value ? Number(e.target.value) : "")}
                         className="w-20 text-sm border border-gray-200 dark:border-white/10 dark:bg-black/40 dark:text-white rounded px-3 py-2 focus:outline-none"

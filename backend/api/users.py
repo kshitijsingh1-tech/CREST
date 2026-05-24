@@ -29,6 +29,7 @@ class UserCreate(BaseModel):
     name: str
     password: str
     role: str
+    phone: Optional[str] = None
     region_id: Optional[int] = None
 
 class UserOut(BaseModel):
@@ -36,6 +37,7 @@ class UserOut(BaseModel):
     email: str
     name: str
     role: str
+    phone: Optional[str] = None
     region_id: Optional[int] = None
     is_active: bool
     class Config: from_attributes = True
@@ -73,6 +75,7 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db_optional), adm
         name=payload.name,
         hashed_password=get_password_hash(payload.password),
         role=payload.role,
+        phone=payload.phone,
         region_id=payload.region_id
     )
     db.add(user)

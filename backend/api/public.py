@@ -221,3 +221,21 @@ def public_chat(req: ChatRequest, db: Session = Depends(get_db_optional)):
         reply = "I apologize, but I am experiencing some difficulties processing your request right now. You can safely lodge your complaint or track your status using our official portal links!"
 
     return {"reply": reply}
+
+@router.get("/directory")
+def get_public_directory(region_id: Optional[int] = None, db: Session = Depends(get_db_optional)):
+    from backend.models.user import User, Region
+    
+    if not region_id:
+        regions = db.query(Region).all()
+        return {"regions": [{"id": r.id, "name": r.name} for r in regions]}
+        
+    emp = db.query(User).filter(User.region_id == region_id, User.role == "EMPLOYEE").first()
+    if emp and emp.phone:
+        return {"contact": emp.phone, "name": emp.name, "role": "Regional Officer"}
+        
+    sub = db.query(User).filter(User.region_id == region_id, User.role == "SUB_ADMIN").first()
+    if sub and sub.phone:
+        return {"contact": sub.phone, "name": sub.name, "role": "Regional Sub-Admin"}
+        
+    return {"contact": "7905438724", "name": "Fallback Helpdesk", "role": "Central"}

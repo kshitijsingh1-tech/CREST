@@ -41,7 +41,7 @@ const CHANNEL_ICONS: Record<string, React.ReactNode> = {
   email: <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
   sms: <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
   app: <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
-  twitter: <svg className="w-4 h-4 text-sky-400" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.84 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" /></svg>,
+  twitter: <svg className="w-4 h-4 text-gray-900 dark:text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>,
   voice: <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>,
 };
 
@@ -133,60 +133,65 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between mb-4">
-        <button 
-          onClick={() => setShowFilters(!showFilters)}
-          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-          Filters
-        </button>
+      {/* Modern Filter Bar (Always visible) */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between p-4 mb-6 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm transition-all">
+        {/* Left: AI Search Input */}
+        <div className="relative w-full md:w-1/2">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input 
+            type="text"
+            placeholder="Search AI category, status, name..."
+            onChange={(e) => {
+              const val = e.target.value.toLowerCase();
+              if (!val) { refresh(); return; }
+              setQueue(prev => prev.filter(c => 
+                c.category?.toLowerCase().includes(val) || 
+                c.status.toLowerCase().includes(val) ||
+                c.customer_name?.toLowerCase().includes(val)
+              ));
+            }}
+            className="block w-full pl-10 pr-4 py-3 bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all placeholder-gray-400 dark:text-white"
+          />
+        </div>
 
-        {showFilters && (
-          <div className="flex gap-4 p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border dark:border-white/10 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">By Region</label>
-              <select 
-                value={currentRegion || ""} 
-                onChange={(e) => setCurrentRegion(e.target.value ? Number(e.target.value) : undefined)}
-                className="block w-full bg-transparent border-b-2 border-gray-300 dark:border-white/20 text-xs font-bold py-1 focus:border-black dark:focus:border-white outline-none"
-              >
-                <option value="">All Regions</option>
-                {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Sort By</label>
-              <select 
-                value={sortBy} 
-                onChange={(e) => setSortBy(e.target.value)}
-                className="block w-full bg-transparent border-b-2 border-gray-300 dark:border-white/20 text-xs font-bold py-1 focus:border-black dark:focus:border-white outline-none"
-              >
-                <option value="priority_score">Priority (High - Low)</option>
-                <option value="anger_score">Anger (High - Low)</option>
-                <option value="sla_deadline">SLA (Soonest)</option>
-                <option value="created_at">Date (Newest)</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">AI Category & Keyword</label>
-              <input 
-                type="text"
-                placeholder="Search AI category, status, name..."
-                onChange={(e) => {
-                  const val = e.target.value.toLowerCase();
-                  if (!val) { refresh(); return; }
-                  setQueue(prev => prev.filter(c => 
-                    c.category?.toLowerCase().includes(val) || 
-                    c.status.toLowerCase().includes(val) ||
-                    c.customer_name?.toLowerCase().includes(val)
-                  ));
-                }}
-                className="block w-full bg-transparent border-b-2 border-gray-300 dark:border-white/20 text-xs font-bold py-1 focus:border-black dark:focus:border-white outline-none"
-              />
+        {/* Right: Dropdowns */}
+        <div className="flex w-full md:w-auto gap-3">
+          {/* Sort By Dropdown */}
+          <div className="relative group flex-1 md:flex-none min-w-[180px]">
+            <select 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+              className="appearance-none block w-full bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/50 outline-none cursor-pointer"
+            >
+              <option value="priority_score">Sort: Priority (High - Low)</option>
+              <option value="anger_score">Sort: Anger (High - Low)</option>
+              <option value="sla_deadline">Sort: SLA (Soonest)</option>
+              <option value="created_at">Sort: Date (Newest)</option>
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-400">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </div>
           </div>
-        )}
+
+          {/* Region Dropdown */}
+          <div className="relative group flex-1 md:flex-none min-w-[150px]">
+            <select 
+              value={currentRegion || ""} 
+              onChange={(e) => setCurrentRegion(e.target.value ? Number(e.target.value) : undefined)}
+              className="appearance-none block w-full bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/50 outline-none cursor-pointer"
+            >
+              <option value="">All Regions</option>
+              {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-400">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </div>
+          </div>
+        </div>
       </div>
 
       {flash && (

@@ -71,6 +71,11 @@ async def lifespan(app: FastAPI):
         initialize_database()
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
+            try:
+                conn.execute(text("ALTER TABLE users ADD COLUMN phone VARCHAR(50)"))
+                conn.commit()
+            except Exception:
+                pass # Column likely already exists
         logger.info("Database connection verified and schema initialized")
         
         # Start Email IMAP Listener in a self-healing background daemon thread

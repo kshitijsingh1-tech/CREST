@@ -29,6 +29,8 @@ class User(Base):
     # Role: SUPER_ADMIN, SUB_ADMIN, EMPLOYEE
     role            = Column(String(50), nullable=False, default="EMPLOYEE")
     
+    phone           = Column(String(50), nullable=True) # Added for regional directory
+    
     region_id       = Column(Integer, ForeignKey("regions.id"), nullable=True)
     is_active       = Column(Boolean, default=True)  # Status toggle for shift/availability
     

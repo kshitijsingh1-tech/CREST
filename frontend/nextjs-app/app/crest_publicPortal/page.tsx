@@ -28,6 +28,31 @@ export default function PublicPortalHub() {
   const [openFaq, setOpenFaq] = useState<string | null>(null);
   const [openCategory, setOpenCategory] = useState<number | null>(null);
 
+  // Regional Directory State
+  const [regions, setRegions] = useState<{id: number, name: string}[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
+  const [directoryInfo, setDirectoryInfo] = useState<{contact: string, name: string, role: string} | null>(null);
+
+  useEffect(() => {
+    if (activeSection === "contact") {
+      fetch("/api/public/directory")
+        .then(res => res.json())
+        .then(data => setRegions(data.regions || []))
+        .catch(() => {});
+    }
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (selectedRegion) {
+      fetch(`/api/public/directory?region_id=${selectedRegion}`)
+        .then(res => res.json())
+        .then(data => setDirectoryInfo(data))
+        .catch(() => {});
+    } else {
+      setDirectoryInfo(null);
+    }
+  }, [selectedRegion]);
+
   // Chatbot State
   const [chatOpen, setChatOpen] = useState(false);
   const [alertVisible, setAlertVisible] = useState(true);
@@ -514,32 +539,48 @@ export default function PublicPortalHub() {
                 </div>
               </div>
 
-              {/*Card 2 */}
+              {/*Card 2: Dynamic Regional Support */}
               <div className="p-8 rounded-[1.5rem] border flex flex-col justify-between min-h-[300px] relative transition-all duration-300 hover:shadow-md
                 dark:bg-white/5 dark:border-white/10
                 bg-[#f4f4f4] border-gray-200">
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
-                    <h3 className="font-extrabold text-xl tracking-tight dark:text-white text-gray-900">Admin: Ayushi not aayush</h3>
+                    <h3 className="font-extrabold text-xl tracking-tight dark:text-white text-gray-900">Regional Support</h3>
                     <p className="text-xs font-semibold dark:text-blue-400 text-blue-700">Response: Within 48 Hours</p>
                   </div>
                   <Lock className="w-6 h-6 dark:text-slate-400 text-gray-800" strokeWidth={1.5} />
                 </div>
-                <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-600 my-4">
-                  Escalate unresolved support tickets directly to the central grievance redressal committee or regional ombudsman officers.
-                </p>
-                <div className="flex flex-col gap-2 mt-4">
-                  <a href="mailto:pno@unionbankofindia.bank" className="w-full text-center py-2.5 rounded-full font-extrabold text-xs tracking-wider transition-all duration-300 shadow-sm border
-                    bg-black border-black text-white hover:bg-gray-800 hover:border-gray-800
-                    dark:bg-white dark:border-white dark:text-black dark:hover:bg-gray-200">
-                    Email Central PNO
-                  </a>
-                  <Link href="/ub_CREST/docs" className="w-full text-center py-2.5 rounded-full font-extrabold text-xs tracking-wider transition-all duration-300 shadow-sm border
-                    bg-white border-gray-300 text-black hover:bg-gray-100
-                    dark:bg-white/10 dark:border-white/10 dark:text-white dark:hover:bg-white/20">
-                    View Escalation Matrix
-                  </Link>
+                
+                <div className="mt-4 z-10">
+                  <select 
+                    value={selectedRegion || ""} 
+                    onChange={e => setSelectedRegion(e.target.value ? Number(e.target.value) : null)}
+                    className="w-full bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-indigo-500/50 outline-none text-gray-800 dark:text-gray-200"
+                  >
+                    <option value="">Select your region first...</option>
+                    {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  </select>
                 </div>
+
+                {directoryInfo ? (
+                  <div className="mt-auto pt-4 flex flex-col gap-2">
+                    <div>
+                      <p className="text-sm font-black dark:text-white text-gray-900 uppercase tracking-widest">{directoryInfo.name}</p>
+                      <p className="text-[10px] font-bold dark:text-blue-400 text-blue-600 uppercase tracking-widest">{directoryInfo.role}</p>
+                    </div>
+                    <a href={`tel:${directoryInfo.contact}`} className="w-full text-center mt-2 py-2.5 rounded-full font-extrabold text-xs tracking-wider transition-all duration-300 shadow-sm border
+                      bg-black border-black text-white hover:bg-gray-800 hover:border-gray-800
+                      dark:bg-white dark:border-white dark:text-black dark:hover:bg-gray-200">
+                      Call {directoryInfo.contact}
+                    </a>
+                  </div>
+                ) : (
+                  <div className="mt-auto pt-4">
+                    <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-500 italic text-center">
+                      Select your region above to instantly view the direct mobile number of your designated grievance officer.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Card 3 */}
