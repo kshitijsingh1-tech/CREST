@@ -41,12 +41,14 @@ export default async function AnalyticsPage() {
             <div className="space-y-6">
               {channels.map(c => {
                 const pct = Math.round((c.count / totalChannels) * 100);
-                const icons: Record<string, string> = { email: "📧", whatsapp: "💬", app: "📱", twitter: "🐦", voice: "📞", branch: "🏦" };
+                const icons: Record<string, string> = { email: "📧", whatsapp: "💬", app: "📱", twitter: "🐦", voice: "📞", branch: "🏦", web: "🌐" };
                 return (
                   <div key={c.channel} className="flex flex-col gap-2 group">
                     <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider transition-colors duration-300
                       dark:text-blue-300 dark:group-hover:text-white text-gray-500 group-hover:text-black">
-                      <span className="flex items-center gap-2">{icons[c.channel] ?? "•"} {c.channel}</span>
+                      <span className="flex items-center gap-2">
+                        {icons[c.channel] ?? "•"} {c.channel === "web" ? "Public Portal" : c.channel.charAt(0).toUpperCase() + c.channel.slice(1)}
+                      </span>
                       <span>{c.count} ({pct}%)</span>
                     </div>
                     <div className="w-full rounded-full h-2 overflow-hidden border transition-colors duration-500

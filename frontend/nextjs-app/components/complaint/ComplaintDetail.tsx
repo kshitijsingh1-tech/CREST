@@ -120,7 +120,9 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
               {c.sub_category && (
                 <span className="text-xs text-gray-400 dark:text-gray-500">{c.sub_category}</span>
               )}
-              <span className="text-xs text-gray-400 dark:text-gray-500">via {c.channel}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                via {c.channel === "web" ? "Public Portal" : c.channel.charAt(0).toUpperCase() + c.channel.slice(1)}
+              </span>
               {c.region_id && (
                 <span className="text-xs bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400 px-2 py-1 rounded">
                   Region: {c.region_id}
