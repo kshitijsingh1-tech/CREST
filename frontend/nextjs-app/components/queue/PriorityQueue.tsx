@@ -63,6 +63,7 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
   const [showFilters, setShowFilters] = useState(false);
   const [userRole, setUserRole] = useState<string>("");
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<string>("priority_score");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -113,6 +114,23 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
     </div>
   );
 
+  const sortedQueue = [...queue].sort((a, b) => {
+    if (sortBy === "priority_score") {
+      return Number(b.priority_score || 0) - Number(a.priority_score || 0);
+    } else if (sortBy === "anger_score") {
+      return Number(b.anger_score || 0) - Number(a.anger_score || 0);
+    } else if (sortBy === "sla_deadline") {
+      const timeA = a.sla_deadline ? new Date(a.sla_deadline).getTime() : Infinity;
+      const timeB = b.sla_deadline ? new Date(b.sla_deadline).getTime() : Infinity;
+      return timeA - timeB;
+    } else if (sortBy === "created_at") {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return timeB - timeA;
+    }
+    return 0;
+  });
+
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
@@ -135,6 +153,19 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
               >
                 <option value="">All Regions</option>
                 {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Sort By</label>
+              <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value)}
+                className="block w-full bg-transparent border-b-2 border-gray-300 dark:border-white/20 text-xs font-bold py-1 focus:border-black dark:focus:border-white outline-none"
+              >
+                <option value="priority_score">Priority (High - Low)</option>
+                <option value="anger_score">Anger (High - Low)</option>
+                <option value="sla_deadline">SLA (Soonest)</option>
+                <option value="created_at">Date (Newest)</option>
               </select>
             </div>
             <div className="space-y-2">
@@ -176,7 +207,7 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-white/5">
-            {queue.map((c, idx) => (
+            {sortedQueue.map((c, idx) => (
               <tr 
                 key={c.id} 
                 className={`${idx % 2 === 0 ? "bg-white dark:bg-black" : "bg-slate-50 dark:bg-white/5"} ${c.severity === 0 ? "animate-p0-glow border-l-4 border-l-red-500" : "border-l-4 border-l-transparent"}`}
