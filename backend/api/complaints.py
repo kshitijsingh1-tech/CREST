@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from backend.utils.db import get_db_optional
 from backend.utils.logger import get_logger
 from backend.utils.runtime import DEV_MOCK, USE_PGVECTOR
-from backend.models.complaint import ComplaintIngest, ComplaintOut, ResolveRequest, AssignRequest, EscalateRequest
+from backend.models.complaint import ComplaintIngest, ComplaintOut, ResolveRequest, AssignRequest, EscalateRequest, ApproveDraftRequest
 from backend.services.complaint_service import (
     ingest_complaint, get_priority_queue, assign_complaint,
     resolve_complaint, approve_draft, export_audit_trail, find_similar,
@@ -457,10 +457,10 @@ def escalate(complaint_id: str, body: EscalateRequest, db: Optional[Session] = D
 # ----------- Approve Draft-------------------
 
 @router.patch("/{complaint_id}/approve-draft", response_model=dict)
-def approve_draft_reply(complaint_id: str, agent: str = Query(...), db: Optional[Session] = Depends(get_db_optional)):
+def approve_draft_reply(complaint_id: str, body: ApproveDraftRequest, db: Optional[Session] = Depends(get_db_optional)):
     try:
         if DEV_MOCK:
-            result = mock_approve_draft(complaint_id, agent)
+            result = mock_approve_draft(complaint_id, body.agent)
             if not result:
                 raise HTTPException(status_code=404, detail="Complaint not found")
             try:
@@ -469,7 +469,7 @@ def approve_draft_reply(complaint_id: str, agent: str = Query(...), db: Optional
                 pass
             return result
 
-        res = approve_draft(db, complaint_id, agent)
+        res = approve_draft(db, complaint_id, body.agent, body.draft_reply)
         try:
             async_to_sync(broadcast_queue_update)()
         except Exception:

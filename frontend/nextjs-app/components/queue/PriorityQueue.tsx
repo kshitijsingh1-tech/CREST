@@ -7,8 +7,9 @@
  * Colour-coded by severity and SLA status.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { getPriorityQueue, type Complaint } from "@/lib/api";
 import { useSocket } from "@/lib/useSocket";
 
@@ -55,15 +56,26 @@ function hoursUntilSLA(deadline: string | null): string {
 }
 
 export default function PriorityQueue({ regionId }: { regionId?: number }) {
+  const searchParams = useSearchParams();
+  const initialRegion = searchParams.get("region_id") ? Number(searchParams.get("region_id")) : regionId;
+  const initialSeverity = searchParams.get("severity");
+  const initialCategory = searchParams.get("category");
+  const initialChannel = searchParams.get("channel");
+
   const [queue, setQueue]     = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [flash, setFlash]     = useState<string | null>(null);
-  const [currentRegion, setCurrentRegion] = useState<number | undefined>(regionId);
+  const [currentRegion, setCurrentRegion] = useState<number | undefined>(initialRegion);
   const [regions, setRegions] = useState<any[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
   const [userRole, setUserRole] = useState<string>("");
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<string>("priority_score");
+  
+  // Filters state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterSeverity, setFilterSeverity] = useState<string | null>(initialSeverity);
+  const [filterCategory, setFilterCategory] = useState<string | null>(initialCategory);
+  const [filterChannel, setFilterChannel] = useState<string | null>(initialChannel);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -114,7 +126,35 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
     </div>
   );
 
-  const sortedQueue = [...queue].sort((a, b) => {
+  const filteredQueue = useMemo(() => {
+    return queue.filter(c => {
+      // Search Box (Case Insensitive)
+      if (searchQuery) {
+        const sq = searchQuery.toLowerCase();
+        const match = 
+          c.category?.toLowerCase().includes(sq) ||
+          c.sub_category?.toLowerCase().includes(sq) ||
+          c.status.toLowerCase().includes(sq) ||
+          c.customer_name?.toLowerCase().includes(sq) ||
+          c.customer_id?.toLowerCase().includes(sq) ||
+          c.subject?.toLowerCase().includes(sq);
+        if (!match) return false;
+      }
+
+      // Severity
+      if (filterSeverity !== null && c.severity?.toString() !== filterSeverity) return false;
+      
+      // Category
+      if (filterCategory && c.category !== filterCategory) return false;
+      
+      // Channel
+      if (filterChannel && c.channel !== filterChannel) return false;
+
+      return true;
+    });
+  }, [queue, searchQuery, filterSeverity, filterCategory, filterChannel]);
+
+  const sortedQueue = [...filteredQueue].sort((a, b) => {
     if (sortBy === "priority_score") {
       return Number(b.priority_score || 0) - Number(a.priority_score || 0);
     } else if (sortBy === "anger_score") {
@@ -144,16 +184,9 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
           </div>
           <input 
             type="text"
-            placeholder="Search AI category, status, name..."
-            onChange={(e) => {
-              const val = e.target.value.toLowerCase();
-              if (!val) { refresh(); return; }
-              setQueue(prev => prev.filter(c => 
-                c.category?.toLowerCase().includes(val) || 
-                c.status.toLowerCase().includes(val) ||
-                c.customer_name?.toLowerCase().includes(val)
-              ));
-            }}
+            placeholder="Search AI category, status, name, subject..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="block w-full pl-10 pr-4 py-3 bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all placeholder-gray-400 dark:text-white"
           />
         </div>
@@ -358,6 +391,12 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
             ))}
           </tbody>
         </table>
+
+        {sortedQueue.length === 0 && queue.length > 0 && (
+          <div className="py-12 text-center text-gray-400 dark:text-gray-600 text-sm">
+            No complaints match your current filters.
+          </div>
+        )}
 
         {queue.length === 0 && (
           <div className="py-12 text-center text-gray-400 dark:text-gray-600 text-sm">

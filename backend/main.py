@@ -68,7 +68,6 @@ async def lifespan(app: FastAPI):
         from backend.utils.init_db import initialize_database
         from sqlalchemy import text
 
-        initialize_database()
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
             try:
@@ -76,6 +75,8 @@ async def lifespan(app: FastAPI):
                 conn.commit()
             except Exception:
                 pass # Column likely already exists
+        
+        initialize_database()
         logger.info("Database connection verified and schema initialized")
         
         # Start Email IMAP Listener in a self-healing background daemon thread

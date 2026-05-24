@@ -5,7 +5,6 @@ import {
   getRegionDistribution, RegionStat
 } from "@/lib/api";
 import VolumeTrendChart from "@/components/charts/VolumeTrendChart";
-import PriorityQueue from "@/components/queue/PriorityQueue";
 import { redirect } from "next/navigation";
 
 function KPICard({ label, value, sub, color }: {
@@ -151,23 +150,24 @@ export default async function CrestAnalyticsPage() {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <div className="xl:col-span-2 space-y-8">
-             {/* Priority Queue Module */}
-            <div className="rounded-3xl p-6 md:p-8 border transition-all duration-500
+             {/* Priority Queue Link Module */}
+            <div className="rounded-3xl p-6 md:p-8 border transition-all duration-500 flex flex-col justify-center items-center h-full min-h-[250px] relative overflow-hidden group
               dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl
-              bg-white border-gray-200 shadow-xl hover:border-black">
-              <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-2">
-                <h2 className="text-base font-black uppercase tracking-widest flex items-center gap-4 transition-colors duration-500 dark:text-white text-black">
-                  Live Priority Queue
-                  <span className="px-3 py-1.5 rounded-md text-[9px] font-bold tracking-widest uppercase transition-colors duration-500 border
-                    dark:bg-blue-900/30 dark:border-blue-500/30 dark:text-blue-300
-                    bg-gray-100 border-gray-300 text-black">
-                    Emotion-Decay ranking
-                  </span>
-                </h2>
-              </div>
-              <div className="transition-all duration-500">
-                <PriorityQueue regionId={regionId} />
-              </div>
+              bg-white border-gray-200 shadow-xl hover:border-black hover:shadow-2xl hover:-translate-y-1 hover:scale-[1.01]">
+              <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-indigo-500/10 dark:bg-indigo-400/10 rounded-full blur-3xl scale-0 group-hover:scale-[3] transition-transform duration-700 ease-out z-0 pointer-events-none"></div>
+              
+              <h2 className="text-xl md:text-2xl font-black uppercase tracking-widest mb-4 transition-colors duration-500 dark:text-white text-black relative z-10 text-center">
+                Manage Live Queue
+              </h2>
+              <p className="text-xs md:text-sm font-semibold text-gray-500 dark:text-slate-400 mb-8 text-center max-w-md relative z-10">
+                Monitor and manage all live grievances ranked dynamically by Emotion-Decay priority scoring. Filter by region, severity, category, or channel.
+              </p>
+              
+              <Link href="/ub_CREST/queue" className="px-8 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-500 border shadow-sm relative z-10
+                dark:bg-blue-600 dark:border-blue-500 dark:text-white dark:hover:bg-blue-500 dark:shadow-[0_0_20px_rgba(37,99,235,0.4)]
+                bg-blue-600 border-blue-700 text-white hover:bg-blue-700 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-500/30">
+                Go to Live Queue →
+              </Link>
             </div>
           </div>
 
@@ -193,14 +193,14 @@ export default async function CrestAnalyticsPage() {
                     "P4 Info":     "bg-gray-400",
                   };
                   return (
-                    <div key={s.severity} className="flex items-center gap-4 group">
+                    <Link href={`/ub_CREST/queue?severity=${s.severity.split(" ")[0].replace("P", "")}`} key={s.severity} className="flex items-center gap-4 group cursor-pointer">
                       <span className="text-[10px] font-bold w-24 uppercase tracking-wider transition-colors duration-300 dark:text-blue-300 dark:group-hover:text-white text-gray-500 group-hover:text-black">{s.severity}</span>
                       <div className="flex-1 rounded-full h-3 overflow-hidden border transition-colors duration-500 dark:bg-black/80 dark:shadow-inner dark:border-blue-900/50 bg-gray-100 border-gray-300">
                         <div className={`h-full rounded-full transition-all duration-500 dark:bg-gradient-to-r dark:${colors_dark[s.severity] ?? "from-gray-500 to-gray-400"} ${colors_light[s.severity] ?? "bg-black"}`}
                           style={{ width: `${Math.max(5, (s.count / (severities[0]?.count || 1)) * 100)}%` }} />
                       </div>
-                      <span className="text-xs font-black w-10 text-right transition-colors duration-500 dark:text-white text-black">{s.count}</span>
-                    </div>
+                      <span className="text-xs font-black w-10 text-right transition-colors duration-500 dark:text-white text-black group-hover:text-blue-600 dark:group-hover:text-blue-400">{s.count}</span>
+                    </Link>
                   );
                 })}
               </div>
@@ -224,21 +224,21 @@ export default async function CrestAnalyticsPage() {
                 const pct = Math.round((c.count / (totalChannels || 1)) * 100);
                 const icons: Record<string, string> = { email: "📧", whatsapp: "💬", app: "📱", twitter: "🐦", voice: "📞", branch: "🏦", web: "🌐" };
                 return (
-                  <div key={c.channel} className="flex flex-col gap-2 group">
+                  <Link href={`/ub_CREST/queue?channel=${c.channel}`} key={c.channel} className="flex flex-col gap-2 group cursor-pointer block">
                     <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider transition-colors duration-300
                       dark:text-blue-300 dark:group-hover:text-white text-gray-500 group-hover:text-black">
                       <span className="flex items-center gap-2">
                         {icons[c.channel] ?? "•"} {c.channel === "web" ? "Public Portal" : c.channel.charAt(0).toUpperCase() + c.channel.slice(1)}
                       </span>
-                      <span>{c.count} ({pct}%)</span>
+                      <span className="group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{c.count} ({pct}%)</span>
                     </div>
                     <div className="w-full rounded-full h-2 overflow-hidden border transition-colors duration-500
                       dark:bg-black/80 dark:border-blue-900/50 dark:shadow-inner bg-gray-100 border-gray-300">
-                      <div className="h-full rounded-full transition-all duration-500
+                      <div className="h-full rounded-full transition-all duration-500 group-hover:shadow-[0_0_10px_rgba(99,102,241,0.5)]
                         dark:bg-gradient-to-r dark:from-indigo-600 dark:to-indigo-400 dark:shadow-[0_0_10px_rgba(99,102,241,0.8)]
                         bg-black" style={{ width: `${pct}%` }} />
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -254,19 +254,19 @@ export default async function CrestAnalyticsPage() {
               {categories.map(c => {
                 const pct = Math.round((c.count / (totalComplaints || 1)) * 100);
                 return (
-                  <div key={c.category} className="flex flex-col gap-2 group">
+                  <Link href={`/ub_CREST/queue?category=${encodeURIComponent(c.category)}`} key={c.category} className="flex flex-col gap-2 group cursor-pointer block">
                     <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider transition-colors duration-300
                       dark:text-blue-300 dark:group-hover:text-white text-gray-500 group-hover:text-black">
                       <span>{c.category}</span>
-                      <span>{c.count} ({pct}%)</span>
+                      <span className="group-hover:text-teal-600 dark:group-hover:text-teal-400">{c.count} ({pct}%)</span>
                     </div>
                     <div className="w-full rounded-full h-2 overflow-hidden border transition-colors duration-500
                       dark:bg-black/80 dark:border-blue-900/50 dark:shadow-inner bg-gray-100 border-gray-300">
-                      <div className="h-full rounded-full transition-all duration-500
+                      <div className="h-full rounded-full transition-all duration-500 group-hover:shadow-[0_0_10px_rgba(20,184,166,0.5)]
                         dark:bg-gradient-to-r dark:from-teal-600 dark:to-teal-400 dark:shadow-[0_0_10px_rgba(20,184,166,0.8)]
                         bg-black" style={{ width: `${pct}%` }} />
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -347,10 +347,10 @@ export default async function CrestAnalyticsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 relative z-10">
               {regions.map((r) => (
-                <div key={r.region} className="rounded-2xl border p-5 transition-all duration-500 group/card
-                  dark:bg-white/[0.02] dark:border-white/5 dark:hover:bg-white/[0.04] dark:hover:border-white/10
-                  bg-slate-50 border-gray-100 hover:bg-slate-100 hover:border-gray-200 hover:-translate-y-1">
-                  <p className="text-xs font-extrabold tracking-tight dark:text-white text-gray-900 truncate">{r.region}</p>
+                <Link href={r.region_id ? `/ub_CREST/queue?region_id=${r.region_id}` : `/ub_CREST/queue`} key={r.region} className="block rounded-2xl border p-5 transition-all duration-500 group/card cursor-pointer
+                  dark:bg-white/[0.02] dark:border-white/5 dark:hover:bg-white/[0.04] dark:hover:border-blue-500/30
+                  bg-slate-50 border-gray-100 hover:bg-white hover:border-blue-300 hover:-translate-y-1 hover:shadow-md">
+                  <p className="text-xs font-extrabold tracking-tight dark:text-white text-gray-900 truncate group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors">{r.region}</p>
                   
                   <div className="mt-4 space-y-2.5">
                     <div className="flex justify-between items-center text-[10px]">
@@ -374,11 +374,11 @@ export default async function CrestAnalyticsPage() {
                   {/* Minimal progress bar indicators */}
                   <div className="mt-4 w-full bg-gray-200 dark:bg-black/60 rounded-full h-1.5 overflow-hidden">
                     <div 
-                      className={`h-full rounded-full transition-all duration-500 ${r.breached > 0 ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-blue-500'}`} 
+                      className={`h-full rounded-full transition-all duration-500 group-hover/card:shadow-[0_0_8px_rgba(59,130,246,0.5)] ${r.breached > 0 ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] group-hover/card:shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-blue-500'}`} 
                       style={{ width: `${Math.min(100, Math.max(5, (r.open / (r.total || 1)) * 100))}%` }}
                     />
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

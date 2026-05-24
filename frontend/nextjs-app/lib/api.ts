@@ -148,7 +148,7 @@ export interface CategoryStat  { category: string;  count: number; }
 export interface SeverityStat  { severity: string;  count: number; }
 export interface ChannelStat   { channel:  string;  count: number; }
 export interface VolumeTrend   { date: string; total: number; duplicates: number; p0_count: number; }
-export interface RegionStat   { region: string; open: number; breached: number; total: number; }
+export interface RegionStat   { region_id?: number; region: string; open: number; breached: number; total: number; }
 export interface SpikeSignal   {
   id:                  number;
   signal_type:         string;
@@ -199,9 +199,10 @@ export const escalateComplaint = (id: string, employeeId: number) =>
     body: JSON.stringify({ employee_id: employeeId }),
   });
 
-export const approveDraft = (id: string, agent: string) =>
-  apiFetch(`/api/complaints/${id}/approve-draft?agent=${encodeURIComponent(agent)}`, {
+export const approveDraft = (id: string, agent: string, draft_reply?: string) =>
+  apiFetch(`/api/complaints/${id}/approve-draft`, {
     method: "PATCH",
+    body: JSON.stringify({ agent, draft_reply }),
   });
 
 export const resolveComplaint = (

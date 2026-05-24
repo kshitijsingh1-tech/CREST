@@ -322,7 +322,7 @@ def resolve_complaint(
     return c
 
 
-def approve_draft(db: Session, complaint_id: str, agent: str) -> dict:
+def approve_draft(db: Session, complaint_id: str, agent: str, draft_reply: Optional[str] = None) -> dict:
     c = _get_or_raise(db, complaint_id)
     recipient = (c.customer_id or "").strip()
 
@@ -333,6 +333,9 @@ def approve_draft(db: Session, complaint_id: str, agent: str) -> dict:
             "recipient": recipient,
             "detail": "Draft was already approved earlier. No new outbound message was sent.",
         }
+
+    if draft_reply is not None:
+        c.draft_reply = draft_reply
 
     if not c.draft_reply or not c.draft_reply.strip():
         raise ValueError("No AI draft reply is available for this complaint")

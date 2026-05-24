@@ -545,7 +545,7 @@ export default function PublicPortalHub() {
                 bg-[#f4f4f4] border-gray-200">
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
-                    <h3 className="font-extrabold text-xl tracking-tight dark:text-white text-gray-900">Regional Support</h3>
+                    <h3 className="font-extrabold text-xl tracking-tight dark:text-white text-gray-900">Regional Contact Support</h3>
                     <p className="text-xs font-semibold dark:text-blue-400 text-blue-700">Response: Within 48 Hours</p>
                   </div>
                   <Lock className="w-6 h-6 dark:text-slate-400 text-gray-800" strokeWidth={1.5} />

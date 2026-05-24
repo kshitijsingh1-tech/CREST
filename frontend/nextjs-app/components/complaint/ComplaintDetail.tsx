@@ -65,7 +65,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
     if (!agent) { flash("err", "Enter your agent ID first"); return; }
     setLoading(true);
     try {
-      await approveDraft(c.id, agent);
+      await approveDraft(c.id, agent, c.draft_reply || undefined);
       setC(prev => ({ ...prev, draft_approved: true }));
       setNote("Resolved by approving AI generated draft reply.");
       flash("ok", "Draft approved! You can now Mark as Resolved.");
@@ -202,9 +202,17 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
             </div>
             {c.draft_reply ? (
               <>
-                <p className="text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40">
-                  {c.draft_reply}
-                </p>
+                {c.draft_approved || (c as any).is_superior_takeover ? (
+                  <p className="text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40">
+                    {c.draft_reply}
+                  </p>
+                ) : (
+                  <textarea
+                    className="w-full text-sm text-gray-800 dark:text-white leading-relaxed bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 resize-y min-h-[120px]"
+                    value={c.draft_reply || ""}
+                    onChange={(e) => setC(prev => ({ ...prev, draft_reply: e.target.value }))}
+                  />
+                )}
                 
                 {/* RAG Sources (Grounded AI) */}
                 {c.draft_metadata && (

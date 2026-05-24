@@ -181,3 +181,7 @@ class AssignRequest(BaseModel):
 class EscalateRequest(BaseModel):
     employee_id: int
     note: Optional[str] = None
+
+class ApproveDraftRequest(BaseModel):
+    agent: str
+    draft_reply: Optional[str] = None
