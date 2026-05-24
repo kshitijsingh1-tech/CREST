@@ -109,6 +109,21 @@ export default function PublicTrackingPage() {
     }
   };
 
+  const handleRating = async (score: number) => {
+    setLoading(true);
+    try {
+      const res = await submitPublicAction(reference, `rate_${score}`);
+      setSuccess("Thank you for your feedback! Your rating has been submitted.");
+      const data = await trackPublicComplaint(reference, contact, otp);
+      setComplaintData(data);
+      setTimeout(() => setSuccess(""), 5000);
+    } catch (err: any) {
+      setError(err.message || `Failed to submit rating.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (complaintData) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-black flex flex-col relative overflow-hidden">
@@ -243,6 +258,24 @@ export default function PublicTrackingPage() {
                 <div className="mt-8 bg-blue-500/5 dark:bg-white/5 p-6 rounded-3xl border border-blue-500/10 dark:border-white/10">
                   <h3 className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-2">Desk Resolution Remarks</h3>
                   <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-medium">{complaintData.resolution_note}</p>
+                </div>
+              )}
+
+              {complaintData.status === "resolved" && (
+                <div className="mt-8 bg-emerald-500/5 dark:bg-emerald-500/5 p-8 rounded-3xl border border-emerald-500/10 dark:border-emerald-500/10 text-center">
+                  <h3 className="text-sm font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest mb-4">Rate Your Resolution Experience</h3>
+                  <div className="flex justify-center gap-3 mb-4">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => handleRating(star)}
+                        className="text-4xl text-slate-300 dark:text-slate-700 hover:text-yellow-400 dark:hover:text-yellow-500 focus:text-yellow-500 transition-colors drop-shadow-sm hover:scale-110 active:scale-95"
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Your feedback (1-5 stars) is securely submitted directly to the Central Audit Team.</p>
                 </div>
               )}
             </div>

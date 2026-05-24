@@ -6,7 +6,7 @@ import urllib.error
 
 def main():
     parser = argparse.ArgumentParser(description="Simulate a frustrated customer Tweet to test CREST Twitter/X ingestion.")
-    parser.add_argument("--text", type=str, default="Hey @UnionBank, your app has crashed 3 times during a UPI transfer! My money got debited but the merchant received nothing. Extremely disappointing service!", help="The content of the Tweet.")
+    parser.add_argument("--text", type=str, default="Hey @CREST_ub, your app has crashed 3 times during a UPI transfer! My money got debited but the merchant received nothing. Extremely disappointing service!", help="The content of the Tweet.")
     parser.add_argument("--username", type=str, default="FrustratedUserX", help="Twitter username (without @).")
     parser.add_argument("--api-url", type=str, default="https://crest-api-0uc4.onrender.com/api/integrations/twitter/webhook", help="Webhook endpoint URL (defaults to Render deployment, use http://localhost:8000/api/integrations/twitter/webhook for local).")
     parser.add_argument("--key", type=str, default="crest_twitter_demo_key_2024", help="Secret TWITTER_WEBHOOK_KEY.")

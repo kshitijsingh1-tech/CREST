@@ -17,7 +17,7 @@ from integrations.twitter.responder import fire_redirect_reply
 logger = get_logger("crest.integrations.twitter")
 
 BEARER_TOKEN   = os.getenv("TWITTER_BEARER_TOKEN", "")
-BANK_HANDLE    = os.getenv("TWITTER_BANK_HANDLE", "@UnionBankTweets")
+BANK_HANDLE    = os.getenv("TWITTER_BANK_HANDLE", "@CREST_ub")
 STREAM_URL     = "https://api.twitter.com/2/tweets/search/stream"
 RULES_URL      = "https://api.twitter.com/2/tweets/search/stream/rules"
 

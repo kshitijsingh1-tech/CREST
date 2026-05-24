@@ -29,7 +29,7 @@ logger = get_logger("crest.integrations.twitter.responder")
 
 BANK_EMAIL       = os.getenv("BANK_SUPPORT_EMAIL",  "iscuteayushi@gmail.com")
 PORTAL_URL       = os.getenv("CREST_PORTAL_URL",    "https://unionbank.crest.in/crest_publicPortal")
-BANK_HANDLE      = os.getenv("TWITTER_BANK_HANDLE", "@UnionBankTweets")
+BANK_HANDLE      = os.getenv("TWITTER_BANK_HANDLE", "@CREST_ub")
 
 # Guard: never reply to the same tweet_id twice (in-memory; safe for single process)
 _replied: set[str] = set()
