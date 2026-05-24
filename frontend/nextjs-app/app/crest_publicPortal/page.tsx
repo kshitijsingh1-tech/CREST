@@ -199,7 +199,11 @@ export default function PublicPortalHub() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest backdrop-blur-md shadow-sm
             dark:border-white/10 dark:bg-white/5 dark:text-blue-300
             border-white/20 bg-white/10 text-gray-700">
-            Bhashini AI • RBI Ombudsman 2021 • India AI Mission Aligned
+            <Link href="/ub_CREST/docs#compliance" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Bhashini AI</Link>
+            {" • "}
+            <Link href="/ub_CREST/docs#compliance" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">RBI Ombudsman 2021</Link>
+            {" • "}
+            <Link href="/ub_CREST/docs#compliance" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">India AI Mission Aligned</Link>
           </div>
 
           {/* Centered Premium Logo */}

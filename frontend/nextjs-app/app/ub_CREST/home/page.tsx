@@ -32,7 +32,20 @@ export default async function CommandCenterHome() {
       subtitle="Command & Escalation Intelligence Platform"
       badgeText={`${roleLabel} Clearance Active`}
       italicText={`“हर शिकायत, हर बार हल”`}
-      subText={`Bhashini AI • India AI Mission • RBI Ombudsman 2021 • DPDP Act 2023 • MeitY Aligned — Welcome, ${user.name}`}
+      subText={
+        <span className="flex flex-wrap items-center justify-center gap-1">
+          <Link href="/ub_CREST/docs#compliance" className="hover:text-blue-500 dark:hover:text-blue-300 transition-colors underline decoration-dotted decoration-blue-500/40">Bhashini AI</Link>
+          {" • "}
+          <Link href="/ub_CREST/docs#compliance" className="hover:text-blue-500 dark:hover:text-blue-300 transition-colors underline decoration-dotted decoration-blue-500/40">India AI Mission</Link>
+          {" • "}
+          <Link href="/ub_CREST/docs#compliance" className="hover:text-blue-500 dark:hover:text-blue-300 transition-colors underline decoration-dotted decoration-blue-500/40">RBI Ombudsman 2021</Link>
+          {" • "}
+          <Link href="/ub_CREST/docs#compliance" className="hover:text-blue-500 dark:hover:text-blue-300 transition-colors underline decoration-dotted decoration-blue-500/40">DPDP Act 2023</Link>
+          {" • "}
+          <Link href="/ub_CREST/docs#compliance" className="hover:text-blue-500 dark:hover:text-blue-300 transition-colors underline decoration-dotted decoration-blue-500/40">MeitY Aligned</Link>
+          {` — Welcome, ${user.name}`}
+        </span>
+      }
     >
       <div className="flex-1 bg-transparent p-6 md:p-10 space-y-10 max-w-[90rem] mx-auto w-full relative z-10">
 

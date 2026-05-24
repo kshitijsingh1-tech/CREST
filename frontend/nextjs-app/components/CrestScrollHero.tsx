@@ -9,7 +9,7 @@ interface CrestScrollHeroProps {
   title: string;
   subtitle: string;
   badgeText?: string;
-  subText?: string;
+  subText?: ReactNode;
   italicText?: string;
   children: ReactNode;
 }
