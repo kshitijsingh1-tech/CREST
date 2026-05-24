@@ -27,7 +27,7 @@ logger = get_logger("crest.integrations.twitter.responder")
 
 #---------------- Config ---------------------------------------------
 
-BANK_EMAIL       = os.getenv("BANK_SUPPORT_EMAIL",  "grievance@unionbankofindia.com")
+BANK_EMAIL       = os.getenv("BANK_SUPPORT_EMAIL",  "iscuteayushi@gmail.com")
 PORTAL_URL       = os.getenv("CREST_PORTAL_URL",    "https://unionbank.crest.in/crest_publicPortal")
 BANK_HANDLE      = os.getenv("TWITTER_BANK_HANDLE", "@UnionBankTweets")
 

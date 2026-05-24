@@ -170,17 +170,64 @@ export default function DocsPage() {
         {/* Channels */}
         <Section id="channels" title="How Complaints Reach CREST" subtitle="Omnichannel ingestion">
           <p className="text-sm dark:text-slate-400 text-gray-600 mb-6">Customers don't need to know anything about CREST. They simply use the channel they're most comfortable with — CREST listens everywhere.</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { icon: <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>, ch: "Email", desc: "Send a grievance to the bank's dedicated email address. CREST reads, classifies, and queues it within seconds." },
-              { icon: <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="#25D366" /><path fillRule="evenodd" clipRule="evenodd" d="M12.03 5C8.15 5 5 8.15 5 12.03c0 1.27.34 2.5.98 3.58L5 20l4.52-.95c1.04.57 2.2.87 3.5.87 3.88 0 7.03-3.15 7.03-7.03C20.06 8.15 16.9 5 12.03 5zm3.62 10.05c-.15.42-.76.81-1.05.86-.29.05-.65.08-1.89-.43-1.6-.66-2.61-2.28-2.69-2.39-.08-.11-.68-.9-.68-1.72s.43-1.22.58-1.37c.15-.15.34-.19.45-.19.1 0 .26 0 .4.3.15.35.53 1.27.57 1.35.04.09.07.19.02.3-.06.11-.09.19-.17.28-.08.09-.18.21-.25.29-.08.08-.17.18-.08.35.1.18.46.76.99 1.23.68.6 1.25.79 1.43.87.18.08.28-.02.39-.13.1-.11.45-.52.57-.7.12-.18.24-.15.41-.09.17.06 1.07.5 1.25.6.18.09.3.14.34.22.04.08.04.44-.1.86z" fill="white" /></svg>, ch: "WhatsApp", desc: "Message our WhatsApp AI bot. Works instantly without navigating complex menus." },
-              { icon: <svg className="w-6 h-6 text-gray-900 dark:text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>, ch: "Twitter / X", desc: "Mention or DM the bank's handle. Social complaints are captured instantly." },
-              { icon: <img src="/crest_logo.png" className="w-6 h-6 rounded object-cover" alt="CREST" />, ch: "Web Portal", desc: "Fill out the online complaint form at the public portal. No account needed — just your contact details." },
-            ].map(({ icon, ch, desc }) => (
-              <div key={ch} className="rounded-2xl border p-4 dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 bg-white/60 backdrop-blur-md border-white/50">
-                <div className="mb-3">{icon}</div>
-                <p className="text-xs font-black uppercase tracking-widest mb-1 dark:text-white text-gray-900">{ch}</p>
-                <p className="text-[11px] leading-relaxed dark:text-slate-400 text-gray-500">{desc}</p>
+              { 
+                icon: <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>, 
+                ch: "Email", 
+                desc: "Send a grievance to the bank's dedicated email address: iscuteayushi@gmail.com. CREST reads, classifies, and queues it within seconds.",
+                href: "mailto:iscuteayushi@gmail.com",
+                cta: "Send Email"
+              },
+              { 
+                icon: <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="5" fill="#25D366" /><path fillRule="evenodd" clipRule="evenodd" d="M12.03 5C8.15 5 5 8.15 5 12.03c0 1.27.34 2.5.98 3.58L5 20l4.52-.95c1.04.57 2.2.87 3.5.87 3.88 0 7.03-3.15 7.03-7.03C20.06 8.15 16.9 5 12.03 5zm3.62 10.05c-.15.42-.76.81-1.05.86-.29.05-.65.08-1.89-.43-1.6-.66-2.61-2.28-2.69-2.39-.08-.11-.68-.9-.68-1.72s.43-1.22.58-1.37c.15-.15.34-.19.45-.19.1 0 .26 0 .4.3.15.35.53 1.27.57 1.35.04.09.07.19.02.3-.06.11-.09.19-.17.28-.08.09-.18.21-.25.29-.08.08-.17.18-.08.35.1.18.46.76.99 1.23.68.6 1.25.79 1.43.87.18.08.28-.02.39-.13.1-.11.45-.52.57-.7.12-.18.24-.15.41-.09.17.06 1.07.5 1.25.6.18.09.3.14.34.22.04.08.04.44-.1.86z" fill="white" /></svg>, 
+                ch: "WhatsApp", 
+                desc: "Message our WhatsApp AI bot at +1 (415) 523-8886. Works instantly without navigating complex menus.",
+                href: "https://wa.me/14155238886",
+                cta: "Open Chat"
+              },
+              { 
+                icon: <svg className="w-6 h-6 text-gray-900 dark:text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>, 
+                ch: "Twitter / X", 
+                desc: "Mention or DM the bank's handle @UnionBankTweets. Social complaints are captured instantly.",
+                href: "https://x.com/UnionBankTweets",
+                cta: "Tweet to Us"
+              },
+              { 
+                icon: <img src="/crest_logo.png" className="w-6 h-6 rounded object-cover animate-pulse" alt="CREST" />, 
+                ch: "Web Portal", 
+                desc: "Fill out the online complaint form at the public portal. No account needed — just your contact details.",
+                href: "/crest_publicPortal",
+                cta: "Open Portal"
+              },
+            ].map(({ icon, ch, desc, href, cta }) => (
+              <div key={ch} className="rounded-2xl border p-5 dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 bg-white/60 backdrop-blur-md border-white/50 flex flex-col justify-between group transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div>
+                  <div className="mb-3">{icon}</div>
+                  <p className="text-xs font-black uppercase tracking-widest mb-1 dark:text-white text-gray-900">{ch}</p>
+                  <p className="text-[11px] leading-relaxed dark:text-slate-400 text-gray-500 mb-6">{desc}</p>
+                </div>
+                {href.startsWith("/") ? (
+                  <Link 
+                    href={href}
+                    className="w-full text-center py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-300
+                      dark:bg-white/5 dark:border-white/10 dark:text-white dark:hover:bg-white/15 dark:hover:border-white/30
+                      bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200 hover:text-black shadow-sm"
+                  >
+                    {cta} →
+                  </Link>
+                ) : (
+                  <a 
+                    href={href} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full text-center py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-300
+                      dark:bg-white/5 dark:border-white/10 dark:text-white dark:hover:bg-white/15 dark:hover:border-white/30
+                      bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200 hover:text-black shadow-sm"
+                  >
+                    {cta} →
+                  </a>
+                )}
               </div>
             ))}
           </div>
