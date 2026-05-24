@@ -1,4 +1,5 @@
 import PriorityQueue from "@/components/queue/PriorityQueue";
+import { Suspense } from "react";
 
 export default function QueuePage() {
   return (
@@ -13,7 +14,9 @@ export default function QueuePage() {
       <div className="rounded-3xl p-8 border transition-all duration-500
         dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl
         bg-white border-gray-200 shadow-xl hover:border-black">
-        <PriorityQueue />
+        <Suspense fallback={<div className="text-gray-400 font-semibold text-xs uppercase tracking-wider animate-pulse">Loading priority queue...</div>}>
+          <PriorityQueue />
+        </Suspense>
       </div>
     </div>
   );

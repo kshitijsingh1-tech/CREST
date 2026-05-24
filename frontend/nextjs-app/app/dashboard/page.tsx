@@ -1,5 +1,6 @@
 import { getDashboardSummary, getByCategory, getBySeverity, getSpikeSignals, getMe } from "@/lib/api";
 import PriorityQueue from "@/components/queue/PriorityQueue";
+import { Suspense } from "react";
 
 function KPICard({ label, value, sub, color }: {
   label: string; value: string | number; sub?: string; color?: string;
@@ -84,7 +85,9 @@ export default async function DashboardPage() {
               </h2>
             </div>
             <div className="transition-all duration-500">
-              <PriorityQueue regionId={regionId} />
+              <Suspense fallback={<div className="text-gray-400 font-semibold text-xs uppercase tracking-wider animate-pulse">Loading priority queue...</div>}>
+                <PriorityQueue regionId={regionId} />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -173,25 +176,34 @@ export default async function DashboardPage() {
             <h3 className="text-xs font-black uppercase tracking-widest mb-8 transition-colors duration-500 dark:text-white text-black">Open by Severity</h3>
             <div className="space-y-6">
               {severities.map(s => {
-                const colors_dark: Record<string, string> = {
-                  "P0 Critical": "from-red-600 to-red-400 shadow-[0_0_10px_rgba(244,63,94,0.8)]",
-                  "P1 High":     "from-orange-500 to-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.8)]",
-                  "P2 Medium":   "from-amber-500 to-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.8)]",
-                  "P3 Low":      "from-blue-600 to-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.8)]",
-                  "P4 Info":     "from-slate-500 to-slate-400 shadow-[0_0_10px_rgba(148,163,184,0.8)]",
+                const SEVERITY_COLORS: Record<string, { light: string; dark: string }> = {
+                  "P0 Critical": { 
+                    light: "bg-red-500", 
+                    dark: "dark:bg-gradient-to-r dark:from-red-600 dark:to-red-400 dark:shadow-[0_0_10px_rgba(239,68,68,0.5)]" 
+                  },
+                  "P1 High": { 
+                    light: "bg-orange-500", 
+                    dark: "dark:bg-gradient-to-r dark:from-orange-500 dark:to-orange-400 dark:shadow-[0_0_10px_rgba(249,115,22,0.5)]" 
+                  },
+                  "P2 Medium": { 
+                    light: "bg-amber-500", 
+                    dark: "dark:bg-gradient-to-r dark:from-amber-500 dark:to-amber-300 dark:shadow-[0_0_10px_rgba(245,158,11,0.5)]" 
+                  },
+                  "P3 Low": { 
+                    light: "bg-blue-500", 
+                    dark: "dark:bg-gradient-to-r dark:from-blue-600 dark:to-blue-400 dark:shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
+                  },
+                  "P4 Info": { 
+                    light: "bg-slate-400", 
+                    dark: "dark:bg-gradient-to-r dark:from-slate-500 dark:to-slate-400" 
+                  },
                 };
-                const colors_light: Record<string, string> = {
-                  "P0 Critical": "bg-red-600",
-                  "P1 High":     "bg-orange-500",
-                  "P2 Medium":   "bg-amber-400",
-                  "P3 Low":      "bg-black",
-                  "P4 Info":     "bg-gray-400",
-                };
+                const severityStyle = SEVERITY_COLORS[s.severity] || { light: "bg-gray-400", dark: "dark:bg-slate-400" };
                 return (
                   <div key={s.severity} className="flex items-center gap-4 group">
                     <span className="text-[10px] font-bold w-24 uppercase tracking-wider transition-colors duration-300 dark:text-blue-300 dark:group-hover:text-white text-gray-500 group-hover:text-black">{s.severity}</span>
                     <div className="flex-1 rounded-full h-3 overflow-hidden border transition-colors duration-500 dark:bg-black/80 dark:shadow-inner dark:border-blue-900/50 bg-gray-100 border-gray-300">
-                      <div className={`h-full rounded-full transition-all duration-500 dark:bg-gradient-to-r dark:${colors_dark[s.severity] ?? "from-gray-500 to-gray-400"} ${colors_light[s.severity] ?? "bg-black"}`}
+                      <div className={`h-full rounded-full transition-all duration-500 ${severityStyle.light} ${severityStyle.dark}`}
                         style={{ width: `${Math.max(5, (s.count / (severities[0]?.count || 1)) * 100)}%` }} />
                     </div>
                     <span className="text-xs font-black w-10 text-right transition-colors duration-500 dark:text-white text-black">{s.count}</span>

@@ -258,6 +258,7 @@ def complaints_by_region(db: Session | None = Depends(get_db_optional)):
     result = []
     for r in rows:
         result.append({
+            "region_id": r.region_id,
             "region": r.region_name,
             "open": int(r.open_count or 0),
             "breached": int(r.breached_count or 0),

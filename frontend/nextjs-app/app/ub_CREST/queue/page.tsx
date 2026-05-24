@@ -1,6 +1,7 @@
 import PriorityQueue from "@/components/queue/PriorityQueue";
 import { getMe } from "@/lib/api";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 export default async function CrestQueuePage() {
   let user;
@@ -24,7 +25,9 @@ export default async function CrestQueuePage() {
       <div className="rounded-3xl p-8 border transition-all duration-500
         dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl
         bg-white border-gray-200 shadow-xl hover:border-black">
-        <PriorityQueue regionId={regionId} />
+        <Suspense fallback={<div className="text-gray-400 font-semibold text-xs uppercase tracking-wider animate-pulse">Loading priority queue...</div>}>
+          <PriorityQueue regionId={regionId} />
+        </Suspense>
       </div>
     </div>
   );
