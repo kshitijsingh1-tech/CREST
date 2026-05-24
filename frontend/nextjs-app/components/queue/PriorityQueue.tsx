@@ -131,12 +131,6 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
     },
   });
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-48 text-gray-400">
-      Loading priority queue…
-    </div>
-  );
-
   const filteredQueue = useMemo(() => {
     return queue.filter(c => {
       // Search Box (Case Insensitive)
@@ -295,7 +289,12 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-sm">
+      {loading ? (
+        <div className="flex items-center justify-center h-48 text-gray-400 dark:text-gray-500 font-semibold text-xs uppercase tracking-wider animate-pulse">
+          Loading priority queue...
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-white/10 shadow-sm">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10 text-sm">
           <thead className="bg-gray-50 dark:bg-black">
             <tr>
@@ -465,7 +464,8 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
             No open complaints — all SLAs on track ✓
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
