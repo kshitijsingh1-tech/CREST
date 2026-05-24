@@ -43,6 +43,77 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
     body = payload_dict.get("body", "")
     subject = payload_dict.get("subject", "")
     language = payload_dict.get("language", "en")
+
+    # ── Check for region update follow-up ──
+    from backend.models.complaint import Complaint
+    from backend.models.user import Region
+    
+    customer_id = payload_dict.get("customer_id", "unknown")
+    channel = (payload_dict.get("channel") or "app").lower().strip()
+    
+    if customer_id != "unknown" and channel != "twitter" and db is not None:
+        open_complaint = (
+            db.query(Complaint)
+            .filter(Complaint.customer_id == customer_id)
+            .filter(Complaint.status == "open")
+            .filter(Complaint.region_id == None)
+            .order_by(Complaint.created_at.desc())
+            .first()
+        )
+        if open_complaint:
+            # Check if body mentions any of our active regions (Delhi, Mumbai, Bangalore)
+            regions = db.query(Region).all()
+            matched_region = None
+            body_lower = body.lower()
+            for r in regions:
+                if r.name.lower() in body_lower:
+                    matched_region = r
+                    break
+            
+            if matched_region:
+                open_complaint.region_id = matched_region.id
+                db.commit()
+                
+                ref_id = open_complaint.external_ref or str(open_complaint.id)
+                portal_url = "https://crest-ui-0uc4.onrender.com"
+                tracking_link = f"{portal_url}/track?ref={ref_id}&contact={customer_id}"
+                
+                confirm_msg = (
+                    f"Thank you! We have successfully routed your ticket to our {matched_region.name} branch.\n\n"
+                    f"Here is your reference ID:\n"
+                    f"(Ticket Ref: {ref_id})\n\n"
+                    f"You can track your live grievance status directly here without entering details:\n"
+                    f"{tracking_link}\n\n"
+                    f"Thank you! 🙏"
+                )
+                
+                try:
+                    if channel == "email" or "@" in customer_id:
+                        from integrations.email.sender import send_customer_reply
+                        send_customer_reply(
+                            recipient=customer_id,
+                            reply_body=confirm_msg,
+                            subject=f"Re: [Ticket Ref: {ref_id[:8]}] Region Updated",
+                            in_reply_to=payload_dict.get("external_ref")
+                        )
+                    elif channel == "whatsapp":
+                        from integrations.whatsapp.sender import send_whatsapp_reply
+                        send_whatsapp_reply(
+                            recipient_phone=customer_id,
+                            reply_body=confirm_msg,
+                            external_ref=payload_dict.get("external_ref")
+                        )
+                    elif channel == "sms":
+                        from integrations.sms.sender import send_sms_reply
+                        send_sms_reply(
+                            recipient_phone=customer_id,
+                            reply_body=confirm_msg,
+                            external_ref=payload_dict.get("external_ref")
+                        )
+                except Exception as auto_err:
+                    logger.error(f"Failed to dispatch region confirmation response: {auto_err}")
+                
+                return open_complaint
     
     # Bidirectional Pivot-Translation for regional Indian languages (MeitY Bhashini Gateway) abhi ke liye google translate fallback
     if language and language.strip().lower() != "en":
@@ -112,9 +183,11 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
     if channel != "twitter" and recipient and recipient != "unknown":
         ref = payload_dict.get("external_ref") or str(complaint.id)[:8]
         msg = (
-            f"Hello! 👋 We have received your complaint (Ticket Ref: {ref}). "
-            f"To help us route this to the nearest nodal branch and provide you with faster support, "
-            f"could you please reply with your city or region? Thank you! 🙏"
+            "Hello! 👋 \n\n"
+            "We have received your complaint: \n\n"
+            "To help us route this to the nearest nodal branch and provide you with faster support, "
+            "could you please reply with your city or region? \n\n"
+            "Thank you! 🙏"
         )
         
         try:
