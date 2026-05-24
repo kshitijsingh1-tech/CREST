@@ -72,6 +72,17 @@ async def lifespan(app: FastAPI):
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         logger.info("Database connection verified and schema initialized")
+        
+        # Start Email IMAP Listener in a self-healing background daemon thread
+        try:
+            import threading
+            from integrations.email.listener import run_listener
+            
+            listener_thread = threading.Thread(target=run_listener, daemon=True)
+            listener_thread.start()
+            logger.info("CREST Email IMAP listener thread started successfully")
+        except Exception as th_err:
+            logger.error(f"Failed to start background Email IMAP listener: {th_err}")
     yield
     logger.info("CREST API shutting down")
 

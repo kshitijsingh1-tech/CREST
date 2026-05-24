@@ -95,31 +95,60 @@ def _process_email(mail: imaplib.IMAP4_SSL, uid: str) -> None:
         "external_ref": msg_id,
     }
     
-    # In dev, we prefer Direct API for instant results without Docker
+    # 1. First attempt Direct DB Ingestion (extremely robust inside the same container)
     ingested_via_api = False
     try:
-        import httpx
-        backend_url = os.getenv("NEXT_PUBLIC_API_URL", "http://127.0.0.1:8000")
-        resp = httpx.post(
-            f"{backend_url}/api/complaints/ingest",
-            json={
+        from backend.api.complaints import ingest_complaint_logic
+        from backend.utils.db import SessionLocal
+        import asyncio
+
+        db = SessionLocal()
+        try:
+            complaint_data = {
                 "channel": "email",
                 "customer_id": customer_id,
                 "body": body,
                 "subject": subject,
                 "external_ref": msg_id,
-                "region_id": 1
-            },
-            timeout=30.0
-        )
-        if resp.status_code == 201:
-            logger.info(f"Successfully ingested email via Direct API: {customer_id}")
+            }
+            # Safely run async logic in sync thread environment
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(ingest_complaint_logic(complaint_data, db))
+            loop.close()
+            logger.info(f"Successfully ingested email via Direct DB: {customer_id}")
             ingested_via_api = True
-        else:
-            logger.warning(f"Direct API ingestion failed (status {resp.status_code}), trying Kafka...")
-    except Exception as api_err:
-        logger.warning(f"Direct API ingestion error: {api_err}, trying Kafka...")
+        finally:
+            db.close()
+    except Exception as db_err:
+        logger.warning(f"Direct DB ingestion failed (expected if run independently): {db_err}")
 
+    # 2. Fallback to Direct HTTP API
+    if not ingested_via_api:
+        try:
+            import httpx
+            backend_url = os.getenv("NEXT_PUBLIC_API_URL", "http://127.0.0.1:8000")
+            resp = httpx.post(
+                f"{backend_url}/api/complaints/ingest",
+                json={
+                    "channel": "email",
+                    "customer_id": customer_id,
+                    "body": body,
+                    "subject": subject,
+                    "external_ref": msg_id,
+                    "region_id": 1
+                },
+                timeout=30.0
+            )
+            if resp.status_code == 201:
+                logger.info(f"Successfully ingested email via Direct API: {customer_id}")
+                ingested_via_api = True
+            else:
+                logger.warning(f"Direct API ingestion failed (status {resp.status_code}), trying Kafka...")
+        except Exception as api_err:
+            logger.warning(f"Direct API ingestion error: {api_err}, trying Kafka...")
+
+    # 3. Fallback to Kafka
     if not ingested_via_api:
         try:
             from integrations.kafka.producer import publish
