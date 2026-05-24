@@ -169,10 +169,10 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">By Column</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">AI Category & Keyword</label>
               <input 
                 type="text"
-                placeholder="Search category, status..."
+                placeholder="Search AI category, status, name..."
                 onChange={(e) => {
                   const val = e.target.value.toLowerCase();
                   if (!val) { refresh(); return; }
