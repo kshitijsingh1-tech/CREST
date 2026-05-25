@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createUser, Region } from "@/lib/api";
-import { X, UserPlus, Loader2, KeyRound, Mail, MapPin, Shield } from "lucide-react";
+import { X, UserPlus, Loader2, KeyRound, Mail, MapPin, Shield, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface Props {
@@ -19,6 +19,7 @@ export default function AddOfficerModal({ regions, currentUserRole }: Props) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
     role: "EMPLOYEE",
     region_id: regions.length > 0 ? String(regions[0].id) : ""
@@ -33,6 +34,7 @@ export default function AddOfficerModal({ regions, currentUserRole }: Props) {
       await createUser({
         name: formData.name,
         email: formData.email,
+        phone: formData.phone || null,
         password: formData.password,
         role: formData.role,
         region_id: formData.region_id ? parseInt(formData.region_id) : null
@@ -40,7 +42,7 @@ export default function AddOfficerModal({ regions, currentUserRole }: Props) {
       
       setIsOpen(false);
       setFormData({
-        name: "", email: "", password: "", role: "EMPLOYEE", 
+        name: "", email: "", phone: "", password: "", role: "EMPLOYEE", 
         region_id: regions.length > 0 ? String(regions[0].id) : ""
       });
       router.refresh(); // Refresh RSC data to show new user
@@ -110,6 +112,18 @@ export default function AddOfficerModal({ regions, currentUserRole }: Props) {
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 dark:text-slate-500 text-gray-400" />
                   <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
                     placeholder="officer@unionbank.in"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl text-sm font-bold border outline-none transition-all
+                      dark:bg-slate-900 dark:border-slate-800 dark:focus:border-emerald-500 dark:text-white
+                      bg-gray-50 border-gray-200 focus:border-emerald-500 text-black" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase tracking-widest font-black dark:text-slate-400 text-gray-500 ml-1">Contact Number</label>
+                <div className="relative">
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 dark:text-slate-500 text-gray-400" />
+                  <input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
+                    placeholder="e.g. +91 98765 43210"
                     className="w-full pl-10 pr-4 py-3 rounded-xl text-sm font-bold border outline-none transition-all
                       dark:bg-slate-900 dark:border-slate-800 dark:focus:border-emerald-500 dark:text-white
                       bg-gray-50 border-gray-200 focus:border-emerald-500 text-black" />

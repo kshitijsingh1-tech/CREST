@@ -131,6 +131,7 @@ export interface User {
   email:     string;
   name:      string;
   role:      string;
+  phone?:    string | null;
   region_id: number | null;
   is_active: boolean;
 }

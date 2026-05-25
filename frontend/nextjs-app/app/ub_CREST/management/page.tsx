@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Users, ShieldCheck, MapPin, UserCheck, Activity, Search } from "lucide-react";
 import AddOfficerModal from "./AddOfficerModal";
+import DeleteUserButton from "./DeleteUserButton";
 
 export default async function ManagementConsolePage() {
   let user;
@@ -108,6 +109,7 @@ export default async function ManagementConsolePage() {
                 <th className="pb-4 text-[10px] uppercase tracking-widest font-black dark:text-slate-500 text-gray-400 px-4">Clearance Role</th>
                 <th className="pb-4 text-[10px] uppercase tracking-widest font-black dark:text-slate-500 text-gray-400 px-4">Regional Hub</th>
                 <th className="pb-4 text-[10px] uppercase tracking-widest font-black dark:text-slate-500 text-gray-400 px-4">Status</th>
+                <th className="pb-4 text-[10px] uppercase tracking-widest font-black dark:text-slate-500 text-gray-400 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-slate-800/50 divide-gray-100">
@@ -119,7 +121,9 @@ export default async function ManagementConsolePage() {
                   <td className="py-5 px-4">
                     <div className="flex flex-col">
                       <span className="text-sm font-black dark:text-white text-black">{u.name}</span>
-                      <span className="text-[10px] font-bold dark:text-slate-500 text-gray-400">{u.email}</span>
+                      <span className="text-[10px] font-bold dark:text-slate-500 text-gray-400">
+                        {u.email} {u.phone ? `• ${u.phone}` : ""}
+                      </span>
                     </div>
                   </td>
                   <td className="py-5 px-4">
@@ -153,11 +157,19 @@ export default async function ManagementConsolePage() {
                       )}
                     </div>
                   </td>
+                  <td className="py-5 px-4 text-right">
+                    {((user.role === "SUPER_ADMIN" && u.id !== user.id) ||
+                      (user.role === "SUB_ADMIN" && u.role === "EMPLOYEE" && u.region_id === user.region_id)) ? (
+                      <DeleteUserButton userId={u.id} userName={u.name} />
+                    ) : (
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">Locked</span>
+                    )}
+                  </td>
                 </tr>
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-xs font-bold dark:text-slate-500 text-gray-400 uppercase tracking-widest">
+                  <td colSpan={6} className="py-8 text-center text-xs font-bold dark:text-slate-500 text-gray-400 uppercase tracking-widest">
                     No personnel records found.
                   </td>
                 </tr>
