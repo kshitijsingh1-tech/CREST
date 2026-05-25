@@ -23,23 +23,33 @@ services:
       - key: JWT_SECRET_KEY
         generateValue: true # Securely generates a unique secret key on Render
       - key: GROQ_API_KEY
-        sync: false # Set in Render Dashboard
+        sync: false
+        description: "Your Groq API key for high-speed AI classification and policy draft generation."
       - key: TWILIO_ACCOUNT_SID
         sync: false
+        description: "Twilio Account SID used for WhatsApp and SMS integrations. Enter 'mock' to disable Twilio."
       - key: TWILIO_AUTH_TOKEN
         sync: false
+        description: "Twilio Auth Token for secure webhook handshake validations."
       - key: TWILIO_WHATSAPP_FROM
         sync: false
+        description: "The Twilio Sandbox WhatsApp number (e.g., whatsapp:+14155238886)."
       - key: SMS_WEBHOOK_KEY
         sync: false
+        description: "Secret API key used to authorize and secure inbound SMS webhooks."
       - key: INSTAGRAM_WEBHOOK_KEY
         sync: false
+        value: "crest_instagram_demo_key_2026"
+        description: "Custom secret key to verify Instagram webhooks. Make sure this matches the Verify Token in the Meta App Webhooks page."
       - key: META_ACCESS_TOKEN
         sync: false
+        description: "Your live Page Access Token generated from the Meta Developer Dashboard under Messenger -> Instagram Settings."
       - key: INSTAGRAM_ACCOUNT_ID
         sync: false
+        description: "Your Instagram Professional Account ID (available in your Facebook Page Settings -> Linked Accounts)."
       - key: INSTAGRAM_PAGE_ID
         sync: false
+        description: "Your connected Facebook Page ID or Instagram User handle (e.g., crest_ub_official)."
       - key: CORS_ALLOW_ALL
         value: "0"
       - key: CORS_ORIGINS
