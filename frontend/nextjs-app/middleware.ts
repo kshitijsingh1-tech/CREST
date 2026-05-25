@@ -14,17 +14,20 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(`${correctedPath}${request.nextUrl.search}`, request.url));
   }
 
-  // 1. If trying to access dashboard/queue/analytics without a token, redirect to login
-  const protectedRoutes = ['/dashboard', '/queue', '/analytics', '/complaints'];
+  // 1. If trying to access administrative routes without a token, redirect to login
+  const protectedRoutes = [
+    '/dashboard', '/queue', '/analytics', '/complaints',
+    '/ub_CREST/home', '/ub_CREST/queue', '/ub_CREST/analytics', '/ub_CREST/management'
+  ];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/ub_CREST/login', request.url));
   }
 
-  // 2. If already logged in and trying to access login page, redirect to dashboard
-  if (pathname === '/login' && token) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  // 2. If already logged in and trying to access the login page, redirect to home
+  if (pathname === '/ub_CREST/login' && token) {
+    return NextResponse.redirect(new URL('/ub_CREST/home', request.url));
   }
 
   return NextResponse.next();
@@ -38,6 +41,10 @@ export const config = {
     '/queue', '/queue/:path*',
     '/analytics', '/analytics/:path*',
     '/complaints', '/complaints/:path*',
-    '/login'
+    '/ub_CREST/login',
+    '/ub_CREST/home',
+    '/ub_CREST/queue',
+    '/ub_CREST/analytics',
+    '/ub_CREST/management'
   ],
 };

@@ -15,7 +15,7 @@ export default function Header({ theme, toggleTheme }: { theme: "dark" | "light"
   }, [pathname]);
   
   // Hide the admin header entirely for public customer pages, or if accessing docs without an active admin session
-  const publicRoutes = ["/", "/track", "/login", "/submit", "/ub_publicPortal", "/crest_publicPortal", "/ub_CREST/login"];
+  const publicRoutes = ["/", "/track", "/submit", "/ub_publicPortal", "/crest_publicPortal", "/ub_CREST/login"];
   if (publicRoutes.includes(pathname) || (pathname === "/ub_CREST/docs" && !isAuthenticated)) {
     return null;
   }
