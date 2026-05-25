@@ -6,7 +6,7 @@
 
 ## (A) Problem being Solved
 Union Bank of India serves millions of customers across diverse regions. Current grievance systems face three critical bottlenecks:
-1. **The "Duplicate" Storm**: Redundant tickets across Email/Twitter/App waste 30% of agent time.
+1. **The "Duplicate" Storm**: Redundant tickets across Email/Instagram/App waste 30% of agent time.
 2. **Static Prioritization**: FIFO queues ignore high-emotion P0 cases and decaying SLAs.
 3. **Response Inconsistency**: Manual drafting leads to compliance and quality risks.
 
@@ -16,13 +16,13 @@ Union Bank of India serves millions of customers across diverse regions. Current
   `priority_score = severity_weight × anger_score × MIN(3.0, 1 + LN(1 + hours_waiting / 8))`
   Combines severity, live frustration scores, and wait times to boost critical or abusive cases instantly to the top of the queue.
 - **Complaint DNA Fingerprinting**: Ingested tickets are vectorized into 768-dim vectors via local SBERT; cosine similarity > 0.92 flags cross-channel duplicates instantly.
-- **Twitter/X Auto-Redirect Responder**: Integrated OAuth 1.0a (User Context) to intercept mentions, dynamically reply, and direct customers to a secure tracking portal while maintaining DPDP compliance.
+- **Instagram DM Auto-Responder**: Integrated Meta Graph API to intercept DMs, dynamically reply, and direct customers to a secure tracking portal while maintaining DPDP compliance.
 - **Adaptive AI Severity Prompting**: Ingested messages with high anger, frustration, or severe abuse are dynamically escalated to P0/P1 to protect brand integrity.
 
 ### **Technical Workflow (Enterprise Hybrid Architecture)**
 ```mermaid
 graph TD
-    A["Customer (Email/SMS/Twitter/Web)"] --> B["Ingestion Layer"]
+    A["Customer (Email/SMS/Instagram/Web)"] --> B["Ingestion Layer"]
     B --> C["Kafka (Distributed Buffer)"]
     C --> D["Celery Worker (AI Processor)"]
     
@@ -99,7 +99,7 @@ python -m backend.utils.reset_db
 |--------|------|-------------|
 | POST | `/api/complaints/ingest` | Sync ingest (test/low-volume) |
 | POST | `/api/integrations/sms/webhook` | SMS Ingest (Hybrid Kafka/Direct) |
-| POST | `/api/integrations/twitter/webhook` | Twitter Ingest (Hybrid Kafka/Direct) |
+| POST | `/api/integrations/instagram/webhook` | Instagram Ingest (Hybrid Kafka/Direct) |
 | GET | `/api/complaints/queue` | Live priority queue |
 | PATCH | `/api/complaints/{id}/assign` | Assign to agent |
 | PATCH | `/api/complaints/{id}/resolve` | Resolve + push to KB |
@@ -115,7 +115,7 @@ CREST divides portal scopes strictly between **Public Citizens** and **Enterpris
 
 ### **1. Public Portal (`/ub_publicPortal`)**
 Designed for maximum ease-of-use and dynamic citizen redressal:
-*   **Multi-Channel Lodging:** Lodge grievances natively via direct web forms, email integrations, SMS headers, or Twitter mentions.
+*   **Multi-Channel Lodging:** Lodge grievances natively via direct web forms, email integrations, SMS headers, or Instagram DMs.
 *   **Dual-Factor Live Tracking:** Track resolution status in real-time securely using the alphanumeric Visual Captcha (noise grid + distortion blur) combined with double-factor OTP authentication.
 *   **RAG Knowledge Corner:** central 34+ FAQ structured directory mapped into 4 collapsible categories (Account Problems, Cards/Digital, Escalations, Customer Rights) to maximize readability and reduce customer friction.
 

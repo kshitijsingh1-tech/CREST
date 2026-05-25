@@ -25,7 +25,7 @@ def seed_spike(count=15):
         body = random.choice(COMPLAINT_TEMPLATES).format(amount=amount, txn_id=txn_id)
         
         payload = {
-            "channel": random.choice(["whatsapp", "app", "twitter"]),
+            "channel": random.choice(["whatsapp", "app", "instagram"]),
             "customer_id": f"+91{random.randint(7000000000, 9999999999)}",
             "customer_name": f"Demo Customer {i+1}",
             "subject": "UPI Payment Issue",

@@ -180,8 +180,9 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 space-y-5">
+      <div className="grid grid-cols-3 gap-6 items-stretch">
+        {/* Left main panel */}
+        <div className="col-span-2 flex flex-col gap-5">
 
           {/* Complaint body */}
           <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-5 backdrop-blur-md">
@@ -189,9 +190,9 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
             <p className="text-sm text-gray-800 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">{(c as any).body}</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
-            {/* RAG Draft Reply */}
-            <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-5 backdrop-blur-md">
+          {/* RAG Draft Reply - Stretched */}
+          <div className="flex-1 bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-5 backdrop-blur-md flex flex-col justify-between">
+            <div className="flex-1 flex flex-col">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   ✨ AI Draft Reply
@@ -208,150 +209,58 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                 </div>
               </div>
               {c.draft_reply ? (
-                <>
+                <div className="flex-1 flex flex-col">
                   {c.draft_approved || (c as any).is_superior_takeover || (!isEditingDraft) ? (
-                    <p className="text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40">
+                    <p className="flex-1 text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 min-h-[150px]">
                       {c.draft_reply}
                     </p>
                   ) : (
                     <textarea
-                      className="w-full text-sm text-gray-800 dark:text-white leading-relaxed bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 resize-y min-h-[120px]"
+                      className="flex-1 w-full text-sm text-gray-800 dark:text-white leading-relaxed bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 resize-y min-h-[150px]"
                       value={c.draft_reply || ""}
                       onChange={(e) => setC(prev => ({ ...prev, draft_reply: e.target.value }))}
                     />
                   )}
-                  
-                  {/* RAG Sources (Grounded AI) */}
-                  {c.draft_metadata && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-3 flex items-center gap-2">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        Verified Policy References
-                      </h4>
-                      <div className="grid grid-cols-1 gap-3">
-                        {c.draft_metadata.documents?.map((doc: any, i: number) => (
-                          <div key={i} className="text-xs bg-gray-50 dark:bg-black/40 p-3 rounded-lg border border-gray-100 dark:border-white/5 group hover:border-indigo-200 dark:hover:border-indigo-900/50 transition-colors">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-bold text-gray-700 dark:text-gray-300">{doc.document_title}</span>
-                              <span className="text-[10px] text-gray-400">Page {doc.page_number}</span>
-                            </div>
-                            <p className="text-gray-500 dark:text-gray-500 italic line-clamp-2">"{doc.content}"</p>
-                          </div>
-                        ))}
-                        {c.draft_metadata.resolutions?.map((res: any, i: number) => (
-                          <div key={i} className="text-xs bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/20">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-bold text-blue-700 dark:text-blue-400">Past Resolution: {res.title}</span>
-                              <span className="text-[10px] text-blue-400">Similarity: {(res.relevance * 100).toFixed(0)}%</span>
-                            </div>
-                            <p className="text-blue-600/80 dark:text-blue-500/80">Key: {res.resolution_text}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
+                </div>
               ) : (
                 <p className="text-sm text-gray-400 italic">No draft generated yet.</p>
               )}
             </div>
 
-            <div className="space-y-5">
-              {/* Agent actions */}
-              {c.status !== "resolved" && (
-                <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-5 space-y-4 backdrop-blur-md">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Agent Actions</h3>
-
-                  <div>
-                    <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Your Agent ID</label>
-                    <input
-                      value={agent}
-                      onChange={e => setAgent(e.target.value)}
-                      placeholder="e.g. AGENT_042"
-                      className="w-full text-sm border border-gray-200 dark:border-white/10 dark:bg-black/40 dark:text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700"
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {!(c as any).is_superior_takeover && (
-                      <button onClick={handleAssign} disabled={loading || !agent}
-                        className="text-xs px-3 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded transition-colors disabled:opacity-50">
-                        Assign to Me
-                      </button>
-                    )}
-                    {userRole !== "SUPER_ADMIN" && (
-                      <button onClick={handleEscalate} disabled={loading || !agent || c.is_escalated}
-                        className="text-xs px-3 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded border border-red-100 dark:border-red-900/30 transition-colors disabled:opacity-50">
-                        Escalate
-                      </button>
-                    )}
-                    {c.draft_reply && !c.draft_approved && !(c as any).is_superior_takeover && (
-                      <button onClick={handleApproveDraft} disabled={loading || !agent}
-                        className="text-xs px-3 py-2 bg-indigo-100 dark:bg-indigo-900/60 hover:bg-indigo-200 dark:hover:bg-indigo-800 text-indigo-700 dark:text-indigo-300 rounded transition-colors disabled:opacity-50">
-                        ✓ Approve Draft
-                      </button>
-                    )}
-                  </div>
-
-                  {!(c as any).is_superior_takeover && (
-                    <>
-                      <div>
-                        <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Resolution Note</label>
-                        <textarea
-                          rows={4} value={note}
-                          onChange={e => setNote(e.target.value)}
-                          placeholder="Note if something was special"
-                          className="w-full text-sm border border-gray-200 dark:border-white/10 dark:bg-black/40 dark:text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
-                        />
+            {/* RAG Sources (Grounded AI) */}
+            {c.draft_reply && c.draft_metadata && (
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-3 flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  Verified Policy References
+                </h4>
+                <div className="grid grid-cols-1 gap-3">
+                  {c.draft_metadata.documents?.map((doc: any, i: number) => (
+                    <div key={i} className="text-xs bg-gray-50 dark:bg-black/40 p-3 rounded-lg border border-gray-100 dark:border-white/5 group hover:border-indigo-200 dark:hover:border-indigo-900/50 transition-colors">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-gray-700 dark:text-gray-300">{doc.document_title}</span>
+                        <span className="text-[10px] text-gray-400">Page {doc.page_number}</span>
                       </div>
-
-                      <div className="flex items-center gap-3">
-                        <button onClick={handleResolve} disabled={loading || !agent}
-                          className="mt-2 w-full text-sm px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded transition-colors disabled:opacity-50">
-                          ✓ Mark Resolved
-                        </button>
+                      <p className="text-gray-500 dark:text-gray-500 italic line-clamp-2">"{doc.content}"</p>
+                    </div>
+                  ))}
+                  {c.draft_metadata.resolutions?.map((res: any, i: number) => (
+                    <div key={i} className="text-xs bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/20">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-blue-700 dark:text-blue-400">Past Resolution: {res.title}</span>
+                        <span className="text-[10px] text-blue-400">Similarity: {(res.relevance * 100).toFixed(0)}%</span>
                       </div>
-                    </>
-                  )}
+                      <p className="text-blue-600/80 dark:text-blue-500/80">Key: {res.resolution_text}</p>
+                    </div>
+                  ))}
                 </div>
-              )}
-
-              {/* Resolved Success State */}
-              {c.status === "resolved" && (
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-900/50 shadow-sm p-8 text-center backdrop-blur-md">
-                  <div className="w-14 h-14 bg-green-100 dark:bg-green-800 text-green-600 dark:text-green-300 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold shadow-sm">
-                    ✓
-                  </div>
-                  <h3 className="text-lg font-bold text-green-800 dark:text-green-400 mb-2">Complaint Successfully Resolved</h3>
-                  <p className="text-sm text-green-600 dark:text-green-500 mb-6">
-                    The resolution note has been securely locked into the RBI Audit Trail.
-                  </p>
-                  <a
-                    href="/ub_CREST/home"
-                    className="inline-flex items-center justify-center px-6 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500 text-white text-sm font-semibold rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                  >
-                    Return to Home ➔
-                  </a>
-                </div>
-              )}
-
-              {/* Superior Lockout State */}
-              {c.status !== "resolved" && (c as any).is_superior_takeover && (
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-5 shadow-sm backdrop-blur-md">
-                  <h3 className="text-sm font-bold text-yellow-800 dark:text-yellow-400 flex items-center gap-2">
-                    ⚠️ Your superior is working with the complaint
-                  </h3>
-                  <p className="text-xs text-yellow-700 dark:text-yellow-500 mt-1">
-                    You cannot edit, approve, or resolve this ticket.
-                  </p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Right sidebar */}
-        <div className="space-y-5">
+        <div className="col-span-1 flex flex-col gap-5">
 
           {/* Named entities */}
           {(c as any).named_entities && Object.keys((c as any).named_entities).length > 0 && (
@@ -403,6 +312,97 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
               ))}
             </div>
           </div>
+
+          {/* Agent actions / resolved / takeover box */}
+          {c.status !== "resolved" && !(c as any).is_superior_takeover && (
+            <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-5 space-y-4 backdrop-blur-md">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Agent Actions</h3>
+
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Your Agent ID</label>
+                <input
+                  value={agent}
+                  onChange={e => setAgent(e.target.value)}
+                  placeholder="e.g. AGENT_042"
+                  className="w-full text-sm border border-gray-200 dark:border-white/10 dark:bg-black/40 dark:text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {!(c as any).is_superior_takeover && (
+                  <button onClick={handleAssign} disabled={loading || !agent}
+                    className="text-xs px-3 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded transition-colors disabled:opacity-50">
+                    Assign to Me
+                  </button>
+                )}
+                {userRole !== "SUPER_ADMIN" && (
+                  <button onClick={handleEscalate} disabled={loading || !agent || c.is_escalated}
+                    className="text-xs px-3 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded border border-red-100 dark:border-red-900/30 transition-colors disabled:opacity-50">
+                    Escalate
+                  </button>
+                )}
+                {c.draft_reply && !c.draft_approved && !(c as any).is_superior_takeover && (
+                  <button onClick={handleApproveDraft} disabled={loading || !agent}
+                    className="text-xs px-3 py-2 bg-indigo-100 dark:bg-indigo-900/60 hover:bg-indigo-200 dark:hover:bg-indigo-800 text-indigo-700 dark:text-indigo-300 rounded transition-colors disabled:opacity-50">
+                    ✓ Approve Draft
+                  </button>
+                )}
+              </div>
+
+              {!(c as any).is_superior_takeover && (
+                <>
+                  <div>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Resolution Note</label>
+                    <textarea
+                      rows={4} value={note}
+                      onChange={e => setNote(e.target.value)}
+                      placeholder="Note if something was special"
+                      className="w-full text-sm border border-gray-200 dark:border-white/10 dark:bg-black/40 dark:text-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button onClick={handleResolve} disabled={loading || !agent}
+                      className="mt-2 w-full text-sm px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded transition-colors disabled:opacity-50">
+                      ✓ Mark Resolved
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Resolved Success State */}
+          {c.status === "resolved" && (
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-900/50 shadow-sm p-8 text-center backdrop-blur-md">
+              <div className="w-14 h-14 bg-green-100 dark:bg-green-800 text-green-600 dark:text-green-300 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold shadow-sm">
+                ✓
+              </div>
+              <h3 className="text-lg font-bold text-green-800 dark:text-green-400 mb-2">Complaint Successfully Resolved</h3>
+              <p className="text-sm text-green-600 dark:text-green-500 mb-6">
+                The resolution note has been securely locked into the RBI Audit Trail.
+              </p>
+              <a
+                href="/ub_CREST/home"
+                className="inline-flex items-center justify-center px-6 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500 text-white text-sm font-semibold rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                Return to Home ➔
+              </a>
+            </div>
+          )}
+
+          {/* Superior Lockout State */}
+          {c.status !== "resolved" && (c as any).is_superior_takeover && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-5 shadow-sm backdrop-blur-md">
+              <h3 className="text-sm font-bold text-yellow-800 dark:text-yellow-400 flex items-center gap-2">
+                ⚠️ Your superior is working with the complaint
+              </h3>
+              <p className="text-xs text-yellow-700 dark:text-yellow-500 mt-1">
+                You cannot edit, approve, or resolve this ticket.
+              </p>
+            </div>
+          )}
+
         </div>
       </div>
     </div>

@@ -94,7 +94,7 @@ services:
       "kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.email     --partitions 3 --replication-factor 1
        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.whatsapp  --partitions 3 --replication-factor 1
        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.app       --partitions 3 --replication-factor 1
-       kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.twitter   --partitions 3 --replication-factor 1
+       kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.instagram   --partitions 3 --replication-factor 1
        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.voice     --partitions 3 --replication-factor 1
        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic crest.channel.branch    --partitions 3 --replication-factor 1
        echo 'Kafka topics created'"

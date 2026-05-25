@@ -32,6 +32,14 @@ services:
         sync: false
       - key: SMS_WEBHOOK_KEY
         sync: false
+      - key: INSTAGRAM_WEBHOOK_KEY
+        sync: false
+      - key: META_ACCESS_TOKEN
+        sync: false
+      - key: INSTAGRAM_ACCOUNT_ID
+        sync: false
+      - key: INSTAGRAM_PAGE_ID
+        sync: false
       - key: CORS_ALLOW_ALL
         value: "0"
       - key: CORS_ORIGINS

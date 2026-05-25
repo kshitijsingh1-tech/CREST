@@ -5,19 +5,19 @@ import urllib.request
 import urllib.error
 
 def main():
-    parser = argparse.ArgumentParser(description="Simulate a frustrated customer Tweet to test CREST Twitter/X ingestion.")
-    parser.add_argument("--text", type=str, default="Hey @CREST_ub, your app has crashed 3 times during a UPI transfer! My money got debited but the merchant received nothing. Extremely disappointing service!", help="The content of the Tweet.")
-    parser.add_argument("--username", type=str, default="FrustratedUserX", help="Twitter username (without @).")
-    parser.add_argument("--api-url", type=str, default="https://crest-api-0uc4.onrender.com/api/integrations/twitter/webhook", help="Webhook endpoint URL (defaults to Render deployment, use http://localhost:8000/api/integrations/twitter/webhook for local).")
-    parser.add_argument("--key", type=str, default="crest_twitter_demo_key_2024", help="Secret TWITTER_WEBHOOK_KEY.")
+    parser = argparse.ArgumentParser(description="Simulate a frustrated customer Instagram DM to test CREST Instagram ingestion.")
+    parser.add_argument("--text", type=str, default="Hey @crest_ub, your app has crashed 3 times during a UPI transfer! My money got debited but the merchant received nothing. Extremely disappointing service!", help="The content of the DM.")
+    parser.add_argument("--username", type=str, default="FrustratedInstaUser", help="Instagram username.")
+    parser.add_argument("--api-url", type=str, default="https://crest-api-0uc4.onrender.com/api/integrations/instagram/webhook", help="Webhook endpoint URL (defaults to Render deployment, use http://localhost:8000/api/integrations/instagram/webhook for local).")
+    parser.add_argument("--key", type=str, default="crest_instagram_demo_key_2026", help="Secret INSTAGRAM_WEBHOOK_KEY.")
     
     args = parser.parse_args()
     
     payload = {
         "username": args.username,
-        "tweet_text": args.text,
-        "tweet_id": "1794500000000000000",
-        "is_mention": True
+        "message_text": args.text,
+        "media_url": None,
+        "is_dm": True
     }
     
     data = json.dumps(payload).encode("utf-8")
@@ -30,11 +30,11 @@ def main():
     req = urllib.request.Request(args.api_url, data=data, headers=headers, method="POST")
     
     print("\n" + "="*60)
-    print("SENDING SIMULATED TWEET TO CREST INGESTION WEBHOOK")
+    print("SENDING SIMULATED INSTAGRAM DM TO CREST INGESTION WEBHOOK")
     print("="*60)
     print(f"Web URL: {args.api_url}")
     print(f"Sender:      @{payload['username']}")
-    print(f"Tweet Text:  \"{payload['tweet_text']}\"")
+    print(f"DM Text:  \"{payload['message_text']}\"")
     print("="*60)
     print("Connecting to API...")
 
@@ -53,7 +53,7 @@ def main():
                 print(f"Created Ticket ID: {complaint_id}")
                 print(f"View Live: https://crest-ui-0uc4.onrender.com/complaints/{complaint_id}")
             else:
-                print("Tweet added to Kafka pipeline for background queue processing.")
+                print("Instagram DM added to Kafka pipeline for background queue processing.")
                 
     except urllib.error.HTTPError as e:
         print(f"\nHTTP ERROR: Status {e.code}")
