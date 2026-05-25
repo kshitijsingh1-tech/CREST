@@ -33,7 +33,6 @@ services:
       - key: SMS_WEBHOOK_KEY
         sync: false # Secret API key used to authorize and secure inbound SMS webhooks.
       - key: INSTAGRAM_WEBHOOK_KEY
-        sync: false
         value: "crest_instagram_demo_key_2026" # Custom secret key to verify Instagram webhooks.
       - key: META_ACCESS_TOKEN
         sync: false # Your live Page Access Token generated from the Meta Developer Dashboard.
