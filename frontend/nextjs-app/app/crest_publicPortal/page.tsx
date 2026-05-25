@@ -76,7 +76,13 @@ export default function PublicPortalHub() {
     let active = true;
     const wakeBackend = async () => {
       try {
-        const res = await fetch("/api/health");
+        const res = await fetch(`/api/health?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+          },
+        });
         if (res.ok && active) {
           setBackendStatus("online");
         } else if (active) {
