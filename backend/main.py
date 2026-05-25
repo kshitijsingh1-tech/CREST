@@ -71,10 +71,12 @@ async def lifespan(app: FastAPI):
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
             try:
+                # Set lock_timeout to 5000ms (5s) to prevent startup migrations from hanging on table locks
+                conn.execute(text("SET lock_timeout = 5000"))
                 conn.execute(text("ALTER TABLE users ADD COLUMN phone VARCHAR(50)"))
                 conn.commit()
-            except Exception:
-                pass # Column likely already exists
+            except Exception as e:
+                logger.warning(f"Startup ALTER TABLE skipped or failed (likely already exists or locked): {e}")
         
         initialize_database()
         logger.info("Database connection verified and schema initialized")
