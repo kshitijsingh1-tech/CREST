@@ -42,8 +42,10 @@ services:
         sync: false # Your connected Facebook Page ID or Instagram User handle (e.g., crest_ub_official).
       - key: CORS_ALLOW_ALL
         value: "0"
+      - key: CREST_PORTAL_URL
+        value: "https://crest-ui-6zh6.onrender.com"
       - key: CORS_ORIGINS
-        value: "https://crest-ui-0uc4.onrender.com"
+        value: "https://crest-ui-6zh6.onrender.com"
       - key: PORT
         value: "8000"
 

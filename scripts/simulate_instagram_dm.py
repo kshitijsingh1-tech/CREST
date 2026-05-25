@@ -51,7 +51,7 @@ def main():
             if "complaint_id" in res_json:
                 complaint_id = res_json["complaint_id"]
                 print(f"Created Ticket ID: {complaint_id}")
-                print(f"View Live: https://crest-ui-0uc4.onrender.com/complaints/{complaint_id}")
+                print(f"Track status: https://crest-ui-6zh6.onrender.com/track?ref={complaint_id}")
             else:
                 print("Instagram DM added to Kafka pipeline for background queue processing.")
                 

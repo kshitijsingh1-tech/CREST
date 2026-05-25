@@ -25,6 +25,7 @@ from ai.rag.retriever import generate_draft_reply
 from backend.services.complaint_service import ingest_complaint
 from asgiref.sync import async_to_sync
 from backend.services.translation_service import translator
+from backend.utils.portal import build_tracking_link
 
 logger = get_logger("crest.workers.ingest")
 
@@ -137,11 +138,16 @@ def process_complaint(self, payload: dict) -> dict:
             recipient = payload.get("customer_id")
             
             if recipient and recipient != "unknown":
-                ref = payload.get("external_ref") or str(complaint.id)[:8]
+                ref = str(complaint.id)
+                tracking_link = build_tracking_link(ref, recipient)
                 msg = (
-                    f"Hello! 👋 We have received your complaint (Ticket Ref: {ref}). "
-                    f"To help us route this to the nearest nodal branch and provide you with faster support, "
-                    f"could you please reply with your city or region? Thank you! 🙏"
+                    "Hello! 👋\n\n"
+                    "We have received your complaint.\n\n"
+                    f"Ticket Ref: {ref}\n\n"
+                    "Track your grievance status anytime here:\n"
+                    f"{tracking_link}\n\n"
+                    "To route this to the nearest nodal branch, please reply with your city or region.\n\n"
+                    "Thank you! 🙏"
                 )
                 
                 try:

@@ -40,6 +40,7 @@ from backend.utils.socket import broadcast_queue_update, broadcast_new_complaint
 from backend.api.deps import get_current_user
 from backend.models.user import User
 from backend.services.translation_service import translator
+from backend.utils.portal import build_tracking_link
 
 router = APIRouter(prefix="/api/complaints", tags=["complaints"])
 logger = get_logger("crest.api.complaints")
@@ -84,15 +85,13 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
                 open_complaint.region_id = matched_region.id
                 db.commit()
                 
-                ref_id = open_complaint.external_ref or str(open_complaint.id)
-                portal_url = "https://crest-ui-0uc4.onrender.com"
-                tracking_link = f"{portal_url}/track?ref={ref_id}&contact={customer_id}"
-                
+                ref_id = str(open_complaint.id)
+                tracking_link = build_tracking_link(ref_id, customer_id)
+
                 confirm_msg = (
                     f"Thank you! We have successfully routed your ticket to our {matched_region.name} branch.\n\n"
-                    f"Here is your reference ID:\n"
-                    f"(Ticket Ref: {ref_id})\n\n"
-                    f"You can track your live grievance status directly here without entering details:\n"
+                    f"Ticket Ref: {ref_id}\n\n"
+                    f"Track your live grievance status here:\n"
                     f"{tracking_link}\n\n"
                     f"Thank you! 🙏"
                 )
@@ -197,12 +196,15 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
     recipient = payload_dict.get("customer_id")
     
     if recipient and recipient != "unknown":
-        ref = payload_dict.get("external_ref") or str(complaint.id)[:8]
+        ref = str(complaint.id)
+        tracking_link = build_tracking_link(ref, recipient)
         msg = (
-            "Hello! 👋 \n\n"
-            "We have received your complaint: \n\n"
-            "To help us route this to the nearest nodal branch and provide you with faster support, "
-            "could you please reply with your city or region? \n\n"
+            "Hello! 👋\n\n"
+            "We have received your complaint.\n\n"
+            f"Ticket Ref: {ref}\n\n"
+            "Track your grievance status anytime here:\n"
+            f"{tracking_link}\n\n"
+            "To route this to the nearest nodal branch, please reply with your city or region.\n\n"
             "Thank you! 🙏"
         )
         
