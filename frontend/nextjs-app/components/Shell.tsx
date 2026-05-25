@@ -5,10 +5,8 @@ import Header from "./Header";
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<"dark" | "light">("light");
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const savedTheme = localStorage.getItem("crest-theme");
     if (savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
 
@@ -31,8 +29,6 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
 
   const colors = ["#0055ff", "#00aaff", "#ff3333", "#ff0000"];
-
-  if (!mounted) return <div className="min-h-screen bg-white"></div>;
 
   return (
     <div className={`transition-colors duration-700 min-h-screen relative overflow-x-hidden ${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-black'}`}>
