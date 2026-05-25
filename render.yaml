@@ -43,7 +43,7 @@ services:
       - key: CORS_ALLOW_ALL
         value: "0"
       - key: CREST_PUBLIC_API_URL
-        value: "https://crest-api-0uc4.onrender.com"
+        value: "https://crest-api-z8zf.onrender.com"
       - key: CREST_PORTAL_URL
         value: "https://crest-ui-6zh6.onrender.com"
       - key: CORS_ORIGINS
@@ -60,7 +60,7 @@ services:
     plan: free
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: https://crest-api-0uc4.onrender.com
+        value: https://crest-api-z8zf.onrender.com
       - key: BACKEND_INTERNAL_URL
         fromService:
           type: web

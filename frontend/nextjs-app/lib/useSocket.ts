@@ -12,7 +12,7 @@ import { io, Socket } from "socket.io-client";
 
 const getSocketUrl = () => {
   // Connect directly to the live FastAPI backend Socket.IO server (Next.js proxy rewrites do not support WebSocket upgrades)
-  return process.env.NEXT_PUBLIC_API_URL ?? "https://crest-api-0uc4.onrender.com";
+  return process.env.NEXT_PUBLIC_API_URL ?? "https://crest-api-z8zf.onrender.com";
 };
 
 interface SocketEvents {

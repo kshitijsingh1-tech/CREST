@@ -44,7 +44,7 @@ def _candidate_webhook_urls(request: Request) -> list[str]:
     host = request.headers.get("x-forwarded-host") or request.headers.get("host")
     if host:
         add(f"{proto}://{host}{path}")
-    public_base = os.getenv("CREST_PUBLIC_API_URL", "https://crest-api-0uc4.onrender.com").strip().rstrip("/")
+    public_base = os.getenv("CREST_PUBLIC_API_URL", "https://crest-api-z8zf.onrender.com").strip().rstrip("/")
     if public_base:
         add(f"{public_base}{path}")
     return urls

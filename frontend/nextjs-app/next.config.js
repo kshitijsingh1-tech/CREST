@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://crest-api-0uc4.onrender.com";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://crest-api-z8zf.onrender.com";
 console.log("★ [Next.config.js] CONFIGURED BACKEND_URL is:", BACKEND_URL);
 
 const nextConfig = {

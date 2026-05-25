@@ -12,7 +12,7 @@ const normalizeServiceUrl = (value?: string | null) => {
   return `http://${value}`;
 };
 
-const PROD_API_URL = "https://crest-api-0uc4.onrender.com";
+const PROD_API_URL = "https://crest-api-z8zf.onrender.com";
 
 const getBaseUrls = () => {
   if (typeof window !== "undefined") {
