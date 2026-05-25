@@ -78,16 +78,13 @@ async def instagram_webhook(
                     "customer_id": f"@{sender_id}",
                     "body": text,
                     "subject": f"Instagram DM from @{sender_id}",
-                    "external_ref": msg.get("mid") or f"https://instagram.com/direct/t/{sender_id}",
+                    "external_ref": msg.get("mid") or f"ig:{sender_id}",
                 }
                 try:
-                    from integrations.kafka.producer import publish
-                    publish(**complaint_data)
-                    ingested += 1
-                except Exception as pub_err:
-                    logger.warning(f"Kafka/direct publish failed, ingesting inline: {pub_err}")
                     await ingest_complaint_logic(complaint_data, db)
                     ingested += 1
+                except Exception as ingest_err:
+                    logger.error(f"Instagram DM ingest failed for sender {sender_id}: {ingest_err}", exc_info=True)
 
         logger.info(f"Meta Instagram webhook processed | object={meta_object} ingested={ingested}")
         return PlainTextResponse("EVENT_RECEIVED")

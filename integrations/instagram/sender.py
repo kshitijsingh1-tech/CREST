@@ -11,6 +11,14 @@ logger = get_logger("crest.integrations.instagram.sender")
 META_ACCESS_TOKEN = os.getenv("META_ACCESS_TOKEN", "mock_meta_token")
 INSTAGRAM_ACCOUNT_ID = os.getenv("INSTAGRAM_ACCOUNT_ID", "mock_account_id")
 
+def _recipient_field(customer_ref: str) -> dict:
+    """Meta requires IGSID for replies; usernames only work in dev/simulator."""
+    ref = customer_ref.lstrip("@").strip()
+    if ref.isdigit():
+        return {"id": ref}
+    return {"username": ref}
+
+
 def send_instagram_dm(customer_username: str, reply_text: str):
     """
     Send a DM to the customer on Instagram.
@@ -20,11 +28,12 @@ def send_instagram_dm(customer_username: str, reply_text: str):
 
     logger.info(f"Preparing to send Instagram DM to {customer_username}...")
     
-    url = f"https://graph.facebook.com/v18.0/{INSTAGRAM_ACCOUNT_ID}/messages"
+    url = f"https://graph.facebook.com/v21.0/{INSTAGRAM_ACCOUNT_ID}/messages"
     
     payload = {
-        "recipient": {"username": customer_username},
-        "message": {"text": reply_text}
+        "recipient": _recipient_field(customer_username),
+        "messaging_type": "RESPONSE",
+        "message": {"text": reply_text},
     }
     
     headers = {
