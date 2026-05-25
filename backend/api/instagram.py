@@ -1,5 +1,6 @@
 import os
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, Query
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.utils.db import get_db_optional
@@ -15,6 +16,19 @@ class InstagramPayload(BaseModel):
     message_text: str
     media_url: str | None = None
     is_dm: bool = True
+
+@router.get("/webhook")
+async def instagram_webhook_verify(
+    hub_mode: str = Query(None, alias="hub.mode"),
+    hub_verify_token: str = Query(None, alias="hub.verify_token"),
+    hub_challenge: str = Query(None, alias="hub.challenge")
+):
+    """
+    Handles Meta Graph API GET verification challenge protocol.
+    """
+    if hub_mode == "subscribe" and hub_verify_token == INSTAGRAM_WEBHOOK_KEY:
+        return PlainTextResponse(hub_challenge)
+    raise HTTPException(status_code=400, detail="Verification token mismatch")
 
 @router.post("/webhook")
 async def instagram_webhook(
