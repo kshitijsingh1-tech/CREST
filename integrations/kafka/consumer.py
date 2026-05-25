@@ -31,6 +31,7 @@ CHANNEL_TOPICS = [
     "crest.channel.whatsapp",
     "crest.channel.app",
     "crest.channel.twitter",
+    "crest.channel.instagram",
     "crest.channel.voice",
     "crest.channel.branch",
 ]
@@ -41,6 +42,7 @@ TOPIC_TO_CHANNEL = {
     "crest.channel.whatsapp":  "whatsapp",
     "crest.channel.app":       "app",
     "crest.channel.twitter":   "twitter",
+    "crest.channel.instagram": "instagram",
     "crest.channel.voice":     "voice",
     "crest.channel.branch":    "branch",
 }

@@ -40,14 +40,22 @@ def send_instagram_dm(customer_username: str, reply_text: str):
     # Mock success since this is a demo environment without real Meta Graph tokens
     if META_ACCESS_TOKEN == "mock_meta_token":
         print(f"[Instagram DM Simulated Success] Message 'sent' to @{customer_username}.")
-        return True
+        return {
+            "status": "simulated",
+            "recipient": customer_username,
+            "body": reply_text,
+        }
 
     try:
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
         print(f"[Instagram DM Success] Message sent to @{customer_username}.")
-        return True
+        return {
+            "status": "sent",
+            "recipient": customer_username,
+            "message_id": "mock_instagram_msg_id",
+        }
     except Exception as exc:
         logger.error(f"Failed to send Instagram DM to {customer_username}: {exc}")
         print(f"[Instagram DM Error] {exc}")
-        return False
+        raise

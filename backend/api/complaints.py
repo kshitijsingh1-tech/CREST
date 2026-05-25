@@ -15,6 +15,16 @@ from sqlalchemy.orm import Session
 from backend.utils.db import get_db_optional
 from backend.utils.logger import get_logger
 from backend.utils.runtime import DEV_MOCK, USE_PGVECTOR
+from backend.mock_store import (
+    approve_draft as mock_approve_draft,
+    assign_complaint as mock_assign_complaint,
+    export_audit_trail as mock_export_audit_trail,
+    find_similar as mock_find_similar,
+    get_complaint as mock_get_complaint,
+    get_priority_queue as mock_get_priority_queue,
+    ingest as mock_ingest,
+    resolve_complaint as mock_resolve_complaint,
+)
 from backend.models.complaint import ComplaintIngest, ComplaintOut, ResolveRequest, AssignRequest, EscalateRequest, ApproveDraftRequest
 from backend.services.complaint_service import (
     ingest_complaint, get_priority_queue, assign_complaint,
@@ -51,7 +61,7 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
     customer_id = payload_dict.get("customer_id", "unknown")
     channel = (payload_dict.get("channel") or "app").lower().strip()
     
-    if customer_id != "unknown" and channel != "twitter" and db is not None:
+    if customer_id != "unknown" and db is not None:
         open_complaint = (
             db.query(Complaint)
             .filter(Complaint.customer_id == customer_id)
@@ -88,7 +98,7 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
                 )
                 
                 try:
-                    if channel == "email" or "@" in customer_id:
+                    if channel == "email":
                         from integrations.email.sender import send_customer_reply
                         send_customer_reply(
                             recipient=customer_id,
@@ -109,6 +119,12 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
                             recipient_phone=customer_id,
                             reply_body=confirm_msg,
                             external_ref=payload_dict.get("external_ref")
+                        )
+                    elif channel == "instagram":
+                        from integrations.instagram.sender import send_instagram_dm
+                        send_instagram_dm(
+                            customer_username=customer_id,
+                            reply_text=confirm_msg,
                         )
                 except Exception as auto_err:
                     logger.error(f"Failed to dispatch region confirmation response: {auto_err}")
@@ -176,11 +192,11 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
     except Exception as ws_err:
         logger.error(f"WebSocket broadcast failed: {ws_err}")
 
-    # Dispatch dynamic, polite region request auto-responses (EXCEPT for Twitter)
+    # Dispatch dynamic, polite region request auto-responses
     channel = (payload_dict.get("channel") or "app").lower().strip()
     recipient = payload_dict.get("customer_id")
     
-    if channel != "twitter" and recipient and recipient != "unknown":
+    if recipient and recipient != "unknown":
         ref = payload_dict.get("external_ref") or str(complaint.id)[:8]
         msg = (
             "Hello! 👋 \n\n"
@@ -191,7 +207,7 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
         )
         
         try:
-            if channel == "email" or "@" in recipient:
+            if channel == "email":
                 from integrations.email.sender import send_customer_reply
                 send_customer_reply(
                     recipient=recipient,
@@ -216,6 +232,13 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
                     external_ref=payload_dict.get("external_ref")
                 )
                 logger.info(f"Polite region request SMS sent to {recipient}")
+            elif channel == "instagram":
+                from integrations.instagram.sender import send_instagram_dm
+                send_instagram_dm(
+                    customer_username=recipient,
+                    reply_text=msg,
+                )
+                logger.info(f"Polite region request Instagram DM sent to {recipient}")
         except Exception as auto_err:
             logger.error(f"Failed to dispatch polite region request for channel {channel}: {auto_err}")
 

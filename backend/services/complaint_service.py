@@ -24,7 +24,7 @@ from backend.utils.logger import get_logger
 from backend.utils.runtime import USE_PGVECTOR
 from integrations.email.sender import is_email_address, send_customer_reply
 from integrations.whatsapp.sender import send_whatsapp_reply
-from integrations.twitter.sender import send_twitter_reply
+from integrations.instagram.sender import send_instagram_dm
 
 logger = get_logger("crest.services.complaint")
 
@@ -361,13 +361,12 @@ def approve_draft(db: Session, complaint_id: str, agent: str, draft_reply: Optio
                 external_ref=c.external_ref,
             )
             sent_via = "whatsapp"
-        elif channel_name == "twitter":
-            send_result = send_twitter_reply(
+        elif channel_name == "instagram":
+            send_result = send_instagram_dm(
                 recipient,
                 c.draft_reply,
-                tweet_id=c.external_ref,
             )
-            sent_via = "twitter"
+            sent_via = "instagram"
     except Exception as exc:
         logger.error(f"Outbound dispatch failed for channel {channel_name} to {recipient}: {exc}", exc_info=True)
         raise
@@ -390,8 +389,8 @@ def approve_draft(db: Session, complaint_id: str, agent: str, draft_reply: Optio
         detail = f"Draft approved and emailed to {recipient}."
     elif sent_via == "whatsapp" and send_result:
         detail = f"Draft approved and sent via WhatsApp to {recipient}."
-    elif sent_via == "twitter" and send_result:
-        detail = f"Draft approved and posted as public reply to Twitter handle {recipient}."
+    elif sent_via == "instagram" and send_result:
+        detail = f"Draft approved and sent via Instagram DM to {recipient}."
     else:
         detail = f"Draft approved. No deliverable recipient was available for channel '{channel_name}'."
 

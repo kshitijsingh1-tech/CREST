@@ -132,11 +132,11 @@ def process_complaint(self, payload: dict) -> dict:
                 db.commit()
                 logger.info("Draft reply and source metadata generated, back-translated, and saved")
 
-            # Dispatch dynamic, polite region request auto-responses (EXCEPT for Twitter)
+            # Dispatch dynamic, polite region request auto-responses
             channel = (payload.get("channel") or "app").lower().strip()
             recipient = payload.get("customer_id")
             
-            if channel != "twitter" and recipient and recipient != "unknown":
+            if recipient and recipient != "unknown":
                 ref = payload.get("external_ref") or str(complaint.id)[:8]
                 msg = (
                     f"Hello! 👋 We have received your complaint (Ticket Ref: {ref}). "
@@ -145,7 +145,7 @@ def process_complaint(self, payload: dict) -> dict:
                 )
                 
                 try:
-                    if channel == "email" or "@" in recipient:
+                    if channel == "email":
                         from integrations.email.sender import send_customer_reply
                         send_customer_reply(
                             recipient=recipient,
@@ -170,6 +170,13 @@ def process_complaint(self, payload: dict) -> dict:
                             external_ref=payload.get("external_ref")
                         )
                         logger.info(f"Polite region request SMS sent to {recipient}")
+                    elif channel == "instagram":
+                        from integrations.instagram.sender import send_instagram_dm
+                        send_instagram_dm(
+                            customer_username=recipient,
+                            reply_text=msg,
+                        )
+                        logger.info(f"Polite region request Instagram DM sent to {recipient}")
                 except Exception as auto_err:
                     logger.error(f"Failed to dispatch polite region request for channel {channel}: {auto_err}")
 
