@@ -23,7 +23,7 @@ from backend.api.users import router as users_router  # type: ignore
 from backend.api.auth import router as auth_router  # type: ignore
 from backend.utils.logger import get_logger  # type: ignore
 from backend.utils.runtime import DEV_MOCK, is_truthy  # type: ignore
-from integrations.whatsapp.webhook import router as whatsapp_webhook_router  # type: ignore
+from integrations.whatsapp.webhook import router as whatsapp_webhook_router, legacy_router as whatsapp_legacy_router  # type: ignore
 from backend.api.sms import router as sms_router # type: ignore
 from backend.api.instagram import router as instagram_router # type: ignore
 from backend.api.public import router as public_router # type: ignore
@@ -114,6 +114,7 @@ app.include_router(complaints_router)
 app.include_router(analytics_router)
 app.include_router(insights_router)
 app.include_router(whatsapp_webhook_router)
+app.include_router(whatsapp_legacy_router)
 app.include_router(sms_router)
 app.include_router(instagram_router)
 app.include_router(public_router)

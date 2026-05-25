@@ -99,6 +99,8 @@ python -m backend.utils.reset_db
 |--------|------|-------------|
 | POST | `/api/complaints/ingest` | Sync ingest (test/low-volume) |
 | POST | `/api/integrations/sms/webhook` | SMS Ingest (Hybrid Kafka/Direct) |
+| POST | `/api/integrations/whatsapp/webhook` | WhatsApp Ingest (Twilio) |
+| POST | `/webhooks/whatsapp` | WhatsApp Ingest (legacy alias) |
 | POST | `/api/integrations/instagram/webhook` | Instagram Ingest (Hybrid Kafka/Direct) |
 | GET | `/api/complaints/queue` | Live priority queue |
 | PATCH | `/api/complaints/{id}/assign` | Assign to agent |
