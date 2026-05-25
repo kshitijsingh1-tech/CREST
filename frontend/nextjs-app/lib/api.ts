@@ -20,11 +20,11 @@ const getBaseUrls = () => {
     return [""];
   }
 
-  // Server-side (RSC / Node): prefer internal networking, but fall back to public URLs if that path is misconfigured.
+  // Server-side (RSC): use the same public API as the browser proxy so JWT/session stays on one backend.
   return Array.from(new Set([
-    normalizeServiceUrl(process.env.BACKEND_INTERNAL_URL),
     normalizeServiceUrl(process.env.NEXT_PUBLIC_API_URL),
     PROD_API_URL,
+    normalizeServiceUrl(process.env.BACKEND_INTERNAL_URL),
   ].filter((value): value is string => Boolean(value))));
 };
 
@@ -65,7 +65,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
         const shouldRetryOnServer =
           typeof window === "undefined" &&
           index < baseUrls.length - 1 &&
-          res.status >= 500;
+          (res.status >= 500 || res.status === 401);
 
         if (shouldRetryOnServer) {
           console.warn(`[API Fetch Retry] ${path}: ${baseUrl} returned ${res.status}, trying next backend URL`);

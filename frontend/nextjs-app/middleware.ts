@@ -14,6 +14,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(`${correctedPath}${request.nextUrl.search}`, request.url));
   }
 
+  // Common typo: /ub_crrest → /ub_CREST
+  if (pathname === '/ub_crrest' || pathname.startsWith('/ub_crrest/')) {
+    const correctedPath = pathname.replace('/ub_crrest', '/ub_CREST');
+    return NextResponse.redirect(new URL(`${correctedPath}${request.nextUrl.search}`, request.url));
+  }
+
   // 1. If trying to access administrative routes without a token, redirect to login
   const protectedRoutes = [
     '/dashboard', '/queue', '/analytics', '/complaints',
@@ -37,6 +43,7 @@ export const config = {
   matcher: [
     '/ub_CREST',
     '/ub_crest', '/ub_crest/:path*',
+    '/ub_crrest', '/ub_crrest/:path*',
     '/dashboard', '/dashboard/:path*',
     '/queue', '/queue/:path*',
     '/analytics', '/analytics/:path*',
