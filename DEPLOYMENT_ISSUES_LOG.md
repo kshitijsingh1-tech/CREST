@@ -119,7 +119,14 @@
 ## Issue 17: Mock Store Still Imported After Removal
 **Symptom:** `analytics.py` and `complaints.py` had dead imports from `backend/mock_store.py` which would crash on import  
 **Cause:** `mock_store.py` was deleted but import statements remained in the API files  
-**Fix:** Removed all `from backend.mock_store import (...)` blocks and `DEV_MOCK` conditional branches from `analytics.py` and `complaints.py`
+**Fix:** Removed all `from backend.mock_store import (...` blocks and `DEV_MOCK` conditional branches from `analytics.py` and `complaints.py`
+
+---
+
+## Issue 18: Startup Migration Table Lock Hang (Deployment Timeout)
+**Symptom:** API deployment failed on Render with: `Timed out after waiting for internal health check to return a successful response code at: crest-api-0uc4.onrender.com:8000/api/health`  
+**Cause:** Running table-altering migrations (`ALTER TABLE users ADD COLUMN phone ...`) dynamically during the lifespan startup phase of FastAPI will hang indefinitely if active connections from previous containers or Celery tasks hold table-level locks. This prevents FastAPI from completing its initialization and listening on port 8000.  
+**Fix:** Set a connection-level lock timeout before running the migration: `conn.execute(text("SET lock_timeout = 5000"))`. If a lock conflict exists, the query will fail fast after 5 seconds, raise an exception (safely caught and logged), and allow the FastAPI container to finish starting up successfully.
 
 ---
 
@@ -137,3 +144,4 @@
 | 8 | DB Seeding | Pre-existing DBs skip seeders — always manually seed initial admin accounts |
 | 9 | pgvector | Must `CREATE EXTENSION IF NOT EXISTS vector;` before SQLAlchemy creates tables |
 | 10 | Server Components | Server-side fetches inside Next.js container need `NEXT_PUBLIC_API_URL` set at RUNTIME in Render Dashboard, not just in `render.yaml` |
+| 11 | DB Migrations | Always set a short connection `lock_timeout` on startup migrations to prevent table-level locks from hanging the entire deployment |
