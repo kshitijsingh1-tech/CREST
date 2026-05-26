@@ -4,6 +4,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('crest_token')?.value;
 
   const { pathname } = request.nextUrl;
+  const isRecovered = request.nextUrl.searchParams.get("recovered") === "1";
 
   if (pathname === '/ub_CREST') {
     return NextResponse.redirect(new URL(token ? '/ub_CREST/home' : '/ub_CREST/login', request.url));
@@ -31,8 +32,19 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/ub_CREST/login', request.url));
   }
 
+  // If we explicitly arrived here to recover from an invalid session, expire the stale token first.
+  if (pathname === '/ub_CREST/login' && token && isRecovered) {
+    const response = NextResponse.next();
+    response.cookies.set('crest_token', '', {
+      path: '/',
+      expires: new Date(0),
+      sameSite: 'lax',
+      secure: true,
+    });
+    return response;
+  }
+
   // 2. If already logged in and trying to access the login page, redirect to home
-  const isRecovered = request.nextUrl.searchParams.get("recovered") === "1";
   if (pathname === '/ub_CREST/login' && token && !isRecovered) {
     return NextResponse.redirect(new URL('/ub_CREST/home', request.url));
   }

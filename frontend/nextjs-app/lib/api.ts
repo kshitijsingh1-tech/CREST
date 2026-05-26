@@ -38,8 +38,14 @@ const getApiErrorMessage = async (res: Response) => {
   return `API request failed with status ${res.status}`;
 };
 
-const clearClientAuthState = () => {
+const removeCrestTokenCookie = () => {
   Cookies.remove("crest_token", { path: "/" });
+  Cookies.remove("crest_token", { path: "/", sameSite: "lax" });
+  Cookies.remove("crest_token", { path: "/", sameSite: "lax", secure: true });
+};
+
+const clearClientAuthState = () => {
+  removeCrestTokenCookie();
   localStorage.removeItem("crest_user");
 };
 
@@ -357,7 +363,7 @@ export const login = async (email: string, password: string): Promise<any> => {
 
 export const logout = () => {
   if (typeof window !== "undefined") {
-    Cookies.remove("crest_token", { path: "/" });
+    removeCrestTokenCookie();
     localStorage.removeItem("crest_user");
     window.location.href = "/ub_CREST/login";
   }

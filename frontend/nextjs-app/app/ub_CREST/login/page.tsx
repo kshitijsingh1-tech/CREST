@@ -13,6 +13,12 @@ import {
 } from "lucide-react";
 import Cookies from "js-cookie";
 
+const removeCrestTokenCookie = () => {
+  Cookies.remove("crest_token", { path: "/" });
+  Cookies.remove("crest_token", { path: "/", sameSite: "lax" });
+  Cookies.remove("crest_token", { path: "/", sameSite: "lax", secure: true });
+};
+
 const generateCaptchaText = () => {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Removed ambiguous characters
   let text = "";
@@ -42,7 +48,7 @@ export default function CrestLoginPage() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("recovered") === "1" || Cookies.get("crest_token")) {
       // Clear stale token/auth state
-      Cookies.remove("crest_token", { path: "/" });
+      removeCrestTokenCookie();
       localStorage.removeItem("crest_user");
       setError("Your session has expired or is invalid. Please sign in again.");
     }
@@ -87,7 +93,7 @@ export default function CrestLoginPage() {
       }
       handleRefreshCaptcha();
       // Clean cookies just to be safe
-      Cookies.remove("crest_token", { path: "/" });
+      removeCrestTokenCookie();
       localStorage.removeItem("crest_user");
     } finally {
       setLoading(false);
