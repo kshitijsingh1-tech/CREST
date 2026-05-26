@@ -58,7 +58,7 @@ def _verify_discord_signature(body: bytes, signature: str, timestamp: str) -> bo
         from nacl.exceptions import BadSignatureError
         
         message = timestamp.encode() + body
-        verify_key = VerifyKey(DISCORD_PUBLIC_KEY)
+        verify_key = VerifyKey(bytes.fromhex(DISCORD_PUBLIC_KEY))
         
         try:
             verify_key.verify(message, bytes.fromhex(signature))
