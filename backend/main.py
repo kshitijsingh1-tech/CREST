@@ -123,20 +123,32 @@ app.include_router(auth_router)
 
 
 @app.get("/api/health")
-def health(db=Depends(get_db_optional)):
+def health():
+    return {
+        "status": "healthy",
+        "service": "CREST API",
+        "dependencies": {
+            "database": "unchecked",
+            "ai_mode": "mock" if DEV_MOCK else "live",
+        },
+    }
+
+
+@app.get("/api/health/dependencies")
+def health_dependencies(db=Depends(get_db_optional)):
     health_status = {
         "status": "healthy",
         "service": "CREST API",
         "dependencies": {
             "database": "down",
-            "ai_mode": "mock" if DEV_MOCK else "live"
-        }
+            "ai_mode": "mock" if DEV_MOCK else "live",
+        },
     }
-    
-    # 1. Check Database
+
     try:
         if db:
             from sqlalchemy import text
+
             db.execute(text("SELECT 1"))
             health_status["dependencies"]["database"] = "up"
     except Exception as e:
