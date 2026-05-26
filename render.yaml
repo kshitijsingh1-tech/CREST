@@ -1,5 +1,12 @@
 services:
-  # 1. The Backend API Gateway (FastAPI)
+  # CREST Render Blueprint (safe defaults, prompts for secrets).
+  #
+  # Notes:
+  # - Keep secrets as sync:false so Render prompts you for them.
+  # - Frontend and backend URLs vary per deploy; set them in Render env after deploy.
+  # - Free-tier friendly: CREST_USE_DIRECT_INGEST=1 (no worker required).
+
+  # 1) Backend API (FastAPI)
   - type: web
     name: crest-api
     env: docker
@@ -8,64 +15,83 @@ services:
     plan: free
     healthCheckPath: /api/health
     envVars:
+      # --- Runtime ---
       - key: PYTHONPATH
         value: /app
-      - key: CREST_DB_URL
-        sync: false # Paste your existing Render PostgreSQL connection string here!
-      - key: REDIS_URL
-        sync: false # Paste your existing Render Redis connection string here!
-      - key: CREST_USE_DIRECT_INGEST
-        value: "1" # Simplifies Render deployments by running direct synchronous ingestion
-      - key: EMBEDDING_MODE
-        value: local
-      - key: CREST_USE_PGVECTOR
-        value: "1"
-      - key: JWT_SECRET_KEY
-        generateValue: true # Securely generates a unique secret key on Render
-      - key: GROQ_API_KEY
-        sync: false # Your Groq API key for high-speed AI classification and policy draft generation.
-      - key: TWILIO_ACCOUNT_SID
-        sync: false # Twilio Account SID used for WhatsApp and SMS integrations.
-      - key: TWILIO_AUTH_TOKEN
-        sync: false # Twilio Auth Token for secure webhook handshake validations.
-      - key: TWILIO_WHATSAPP_FROM
-        sync: false # The Twilio Sandbox WhatsApp number (e.g., whatsapp:+14155238886).
-      - key: SMS_WEBHOOK_KEY
-        sync: false # Secret API key used to authorize and secure inbound SMS webhooks.
-      - key: INSTAGRAM_WEBHOOK_KEY
-        value: "crest_instagram_demo_key_2026" # Custom secret key to verify Instagram webhooks.
-      - key: META_ACCESS_TOKEN
-        sync: false # Your live Page Access Token generated from the Meta Developer Dashboard.
-      - key: INSTAGRAM_ACCOUNT_ID
-        sync: false # Your Instagram Professional Account ID.
-      - key: INSTAGRAM_PAGE_ID
-        sync: false # Your connected Facebook Page ID or Instagram User handle (e.g., crest_ub_official).
-      - key: CORS_ALLOW_ALL
-        value: "0"
-      - key: CREST_PUBLIC_API_URL
-        value: "https://crest-api-z8zf.onrender.com"
-      - key: CREST_PORTAL_URL
-        value: "https://crest-ui-6zh6.onrender.com"
-      - key: CORS_ORIGINS
-        value: "https://crest-ui-6zh6.onrender.com"
       - key: PORT
         value: "8000"
 
-  # 2. The Frontend (Next.js UI)
+      # --- DB / Cache ---
+      - key: CREST_DB_URL
+        sync: false # REQUIRED: Render Postgres connection string
+      - key: REDIS_URL
+        sync: false # REQUIRED if Celery/Kafka paths are used; safe to set anyway
+
+      # --- Feature flags ---
+      - key: CREST_USE_DIRECT_INGEST
+        value: "1"
+      - key: CREST_USE_PGVECTOR
+        value: "1"
+      - key: EMBEDDING_MODE
+        value: local
+
+      # --- Auth ---
+      - key: JWT_SECRET_KEY
+        generateValue: true
+
+      # --- AI ---
+      - key: GROQ_API_KEY
+        sync: false # REQUIRED for live classification + drafts
+      - key: OPENAI_API_KEY
+        sync: false # OPTIONAL: used for Whisper STT (voice notes)
+
+      # --- CORS / Public URLs ---
+      - key: CORS_ALLOW_ALL
+        value: "0"
+      - key: CORS_ORIGINS
+        sync: false # REQUIRED: set to your frontend origin(s), comma-separated
+      - key: CREST_PORTAL_URL
+        sync: false # REQUIRED: e.g. https://<your-crest-ui>.onrender.com
+      - key: CREST_PUBLIC_API_URL
+        sync: false # REQUIRED: e.g. https://<your-crest-api>.onrender.com (used for Twilio signature checks)
+
+      # --- Twilio (WhatsApp/SMS) ---
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false # e.g. whatsapp:+14155238886
+      - key: SMS_WEBHOOK_KEY
+        sync: false
+
+      # --- Instagram / Meta ---
+      - key: INSTAGRAM_WEBHOOK_KEY
+        value: "crest_instagram_demo_key_2026"
+      - key: META_ACCESS_TOKEN
+        sync: false
+      - key: INSTAGRAM_ACCOUNT_ID
+        sync: false
+      - key: INSTAGRAM_PAGE_ID
+        sync: false
+
+      # --- Discord ---
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: DISCORD_PUBLIC_KEY
+        sync: false
+
+  # 2) Frontend UI (Next.js)
   - type: web
     name: crest-ui
     env: docker
-    dockerContext: frontend/nextjs-app # Fixed build context to target correct folder
+    dockerContext: frontend/nextjs-app
     dockerfilePath: infra/docker/Dockerfile.nextjs
     plan: free
     envVars:
+      # This must be set at runtime for Server Components.
       - key: NEXT_PUBLIC_API_URL
-        value: https://crest-api-z8zf.onrender.com
-      - key: BACKEND_INTERNAL_URL
-        fromService:
-          type: web
-          name: crest-api
-          property: hostport
+        sync: false # REQUIRED: https://<your-crest-api>.onrender.com
       - key: HOSTNAME
         value: "0.0.0.0"
       - key: PORT

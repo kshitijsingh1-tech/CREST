@@ -25,6 +25,7 @@ from backend.utils.runtime import USE_PGVECTOR
 from integrations.email.sender import is_email_address, send_customer_reply
 from integrations.whatsapp.sender import send_whatsapp_reply
 from integrations.instagram.sender import send_instagram_dm
+from integrations.discord.sender import send_discord_dm
 
 logger = get_logger("crest.services.complaint")
 
@@ -367,6 +368,13 @@ def approve_draft(db: Session, complaint_id: str, agent: str, draft_reply: Optio
                 c.draft_reply,
             )
             sent_via = "instagram"
+        elif channel_name == "discord":
+            send_result = send_discord_dm(
+                recipient,
+                c.draft_reply,
+                external_ref=c.external_ref,
+            )
+            sent_via = "discord"
     except Exception as exc:
         logger.error(f"Outbound dispatch failed for channel {channel_name} to {recipient}: {exc}", exc_info=True)
         raise
@@ -391,6 +399,8 @@ def approve_draft(db: Session, complaint_id: str, agent: str, draft_reply: Optio
         detail = f"Draft approved and sent via WhatsApp to {recipient}."
     elif sent_via == "instagram" and send_result:
         detail = f"Draft approved and sent via Instagram DM to {recipient}."
+    elif sent_via == "discord" and send_result:
+        detail = f"Draft approved and sent via Discord DM to {recipient}."
     else:
         detail = f"Draft approved. No deliverable recipient was available for channel '{channel_name}'."
 
