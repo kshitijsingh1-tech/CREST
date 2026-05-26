@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { login } from "@/lib/api";
+import { getApiErrorStatus, login } from "@/lib/api";
 import { 
   ShieldCheck, 
   Lock, 
@@ -68,7 +68,14 @@ export default function CrestLoginPage() {
         window.location.assign("/ub_CREST/home");
       }, 600);
     } catch (err) {
-      setError("Invalid administrative credentials");
+      const status = getApiErrorStatus(err);
+      if (status && [502, 503, 504].includes(status)) {
+        setError("Gateway recovered. Please try login again.");
+      } else if (status === 401) {
+        setError("Invalid administrative credentials");
+      } else {
+        setError("Login service temporarily unavailable");
+      }
       handleRefreshCaptcha();
       // Clean cookies just to be safe
       Cookies.remove("crest_token", { path: "/" });

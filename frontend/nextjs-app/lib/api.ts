@@ -6,6 +6,55 @@
 
 import Cookies from "js-cookie";
 
+const RECOVERABLE_CLIENT_STATUSES = new Set([401, 502, 503, 504]);
+
+class ApiError extends Error {
+  status: number;
+  path: string;
+
+  constructor(path: string, status: number, message?: string) {
+    super(message ?? `API ${path} failed with status ${status}`);
+    this.name = "ApiError";
+    this.status = status;
+    this.path = path;
+  }
+}
+
+const getApiErrorMessage = async (res: Response) => {
+  try {
+    const data = await res.clone().json();
+    if (typeof data?.detail === "string" && data.detail.trim()) return data.detail;
+  } catch {
+    // Ignore JSON parse failures and fall back to plain text / status text.
+  }
+
+  try {
+    const text = (await res.clone().text()).trim();
+    if (text) return text;
+  } catch {
+    // Ignore body read failures and fall back to status text.
+  }
+
+  return `API request failed with status ${res.status}`;
+};
+
+const clearClientAuthState = () => {
+  Cookies.remove("crest_token", { path: "/" });
+  localStorage.removeItem("crest_user");
+};
+
+const hasClientAuthState = () =>
+  Boolean(Cookies.get("crest_token") || localStorage.getItem("crest_user"));
+
+const redirectToRecoveredLogin = () => {
+  if (typeof window === "undefined") return;
+  if (window.location.pathname === "/ub_CREST/login") return;
+
+  const nextUrl = new URL("/ub_CREST/login", window.location.origin);
+  nextUrl.searchParams.set("recovered", "1");
+  window.location.assign(nextUrl.toString());
+};
+
 const normalizeServiceUrl = (value?: string | null) => {
   if (!value) return null;
   if (/^https?:\/\//i.test(value)) return value;
@@ -28,27 +77,29 @@ const getBaseUrls = () => {
   ].filter((value): value is string => Boolean(value))));
 };
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const baseUrls = getBaseUrls();
+const buildAuthHeaders = async () => {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  
   let token: string | undefined;
 
   if (typeof window !== "undefined") {
-    // Client-side
     token = Cookies.get("crest_token");
   } else {
-    // Server-side (RSC)
     const { cookies } = await import("next/headers");
     token = cookies().get("crest_token")?.value;
   }
 
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+};
 
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const baseUrls = getBaseUrls();
   let lastError: unknown;
+  let recoveredClientAuth = false;
 
   for (const [index, baseUrl] of baseUrls.entries()) {
     try {
+      const headers = await buildAuthHeaders();
       const res = await fetch(`${baseUrl}${path}`, {
         headers,
         credentials: "include", // Essential for sending cookies to the backend
@@ -56,14 +107,22 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
       });
 
       if (!res.ok) {
-        if (res.status === 401 && typeof window !== "undefined") {
-          console.warn("Unauthorized API call, redirecting to login");
-          // We don't redirect immediately here to avoid loops, 
-          // but we throw so the component can handle it.
+        const isBrowser = typeof window !== "undefined";
+        const canRecoverClientAuth =
+          isBrowser &&
+          !recoveredClientAuth &&
+          RECOVERABLE_CLIENT_STATUSES.has(res.status) &&
+          hasClientAuthState();
+
+        if (canRecoverClientAuth) {
+          recoveredClientAuth = true;
+          console.warn(`[API Recovery] Clearing stale browser auth before retrying ${path} after ${res.status}`);
+          clearClientAuthState();
+          continue;
         }
 
         const shouldRetryOnServer =
-          typeof window === "undefined" &&
+          !isBrowser &&
           index < baseUrls.length - 1 &&
           (res.status >= 500 || res.status === 401);
 
@@ -72,7 +131,12 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
           continue;
         }
 
-        throw new Error(`API ${path} failed with status ${res.status}`);
+        if (isBrowser && res.status === 401) {
+          console.warn(`[API Auth] Unauthorized API call for ${path}, redirecting to login`);
+          redirectToRecoveredLogin();
+        }
+
+        throw new ApiError(path, res.status, await getApiErrorMessage(res));
       }
 
       return res.json() as Promise<T>;
@@ -92,6 +156,9 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   console.error(`[API Fetch Error] ${path}:`, lastError);
   throw lastError;
 }
+
+export const getApiErrorStatus = (error: unknown): number | null =>
+  error instanceof ApiError ? error.status : null;
 
 // ── Types ─────────────────────────────────────────────────────
 
