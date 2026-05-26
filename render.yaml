@@ -81,6 +81,30 @@ services:
       - key: DISCORD_PUBLIC_KEY
         sync: false
 
+      # --- Telegram ---
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
+
+  # 3) Discord Gateway Bot Listener (Worker)
+  # Maintains persistent WebSocket to Discord to receive DMs.
+  # This is REQUIRED for DM ingestion — HTTP Interactions alone cannot receive DMs.
+  # Remove or comment out if you don't need Discord DM support.
+  - type: worker
+    name: crest-discord-listener
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python integrations/discord/listener.py
+    plan: free
+    envVars:
+      - key: PYTHONPATH
+        value: /app
+      - key: DISCORD_BOT_TOKEN
+        sync: false  # REQUIRED: Bot token from Discord Developer Portal
+      - key: CREST_API_URL
+        sync: false  # REQUIRED: e.g. https://crest-api-z8zf.onrender.com
+
   # 2) Frontend UI (Next.js)
   - type: web
     name: crest-ui

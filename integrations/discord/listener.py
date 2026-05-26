@@ -41,7 +41,8 @@ async def forward_to_crest(user_id: str, username: str, message_id: str, content
                 "username": username,
                 "bot": False
             },
-            "content": content
+            "content": content,
+            "timestamp": "2026-01-01T00:00:00+00:00",  # Required by DiscordMessage model
         }
     }
     
