@@ -241,6 +241,13 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
                     reply_text=msg,
                 )
                 logger.info(f"Polite region request Instagram DM sent to {recipient}")
+            elif channel == "discord":
+                from integrations.discord.sender import send_discord_dm
+                send_discord_dm(
+                    recipient_user_id=recipient,
+                    reply_text=msg,
+                )
+                logger.info(f"Polite region request Discord DM sent to {recipient}")
         except Exception as auto_err:
             logger.error(f"Failed to dispatch polite region request for channel {channel}: {auto_err}")
 
