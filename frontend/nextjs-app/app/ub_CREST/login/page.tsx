@@ -19,6 +19,8 @@ const removeCrestTokenCookie = () => {
   Cookies.remove("crest_token", { path: "/", sameSite: "lax", secure: true });
 };
 
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 const generateCaptchaText = () => {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Removed ambiguous characters
   let text = "";
@@ -75,8 +77,26 @@ export default function CrestLoginPage() {
     }
 
     try {
-      // Authenticate via FastAPI JWT backend
-      await login(email, password);
+      // Authenticate via FastAPI JWT backend.
+      // Render free-tier cold starts can cause transient gateway/network failures,
+      // so give the backend one brief wake-up retry before failing the login.
+      let attempt = 0;
+      while (true) {
+        try {
+          await login(email, password);
+          break;
+        } catch (err) {
+          const status = getApiErrorStatus(err);
+          const likelyWakeUp = status == null || [502, 503, 504].includes(status);
+          if (likelyWakeUp && attempt < 1) {
+            attempt += 1;
+            setError("waking up.. please wait");
+            await wait(5000);
+            continue;
+          }
+          throw err;
+        }
+      }
       
       setSuccess("Operational clearance confirmed!");
       setTimeout(() => {
@@ -84,8 +104,8 @@ export default function CrestLoginPage() {
       }, 600);
     } catch (err) {
       const status = getApiErrorStatus(err);
-      if (status && [502, 503, 504].includes(status)) {
-        setError("Gateway recovered. Please try login again.");
+      if (status == null || [502, 503, 504].includes(status)) {
+        setError("waking up.. please wait");
       } else if (status === 401) {
         setError("Invalid administrative credentials");
       } else {
