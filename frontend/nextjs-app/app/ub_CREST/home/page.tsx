@@ -9,7 +9,7 @@ export default async function CommandCenterHome() {
   try {
     user = await getMe();
   } catch (e) {
-    redirect("/ub_CREST/login");
+    redirect("/ub_CREST/login?recovered=1");
   }
 
   let spikes: Awaited<ReturnType<typeof getSpikeSignals>> = [];

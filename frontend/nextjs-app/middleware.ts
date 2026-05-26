@@ -32,7 +32,8 @@ export function middleware(request: NextRequest) {
   }
 
   // 2. If already logged in and trying to access the login page, redirect to home
-  if (pathname === '/ub_CREST/login' && token) {
+  const isRecovered = request.nextUrl.searchParams.get("recovered") === "1";
+  if (pathname === '/ub_CREST/login' && token && !isRecovered) {
     return NextResponse.redirect(new URL('/ub_CREST/home', request.url));
   }
 

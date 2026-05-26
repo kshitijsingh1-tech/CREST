@@ -10,7 +10,7 @@ export default async function ManagementConsolePage() {
   try {
     user = await getMe();
   } catch (e) {
-    redirect("/ub_CREST/login");
+    redirect("/ub_CREST/login?recovered=1");
   }
 
   // Ensure only authenticated staff can view team stats

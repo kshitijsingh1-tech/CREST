@@ -163,77 +163,77 @@ export const getApiErrorStatus = (error: unknown): number | null =>
 // ── Types ─────────────────────────────────────────────────────
 
 export interface Complaint {
-  id:             string;
-  channel:        string;
-  customer_id:    string;
-  customer_name:  string | null;
-  subject:        string | null;
-  category:       string | null;
-  sub_category:   string | null;
-  severity:       number | null;
-  anger_score:    number | null;
-  sentiment:      string | null;
+  id: string;
+  channel: string;
+  customer_id: string;
+  customer_name: string | null;
+  subject: string | null;
+  category: string | null;
+  sub_category: string | null;
+  severity: number | null;
+  anger_score: number | null;
+  sentiment: string | null;
   priority_score: number;
-  sla_deadline:   string | null;
-  sla_status:     string;
-  status:         string;
-  region_id:      number | null;
+  sla_deadline: string | null;
+  sla_status: string;
+  status: string;
+  region_id: number | null;
   assigned_employee_id: number | null;
-  is_escalated:   boolean;
-  is_duplicate:   boolean;
-  duplicate_of:   string | null;
-  draft_reply:    string | null;
+  is_escalated: boolean;
+  is_duplicate: boolean;
+  duplicate_of: string | null;
+  draft_reply: string | null;
   draft_metadata: any | null;
   draft_approved: boolean;
-  created_at:     string;
+  created_at: string;
 }
 
 export interface Region {
-  id:   number;
+  id: number;
   name: string;
 }
 
 export interface User {
-  id:        number;
-  email:     string;
-  name:      string;
-  role:      string;
-  phone?:    string | null;
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  phone?: string | null;
   region_id: number | null;
   is_active: boolean;
 }
 
 export interface DashboardSummary {
-  total_open:        number;
-  p0_open:           number;
-  sla_breached:      number;
-  resolved_today:    number;
+  total_open: number;
+  p0_open: number;
+  sla_breached: number;
+  resolved_today: number;
   duplicates_caught: number;
-  avg_resolution_hrs:number;
+  avg_resolution_hrs: number;
 }
 
-export interface CategoryStat  { category: string;  count: number; }
-export interface SeverityStat  { severity: string;  count: number; }
-export interface ChannelStat   { channel:  string;  count: number; }
-export interface VolumeTrend   { date: string; total: number; duplicates: number; p0_count: number; }
-export interface RegionStat   { region_id?: number; region: string; open: number; breached: number; total: number; }
-export interface SpikeSignal   {
-  id:                  number;
-  signal_type:         string;
-  description:         string;
-  expected_impact:     string;
+export interface CategoryStat { category: string; count: number; }
+export interface SeverityStat { severity: string; count: number; }
+export interface ChannelStat { channel: string; count: number; }
+export interface VolumeTrend { date: string; total: number; duplicates: number; p0_count: number; }
+export interface RegionStat { region_id?: number; region: string; open: number; breached: number; total: number; }
+export interface SpikeSignal {
+  id: number;
+  signal_type: string;
+  description: string;
+  expected_impact: string;
   predicted_surge_pct: number;
-  rca_insight:         string | null;
-  common_factors:      any | null;
-  signal_ts:           string;
+  rca_insight: string | null;
+  common_factors: any | null;
+  signal_ts: string;
 }
 export interface AuditEntry {
-  id:        number;
-  actor:     string;
-  action:    string;
+  id: number;
+  actor: string;
+  action: string;
   old_value: Record<string, unknown> | null;
   new_value: Record<string, unknown> | null;
-  ts:        string;
+  ts: string;
 }
 
 // ── Complaints ────────────────────────────────────────────────

@@ -6,8 +6,8 @@ export default async function CrestRootRedirector() {
     // Validate officer session first
     await getMe();
   } catch (e) {
-    // If not logged in, redirect to login
-    redirect("/ub_CREST/login");
+    // If not logged in, redirect to login with recovery trigger
+    redirect("/ub_CREST/login?recovered=1");
   }
 
   // Once authenticated, route staff straight to their home dashboard!

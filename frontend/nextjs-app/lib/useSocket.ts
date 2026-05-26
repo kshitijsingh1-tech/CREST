@@ -16,9 +16,9 @@ const getSocketUrl = () => {
 };
 
 interface SocketEvents {
-  onQueueUpdated?:  (data: unknown) => void;
-  onNewComplaint?:  (data: { id: string; severity: number; category: string }) => void;
-  onNewSpike?:      (data: { category: string; surge_pct: number; rca_insight?: string }) => void;
+  onQueueUpdated?: (data: unknown) => void;
+  onNewComplaint?: (data: { id: string; severity: number; category: string }) => void;
+  onNewSpike?: (data: { category: string; surge_pct: number; rca_insight?: string }) => void;
 }
 
 export function useSocket({ onQueueUpdated, onNewComplaint, onNewSpike }: SocketEvents) {
@@ -26,7 +26,7 @@ export function useSocket({ onQueueUpdated, onNewComplaint, onNewSpike }: Socket
 
   useEffect(() => {
     const socket = io(getSocketUrl(), {
-      transports:        ["websocket"],
+      transports: ["websocket"],
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
     });
