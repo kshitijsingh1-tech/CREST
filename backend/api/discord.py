@@ -120,7 +120,7 @@ async def discord_webhook(
         if not message:
             return {"status": "ignored"}
         
-        # Ignore bot messages
+        # Extract user info
         author = message.get("author", {})
         if author.get("bot"):
             logger.info("Ignoring message from bot")
@@ -135,6 +135,19 @@ async def discord_webhook(
         # Extract user info
         user_id = author.get("id", "unknown")
         username = author.get("username", "unknown")
+
+        # Classify intent (COMPLAINT vs CONVERSATION)
+        from ai.utils.intent import classify_message_intent, get_cresty_response
+        intent = classify_message_intent(content)
+        if intent == "CONVERSATION":
+            logger.info(f"Discord message from {user_id} classified as CONVERSATION: {content[:50]}...")
+            try:
+                from integrations.discord.sender import send_discord_dm
+                cresty_reply = get_cresty_response(content)
+                send_discord_dm(recipient_user_id=str(user_id), reply_text=cresty_reply)
+            except Exception as send_err:
+                logger.error(f"Failed to send Cresty response to Discord: {send_err}")
+            return {"status": "replied_via_cresty"}
         
         # Create complaint payload
         complaint_data = {

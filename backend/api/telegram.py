@@ -83,6 +83,19 @@ async def telegram_webhook(
     chat_id = chat.get("id")
     chat_type = chat.get("type", "unknown")
 
+    # Classify intent (COMPLAINT vs CONVERSATION)
+    from ai.utils.intent import classify_message_intent, get_cresty_response
+    intent = classify_message_intent(text)
+    if intent == "CONVERSATION":
+        logger.info(f"Telegram message from {chat_id} classified as CONVERSATION: {text[:50]}...")
+        if chat_id:
+            try:
+                cresty_reply = get_cresty_response(text)
+                send_telegram_reply(chat_id=str(chat_id), reply_text=cresty_reply)
+            except Exception as send_err:
+                logger.error(f"Failed to send Cresty response to Telegram: {send_err}")
+        return {"status": "replied_via_cresty"}
+
     sender = msg.get("from") or {}
     sender_id = sender.get("id")
     username = sender.get("username")
