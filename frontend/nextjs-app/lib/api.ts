@@ -6,7 +6,7 @@
 
 import Cookies from "js-cookie";
 
-const RECOVERABLE_CLIENT_STATUSES = new Set([401, 502, 503, 504]);
+const RECOVERABLE_CLIENT_STATUSES = new Set([401]);
 
 class ApiError extends Error {
   status: number;
