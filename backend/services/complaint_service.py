@@ -385,12 +385,11 @@ def approve_draft(db: Session, complaint_id: str, agent: str, draft_reply: Optio
             sent_via = "telegram"
     except Exception as exc:
         logger.error(f"Outbound dispatch failed for channel {channel_name} to {recipient}: {exc}", exc_info=True)
-        # For demo/testing: allow approval to proceed if it's a missing config or a bad request (e.g. invalid test phone number)
-        error_msg = str(exc).lower()
-        if "not configured" in error_msg or "400 bad request" in error_msg:
-            logger.warning(f"Bypassing dispatch for {recipient} due to config/validation error: {exc}")
-        else:
-            raise
+        # For demo/testing/robustness: allow approval to proceed even if dispatch fails,
+        # so that network/SMTP/API errors do not completely block the complaint lifecycle.
+        logger.warning(f"Bypassing dispatch failure for {recipient} to allow complaint resolution: {exc}")
+        send_result = {"status": "failed", "error": str(exc)}
+        sent_via = channel_name
 
     c.draft_approved = True
     _write_audit(db, c.id, agent, "draft_approved", None, {"draft_approved": True})
