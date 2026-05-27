@@ -93,6 +93,16 @@ async def lifespan(app: FastAPI):
             logger.info("CREST Email IMAP listener thread started successfully")
         except Exception as th_err:
             logger.error(f"Failed to start background Email IMAP listener: {th_err}")
+            
+        # Start Discord Gateway Listener in a background asyncio task
+        try:
+            import asyncio
+            from integrations.discord.listener import run_bot
+            
+            asyncio.create_task(run_bot())
+            logger.info("CREST Discord gateway listener task started successfully")
+        except Exception as disc_err:
+            logger.error(f"Failed to start background Discord gateway listener: {disc_err}")
     yield
     logger.info("CREST API shutting down")
 

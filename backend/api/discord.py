@@ -81,11 +81,16 @@ async def discord_webhook(
     """
     body = await request.body()
     
-    # Verify Discord signature
+    # Verify Discord signature or bot token (for internal forwarding)
     signature = request.headers.get("X-Signature-Ed25519", "")
     timestamp = request.headers.get("X-Signature-Timestamp", "")
+    x_bot_token = request.headers.get("X-Discord-Bot-Token", "")
     
-    if not _verify_discord_signature(body, signature, timestamp):
+    is_internal = False
+    if x_bot_token and DISCORD_BOT_TOKEN and x_bot_token == DISCORD_BOT_TOKEN:
+        is_internal = True
+        
+    if not is_internal and not _verify_discord_signature(body, signature, timestamp):
         logger.warning("Discord signature validation failed")
         raise HTTPException(status_code=401, detail="Invalid Discord Signature")
     

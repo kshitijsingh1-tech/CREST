@@ -22,10 +22,6 @@ DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN", "").strip()
 CREST_API_URL = os.getenv("CREST_API_URL", "http://127.0.0.1:8000")
 CREST_WEBHOOK_URL = f"{CREST_API_URL}/api/integrations/discord/webhook"
 
-if not DISCORD_BOT_TOKEN:
-    logger.error("DISCORD_BOT_TOKEN not set. Exiting.")
-    exit(1)
-
 
 async def forward_to_crest(user_id: str, username: str, message_id: str, content: str):
     """
@@ -46,9 +42,13 @@ async def forward_to_crest(user_id: str, username: str, message_id: str, content
         }
     }
     
+    headers = {}
+    if DISCORD_BOT_TOKEN:
+        headers["X-Discord-Bot-Token"] = DISCORD_BOT_TOKEN
+        
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(CREST_WEBHOOK_URL, json=payload, timeout=10.0)
+            response = await client.post(CREST_WEBHOOK_URL, json=payload, headers=headers, timeout=10.0)
             response.raise_for_status()
             logger.info(f"Forwarded Discord DM to CREST: user={username}, msg_id={message_id}")
     except Exception as e:
@@ -59,6 +59,10 @@ async def run_bot():
     """
     Connect to Discord using discord.py and listen for DMs.
     """
+    if not DISCORD_BOT_TOKEN:
+        logger.warning("DISCORD_BOT_TOKEN not set. Discord listener task will not start.")
+        return
+        
     try:
         import discord
     except ImportError:
@@ -94,7 +98,7 @@ async def run_bot():
     
     intents = discord.Intents.default()
     intents.message_content = True  # Required to read message content
-    intents.direct_messages = True  # Required for DMs
+    intents.dm_messages = True      # Required for DMs
     
     bot = CRESTBot(intents=intents)
     
@@ -107,5 +111,9 @@ async def run_bot():
 
 
 if __name__ == "__main__":
+    if not DISCORD_BOT_TOKEN:
+        logger.error("DISCORD_BOT_TOKEN not set. Exiting.")
+        exit(1)
+        
     logger.info(f"Starting Discord listener (forwarding to {CREST_WEBHOOK_URL})...")
     asyncio.run(run_bot())
