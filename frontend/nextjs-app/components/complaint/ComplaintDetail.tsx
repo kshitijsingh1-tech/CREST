@@ -57,7 +57,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
       await assignComplaint(c.id, Number(agent));
       setC(prev => ({ ...prev, assigned_employee_id: Number(agent), status: "in_progress" }));
       flash("ok", `Assigned to ${agent}`);
-    } catch { flash("err", "Assignment failed"); }
+    } catch (err: any) { flash("err", err.message || "Assignment failed"); }
     setLoading(false);
   };
 
@@ -69,7 +69,9 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
       setC(prev => ({ ...prev, draft_approved: true }));
       setNote("Resolved by approving AI generated draft reply.");
       flash("ok", "Draft approved! You can now Mark as Resolved.");
-    } catch { flash("err", "Approval failed"); }
+    } catch (err: any) { 
+      flash("err", err.message || "Approval failed"); 
+    }
     setLoading(false);
   };
 
@@ -80,7 +82,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
       await resolveComplaint(c.id, agent, note, undefined);
       setC(prev => ({ ...prev, status: "resolved" }));
       flash("ok", "Complaint resolved and added to knowledge base ✓");
-    } catch { flash("err", "Resolution failed"); }
+    } catch (err: any) { flash("err", err.message || "Resolution failed"); }
     setLoading(false);
   };
 
@@ -91,7 +93,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
       await escalateComplaint(c.id, Number(agent));
       setC(prev => ({ ...prev, is_escalated: true, assigned_employee_id: null, status: "open" }));
       flash("ok", "Ticket escalated to your Regional Sub-Admin");
-    } catch { flash("err", "Escalation failed"); }
+    } catch (err: any) { flash("err", err.message || "Escalation failed"); }
     setLoading(false);
   };
 
