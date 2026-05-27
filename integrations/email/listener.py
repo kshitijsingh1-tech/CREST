@@ -160,8 +160,12 @@ def _process_email(mail: imaplib.IMAP4_SSL, uid: str) -> None:
                 external_ref=msg_id,
             )
             logger.info(f"Published email to Kafka: from={from_addr}")
+            ingested_via_api = True
         except Exception as kafka_err:
             logger.error(f"Critical failure: Both Direct API and Kafka failed: {kafka_err}")
+
+    if not ingested_via_api:
+        raise RuntimeError("Email ingestion failed via all available paths (Direct DB, HTTP API, and Kafka)")
 
 
 def run_listener() -> None:
@@ -176,7 +180,7 @@ def run_listener() -> None:
 
     while True:
         try:
-            mail = imaplib.IMAP4_SSL(str(IMAP_HOST), int(IMAP_PORT))
+            mail = imaplib.IMAP4_SSL(str(IMAP_HOST), int(IMAP_PORT), timeout=15)
             mail.login(str(IMAP_USER), str(IMAP_PASSWORD))
             mail.select("INBOX")
 
