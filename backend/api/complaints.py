@@ -205,26 +205,39 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
     if recipient and recipient != "unknown":
         ref = str(complaint.id)
         tracking_link = build_tracking_link(ref, recipient)
-        msg = (
-            "Hello! 👋\n\n"
-            "We have received your complaint.\n\n"
-            f"Ticket Ref: {ref}\n\n"
-            "Track your grievance status anytime here:\n"
-            f"{tracking_link}\n\n"
-            "To route this to the nearest nodal branch, please reply with your city or region.\n\n"
-            "Thank you! 🙏"
-        )
+        # Adjust message if region was already provided (like in web portal)
+        if complaint.region_id:
+            msg = (
+                "Hello! 👋\n\n"
+                "We have successfully received your complaint.\n\n"
+                f"Ticket Ref: {ref}\n\n"
+                "Track your grievance status anytime here:\n"
+                f"{tracking_link}\n\n"
+                "Thank you! 🙏"
+            )
+        else:
+            msg = (
+                "Hello! 👋\n\n"
+                "We have received your complaint.\n\n"
+                f"Ticket Ref: {ref}\n\n"
+                "Track your grievance status anytime here:\n"
+                f"{tracking_link}\n\n"
+                "To route this to the nearest nodal branch, please reply with your city or region.\n\n"
+                "Thank you! 🙏"
+            )
         
         try:
-            if channel == "email":
-                from integrations.email.sender import send_customer_reply
-                send_customer_reply(
-                    recipient=recipient,
-                    reply_body=msg,
-                    subject=f"Re: [Ticket Ref: {ref}] {complaint.subject or 'Complaint Registration'}",
-                    in_reply_to=payload_dict.get("external_ref")
-                )
-                logger.info(f"Polite region request email sent to {recipient}")
+            from integrations.email.sender import is_email_address
+            if channel == "email" or is_email_address(recipient):
+                if is_email_address(recipient):
+                    from integrations.email.sender import send_customer_reply
+                    send_customer_reply(
+                        recipient=recipient,
+                        reply_body=msg,
+                        subject=f"Re: [Ticket Ref: {ref}] {complaint.subject or 'Complaint Registration'}",
+                        in_reply_to=payload_dict.get("external_ref")
+                    )
+                    logger.info(f"Confirmation email sent to {recipient}")
             elif channel == "whatsapp":
                 from integrations.whatsapp.sender import send_whatsapp_reply
                 send_whatsapp_reply(
