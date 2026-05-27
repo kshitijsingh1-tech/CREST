@@ -175,3 +175,16 @@ def embed_batch(texts: list[str]) -> list[list[float]]:
             extra={"error": str(exc), "batch_size": len(cleaned)},
         )
         return [_mock_embed(text) for text in cleaned]
+
+
+def warm_model() -> None:
+    """Pre-warm the local embedding model in a background thread if active."""
+    if _get_mode() in {"local", "groq"}:  # groq falls back to local in this script
+        import threading
+
+        def load_worker():
+            logger.info("Pre-warming SBERT embedding model in background thread...")
+            _get_model_instance()
+
+        thread = threading.Thread(target=load_worker, name="CrestModelWarmer", daemon=True)
+        thread.start()

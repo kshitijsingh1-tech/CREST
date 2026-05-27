@@ -130,7 +130,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
         const shouldRetryOnServer =
           !isBrowser &&
           index < baseUrls.length - 1 &&
-          (res.status >= 500 || res.status === 401);
+          res.status >= 500;
 
         if (shouldRetryOnServer) {
           console.warn(`[API Fetch Retry] ${path}: ${baseUrl} returned ${res.status}, trying next backend URL`);

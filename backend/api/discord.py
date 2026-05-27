@@ -49,8 +49,8 @@ def _verify_discord_signature(body: bytes, signature: str, timestamp: str) -> bo
     """
     Verify Discord interaction signature using Ed25519.
     """
-    if not DISCORD_PUBLIC_KEY:
-        logger.warning("DISCORD_PUBLIC_KEY not set; skipping signature verification")
+    if not DISCORD_PUBLIC_KEY or DISCORD_PUBLIC_KEY in ("your_discord_public_key_here", ""):
+        logger.warning("DISCORD_PUBLIC_KEY not set or is placeholder; skipping signature verification")
         return True
     
     try:

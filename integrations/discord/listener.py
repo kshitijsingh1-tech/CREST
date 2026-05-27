@@ -59,8 +59,8 @@ async def run_bot():
     """
     Connect to Discord using discord.py and listen for DMs.
     """
-    if not DISCORD_BOT_TOKEN:
-        logger.warning("DISCORD_BOT_TOKEN not set. Discord listener task will not start.")
+    if not DISCORD_BOT_TOKEN or DISCORD_BOT_TOKEN in ("mock_discord_token", "your_discord_bot_token_here", ""):
+        logger.warning("DISCORD_BOT_TOKEN not set or is placeholder. Discord listener task will not start.")
         return
         
     try:
@@ -111,8 +111,8 @@ async def run_bot():
 
 
 if __name__ == "__main__":
-    if not DISCORD_BOT_TOKEN:
-        logger.error("DISCORD_BOT_TOKEN not set. Exiting.")
+    if not DISCORD_BOT_TOKEN or DISCORD_BOT_TOKEN in ("mock_discord_token", "your_discord_bot_token_here", ""):
+        logger.error("DISCORD_BOT_TOKEN not set or is placeholder. Exiting.")
         exit(1)
         
     logger.info(f"Starting Discord listener (forwarding to {CREST_WEBHOOK_URL})...")

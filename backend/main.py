@@ -103,6 +103,13 @@ async def lifespan(app: FastAPI):
             logger.info("CREST Discord gateway listener task started successfully")
         except Exception as disc_err:
             logger.error(f"Failed to start background Discord gateway listener: {disc_err}")
+
+        # Pre-warm SBERT embedding model in background thread
+        try:
+            from ai.embeddings.embedder import warm_model
+            warm_model()
+        except Exception as warm_err:
+            logger.error(f"Failed to pre-warm SBERT embedding model: {warm_err}")
     yield
     logger.info("CREST API shutting down")
 

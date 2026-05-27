@@ -36,7 +36,7 @@ def send_discord_dm(recipient_user_id: str, reply_text: str, *, external_ref: st
     print(f"----------------------------------------\n")
 
     # Mock success if token not configured
-    if DISCORD_BOT_TOKEN == "mock_discord_token":
+    if not DISCORD_BOT_TOKEN or DISCORD_BOT_TOKEN in ("mock_discord_token", "your_discord_bot_token_here", ""):
         print(f"[Discord DM Simulated Success] Message 'sent' to user {recipient_user_id}.")
         return {
             "status": "simulated",
