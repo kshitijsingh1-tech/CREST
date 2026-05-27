@@ -116,6 +116,15 @@ async def receive_message(request: Request, db: Session = Depends(get_db_optiona
         if not text:
             return Response(content="<Response></Response>", media_type="application/xml")
 
+        # Classify intent (COMPLAINT vs CONVERSATION)
+        from ai.utils.intent import classify_message_intent, get_cresty_response
+        intent = classify_message_intent(text)
+        if intent == "CONVERSATION":
+            logger.info(f"WhatsApp message from {from_number} classified as CONVERSATION: {text[:50]}...")
+            cresty_reply = get_cresty_response(text)
+            twiml_content = f"<Response><Message>{cresty_reply}</Message></Response>"
+            return Response(content=twiml_content, media_type="application/xml")
+
         display_name = params.get("ProfileName", "WhatsApp User")
         detected_lang = await _detect_language(text)
 

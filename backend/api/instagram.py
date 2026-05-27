@@ -73,6 +73,19 @@ async def instagram_webhook(
                     logger.info("Skipping Instagram webhook event with no text/attachments")
                     continue
 
+                # Classify intent (COMPLAINT vs CONVERSATION)
+                from ai.utils.intent import classify_message_intent, get_cresty_response
+                intent = classify_message_intent(text)
+                if intent == "CONVERSATION":
+                    logger.info(f"Instagram message from {sender_id} classified as CONVERSATION: {text[:50]}...")
+                    try:
+                        from integrations.instagram.sender import send_instagram_dm
+                        cresty_reply = get_cresty_response(text)
+                        send_instagram_dm(customer_username=str(sender_id), reply_text=cresty_reply)
+                    except Exception as send_err:
+                        logger.error(f"Failed to send Cresty response to Instagram: {send_err}")
+                    continue
+
                 complaint_data = {
                     "channel": "instagram",
                     "customer_id": f"@{sender_id}",
@@ -97,6 +110,21 @@ async def instagram_webhook(
         payload = InstagramPayload(**body)
     except Exception as e:
         raise HTTPException(status_code=422, detail="Invalid simulator payload")
+
+    text = payload.message_text.strip()
+    # Classify intent (COMPLAINT vs CONVERSATION)
+    from ai.utils.intent import classify_message_intent, get_cresty_response
+    intent = classify_message_intent(text)
+    if intent == "CONVERSATION":
+        logger.info(f"Simulated Instagram message from {payload.username} classified as CONVERSATION: {text[:50]}...")
+        try:
+            from integrations.instagram.sender import send_instagram_dm
+            cresty_reply = get_cresty_response(text)
+            send_instagram_dm(customer_username=payload.username, reply_text=cresty_reply)
+            return {"status": "replied_via_cresty", "reply": cresty_reply}
+        except Exception as send_err:
+            logger.error(f"Failed to send Cresty response to Instagram: {send_err}")
+            raise HTTPException(status_code=500, detail="Failed to send reply")
         
     ref_type = "dm" if payload.is_dm else "comment"
     complaint_data = {
