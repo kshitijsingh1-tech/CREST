@@ -160,9 +160,9 @@ export default function DocsPage() {
               },
             ].map(p => <Card key={p.title} {...p} />)}
           </div>
-          <div className="mt-6 rounded-2xl border p-5 dark:bg-blue-500/5 dark:border-blue-500/20 bg-blue-50 border-blue-200">
-            <p className="text-xs font-bold dark:text-blue-300 text-blue-700 leading-relaxed">
-              🌐 <strong>Multilingual by Default</strong> — Powered by the MeitY Digital India Bhashini gateway, CREST automatically detects regional Indian languages (Hindi, Tamil, Bengali, Telugu, and more). Complaints are translated for AI processing and replies are sent back in the customer's own language — no manual effort required.
+          <div className="relative rounded-r-2xl rounded-l-md border border-l-4 border-gray-200 dark:border-white/10 border-l-blue-500 dark:border-l-blue-400 p-5 bg-white/60 dark:bg-white/5 backdrop-blur-md transition-all duration-300 shadow-sm hover:shadow-md">
+            <p className="text-xs font-semibold dark:text-slate-300 text-gray-700 leading-relaxed">
+              <strong className="dark:text-blue-300 text-blue-700 font-bold">Multilingual by Default</strong> — Powered by the MeitY Digital India Bhashini gateway, CREST automatically detects regional Indian languages (Hindi, Tamil, Bengali, Telugu, and more). Complaints are translated for AI processing and replies are sent back in the customer's own language — no manual effort required.
             </p>
           </div>
         </Section>
@@ -240,9 +240,9 @@ export default function DocsPage() {
               );
             })}
           </div>
-          <div className="mt-6 rounded-2xl border p-5 dark:bg-indigo-500/5 dark:border-indigo-500/20 bg-indigo-50 border-indigo-200">
-            <p className="text-xs font-bold dark:text-indigo-300 text-indigo-700 leading-relaxed">
-              🤖 <strong>Conversational Assistance & Intelligent Intent Detection</strong> — You can chat and converse with <strong>Cresty</strong> naturally through any of these integration platforms! Our AI models inspect incoming messages in real-time. If you are lodging a complaint, it will automatically register a new grievance ticket, route it to the correct nodal region, and reply with your tracking details. For general inquiries, greetings, or questions, Cresty will simply chat with you and assist you directly.
+          <div className="relative rounded-r-2xl rounded-l-md border border-l-4 border-gray-200 dark:border-white/10 border-l-indigo-500 dark:border-l-indigo-400 p-5 bg-white/60 dark:bg-white/5 backdrop-blur-md transition-all duration-300 shadow-sm hover:shadow-md">
+            <p className="text-xs font-semibold dark:text-slate-300 text-gray-700 leading-relaxed">
+              <strong className="dark:text-indigo-300 text-indigo-700 font-bold">Conversational Assistance & Intelligent Intent Detection</strong> — You can chat and converse with <strong>Cresty</strong> naturally through any of these integration platforms! Our AI models inspect incoming messages in real-time. If you are lodging a complaint, it will automatically register a new grievance ticket, route it to the correct nodal region, and reply with your tracking details. For general inquiries, greetings, or questions, Cresty will simply chat with you and assist you directly.
             </p>
           </div>
         </Section>
