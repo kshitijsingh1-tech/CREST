@@ -292,36 +292,50 @@ export const resolveComplaint = (
 
 // ── Analytics ─────────────────────────────────────────────────
 
-export const getDashboardSummary = (regionId?: number): Promise<DashboardSummary> => {
-  const query = regionId ? `?region_id=${regionId}` : "";
+export const getDashboardSummary = (regionId?: number, scope?: string): Promise<DashboardSummary> => {
+  const params = new URLSearchParams();
+  if (regionId) params.append("region_id", regionId.toString());
+  if (scope) params.append("scope", scope);
+  const query = params.toString() ? `?${params.toString()}` : "";
   return apiFetch(`/api/analytics/dashboard${query}`, { next: { revalidate: 30 } });
 };
 
-export const getByCategory = (days = 30, regionId?: number): Promise<CategoryStat[]> => {
-  const query = `?days=${days}${regionId ? `&region_id=${regionId}` : ""}`;
-  return apiFetch(`/api/analytics/by-category${query}`, { next: { revalidate: 60 } });
+export const getByCategory = (days = 30, regionId?: number, scope?: string): Promise<CategoryStat[]> => {
+  const params = new URLSearchParams({ days: days.toString() });
+  if (regionId) params.append("region_id", regionId.toString());
+  if (scope) params.append("scope", scope);
+  return apiFetch(`/api/analytics/by-category?${params.toString()}`, { next: { revalidate: 60 } });
 };
 
-export const getBySeverity = (regionId?: number): Promise<SeverityStat[]> => {
-  const query = regionId ? `?region_id=${regionId}` : "";
+export const getBySeverity = (regionId?: number, scope?: string): Promise<SeverityStat[]> => {
+  const params = new URLSearchParams();
+  if (regionId) params.append("region_id", regionId.toString());
+  if (scope) params.append("scope", scope);
+  const query = params.toString() ? `?${params.toString()}` : "";
   return apiFetch(`/api/analytics/by-severity${query}`, { next: { revalidate: 60 } });
 };
 
-export const getVolumeTrend = (days = 14, regionId?: number): Promise<VolumeTrend[]> => {
-  const query = `?days=${days}${regionId ? `&region_id=${regionId}` : ""}`;
-  return apiFetch(`/api/analytics/volume-trend${query}`, { next: { revalidate: 300 } });
+export const getVolumeTrend = (days = 14, regionId?: number, scope?: string): Promise<VolumeTrend[]> => {
+  const params = new URLSearchParams({ days: days.toString() });
+  if (regionId) params.append("region_id", regionId.toString());
+  if (scope) params.append("scope", scope);
+  return apiFetch(`/api/analytics/volume-trend?${params.toString()}`, { next: { revalidate: 300 } });
 };
 
-export const getChannelDistribution = (days = 30, regionId?: number): Promise<ChannelStat[]> => {
-  const query = `?days=${days}${regionId ? `&region_id=${regionId}` : ""}`;
-  return apiFetch(`/api/analytics/channel-distribution${query}`, { next: { revalidate: 60 } });
+export const getChannelDistribution = (days = 30, regionId?: number, scope?: string): Promise<ChannelStat[]> => {
+  const params = new URLSearchParams({ days: days.toString() });
+  if (regionId) params.append("region_id", regionId.toString());
+  if (scope) params.append("scope", scope);
+  return apiFetch(`/api/analytics/channel-distribution?${params.toString()}`, { next: { revalidate: 60 } });
 };
 
 export const getSpikeSignals = (hours = 48): Promise<SpikeSignal[]> =>
   apiFetch(`/api/analytics/spike-signals?hours=${hours}`, { next: { revalidate: 120 } });
 
-export const getRegionDistribution = (): Promise<RegionStat[]> =>
-  apiFetch("/api/analytics/by-region", { next: { revalidate: 60 } });
+export const getRegionDistribution = (scope?: string): Promise<RegionStat[]> => {
+  const query = scope ? `?scope=${scope}` : "";
+  return apiFetch(`/api/analytics/by-region${query}`, { next: { revalidate: 60 } });
+};
 
 // ── Admin ─────────────────────────────────────────────────────
 

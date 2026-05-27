@@ -80,7 +80,11 @@ const CHANNEL_ICONS: Record<string, React.ReactNode> = {
   voice: <svg className="w-4 h-4 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>,
 };
 
-export default async function CrestAnalyticsPage() {
+export default async function CrestAnalyticsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ scope?: string }> | { scope?: string };
+}) {
   let user;
   try {
     user = await getMe();
@@ -89,6 +93,10 @@ export default async function CrestAnalyticsPage() {
   }
 
   const regionId = user.region_id ?? undefined;
+
+  // Resolve searchParams to support Next.js 14/15 safely
+  const resolvedParams = await (searchParams instanceof Promise ? searchParams : Promise.resolve(searchParams));
+  const scope = resolvedParams?.scope === "queue" ? "queue" : "all";
 
   // Wrap each call individually so a backend failure shows empty data instead of crashing
   let coreBackendError = false;
@@ -105,14 +113,14 @@ export default async function CrestAnalyticsPage() {
   const emptySummary = { total_open: 0, p0_open: 0, sla_breached: 0, resolved_today: 0, duplicates_caught: 0, avg_resolution_hrs: 0 };
 
   const [summary, severities, trend, channels, categories, spikes, regions] = await Promise.all([
-    safe(() => getDashboardSummary(regionId), emptySummary, () => { coreBackendError = true; }),
-    safe(() => getBySeverity(regionId), [] as ReturnType<typeof getBySeverity> extends Promise<infer T> ? T : never[], () => { coreBackendError = true; }),
-    safe(() => getVolumeTrend(14, regionId), [], () => { coreBackendError = true; }),
-    safe(() => getChannelDistribution(30, regionId), [], () => { coreBackendError = true; }),
-    safe(() => getByCategory(30, regionId), [], () => { coreBackendError = true; }),
+    safe(() => getDashboardSummary(regionId, scope), emptySummary, () => { coreBackendError = true; }),
+    safe(() => getBySeverity(regionId, scope), [] as ReturnType<typeof getBySeverity> extends Promise<infer T> ? T : never[], () => { coreBackendError = true; }),
+    safe(() => getVolumeTrend(14, regionId, scope), [], () => { coreBackendError = true; }),
+    safe(() => getChannelDistribution(30, regionId, scope), [], () => { coreBackendError = true; }),
+    safe(() => getByCategory(30, regionId, scope), [], () => { coreBackendError = true; }),
     safe(() => getSpikeSignals(168), [], () => { coreBackendError = true; }),
     user.role === "SUPER_ADMIN"
-      ? safe(() => getRegionDistribution(), [] as RegionStat[], () => { regionBackendError = true; })
+      ? safe(() => getRegionDistribution(scope), [] as RegionStat[], () => { regionBackendError = true; })
       : Promise.resolve([] as RegionStat[]),
   ]);
 
@@ -137,18 +145,45 @@ export default async function CrestAnalyticsPage() {
           <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase transition-colors duration-500 dark:text-white text-black dark:drop-shadow-sm">Analytics</h1>
           <p className="text-xs uppercase tracking-widest mt-2 font-bold transition-colors duration-500 dark:text-blue-300 text-gray-600">Real-time metrics, live queue & historical trends</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-colors duration-500 w-max border shadow-sm
-            dark:bg-red-600/20 dark:border-red-500/40 dark:text-red-400
-            bg-red-50 border-red-100 text-red-600">
-            <span className="w-2.5 h-2.5 rounded-full animate-pulse blur-[1px] dark:bg-red-500 bg-red-600"></span>
-            Live Feed Active
+        
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Scope Selector */}
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl border bg-gray-100/60 dark:bg-zinc-900/60 dark:border-white/10 backdrop-blur-xl w-max">
+            <Link
+              href="/ub_CREST/analytics?scope=all"
+              className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all duration-300 ${
+                scope === "all"
+                  ? "bg-white text-black shadow-sm dark:bg-blue-600 dark:text-white"
+                  : "text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white"
+              }`}
+            >
+              All-Time Data
+            </Link>
+            <Link
+              href="/ub_CREST/analytics?scope=queue"
+              className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all duration-300 ${
+                scope === "queue"
+                  ? "bg-white text-black shadow-sm dark:bg-blue-600 dark:text-white"
+                  : "text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white"
+              }`}
+            >
+              Active Queue
+            </Link>
           </div>
-          <Link href="/ub_CREST/home" className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-500 border shadow-sm
-            dark:bg-blue-900/30 dark:border-blue-500/30 dark:text-blue-300 dark:hover:bg-blue-900/50
-            bg-gray-100 border-gray-300 text-black hover:bg-gray-200">
-            ← Back to Home
-          </Link>
+
+          <div className="flex items-center gap-4">
+            <div className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-colors duration-500 w-max border shadow-sm
+              dark:bg-red-600/20 dark:border-red-500/40 dark:text-red-400
+              bg-red-50 border-red-100 text-red-600">
+              <span className="w-2.5 h-2.5 rounded-full animate-pulse blur-[1px] dark:bg-red-500 bg-red-600"></span>
+              Live Feed Active
+            </div>
+            <Link href="/ub_CREST/home" className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all duration-500 border shadow-sm
+              dark:bg-blue-900/30 dark:border-blue-500/30 dark:text-blue-300 dark:hover:bg-blue-900/50
+              bg-gray-100 border-gray-300 text-black hover:bg-gray-200">
+              ← Back to Home
+            </Link>
+          </div>
         </div>
       </div>
 
