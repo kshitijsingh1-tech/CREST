@@ -93,17 +93,19 @@ services:
       - key: EMAIL_IMAP_PASSWORD
         sync: false
       - key: EMAIL_IMAP_HOST
-        sync: false
+        value: "imap.gmail.com"
       - key: EMAIL_SMTP_USER
         sync: false
       - key: EMAIL_SMTP_PASSWORD
         sync: false
       - key: EMAIL_SMTP_HOST
-        sync: false
+        value: "smtp.gmail.com"   # override with your SMTP host if not Gmail
       - key: EMAIL_SMTP_PORT
         value: "587"
+      - key: EMAIL_SMTP_STARTTLS
+        value: "1"
       - key: EMAIL_FROM_EMAIL
-        sync: false
+        sync: false               # REQUIRED: same as EMAIL_SMTP_USER for Gmail
       - key: EMAIL_FROM_NAME
         value: "CREST Support"
 
@@ -120,11 +122,16 @@ services:
     dockerContext: frontend/nextjs-app
     dockerfilePath: infra/docker/Dockerfile.nextjs
     plan: free
-    envVars:
-      # This must be set at runtime for Server Components.
+    buildArgs:
+      # Baked into the Next.js bundle at build time — must match your backend URL.
       - key: NEXT_PUBLIC_API_URL
         sync: false # REQUIRED: https://<your-crest-api>.onrender.com
+    envVars:
+      # Runtime hostname binding — required for Render's internal router.
       - key: HOSTNAME
         value: "0.0.0.0"
       - key: PORT
         value: "3000"
+      # Also expose at runtime so SSR server components can reach the API.
+      - key: NEXT_PUBLIC_API_URL
+        sync: false # REQUIRED: same value as the buildArg above

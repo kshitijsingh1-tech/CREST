@@ -17,6 +17,18 @@ x-common-env: &common-env
   GROQ_DRAFT_MODEL:     ${GROQ_DRAFT_MODEL:-llama-3.3-70b-versatile}
   OPENAI_API_KEY:       ${OPENAI_API_KEY:-}
   EMBEDDING_MODE:       ${EMBEDDING_MODE:-mock}
+  # ── Email (SMTP / IMAP) ──────────────────────────────────────
+  EMAIL_SMTP_HOST:      ${EMAIL_SMTP_HOST:-smtp.gmail.com}
+  EMAIL_SMTP_PORT:      ${EMAIL_SMTP_PORT:-587}
+  EMAIL_SMTP_STARTTLS:  ${EMAIL_SMTP_STARTTLS:-1}
+  EMAIL_SMTP_USER:      ${EMAIL_SMTP_USER:-}
+  EMAIL_SMTP_PASSWORD:  ${EMAIL_SMTP_PASSWORD:-}
+  EMAIL_FROM_EMAIL:     ${EMAIL_FROM_EMAIL:-}
+  EMAIL_FROM_NAME:      ${EMAIL_FROM_NAME:-CREST Support}
+  EMAIL_IMAP_HOST:      ${EMAIL_IMAP_HOST:-imap.gmail.com}
+  EMAIL_IMAP_PORT:      ${EMAIL_IMAP_PORT:-993}
+  EMAIL_IMAP_USER:      ${EMAIL_IMAP_USER:-}
+  EMAIL_IMAP_PASSWORD:  ${EMAIL_IMAP_PASSWORD:-}
 
 services:
 
