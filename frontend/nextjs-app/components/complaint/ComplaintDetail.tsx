@@ -382,18 +382,18 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                 The resolution note has been securely locked into the RBI Audit Trail.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch justify-center gap-3 w-full max-w-sm mx-auto">
                 <a
                   href="/ub_CREST/queue"
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-center text-balance"
                 >
                   Back to Queue
                 </a>
                 <a
                   href="/ub_CREST/analytics"
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-center text-balance"
                 >
-                  View Performance Analytics
+                  View Analytics
                 </a>
               </div>
             </div>
