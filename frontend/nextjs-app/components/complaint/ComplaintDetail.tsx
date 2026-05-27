@@ -346,7 +346,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                 {c.draft_reply && !c.draft_approved && !(c as any).is_superior_takeover && (
                   <button onClick={handleApproveDraft} disabled={loading || !agent}
                     className="text-xs px-3 py-2 bg-indigo-100 dark:bg-indigo-900/60 hover:bg-indigo-200 dark:hover:bg-indigo-800 text-indigo-700 dark:text-indigo-300 rounded transition-colors disabled:opacity-50">
-                    ✓ Approve Draft
+                    Approve Draft
                   </button>
                 )}
               </div>
