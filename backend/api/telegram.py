@@ -56,6 +56,24 @@ async def telegram_webhook(
     if not text:
         return {"status": "ignored"}
 
+    # Filter out bot commands (e.g. /start)
+    if text.startswith("/"):
+        if text.startswith("/start"):
+            chat = msg.get("chat") or {}
+            chat_id = chat.get("id")
+            if chat_id:
+                from integrations.telegram.sender import send_telegram_reply
+                welcome_msg = (
+                    "Welcome to the Union Bank of India CREST Nodal Grievance Support Bot! 🙏\n\n"
+                    "Please describe your grievance or complaint in this chat. Our AI system will "
+                    "instantly register and track it for you."
+                )
+                try:
+                    send_telegram_reply(chat_id=str(chat_id), reply_text=welcome_msg)
+                except Exception as send_err:
+                    logger.error(f"Failed to send Telegram welcome message: {send_err}")
+        return {"status": "ignored"}
+
     chat = msg.get("chat") or {}
     chat_id = chat.get("id")
     chat_type = chat.get("type", "unknown")
