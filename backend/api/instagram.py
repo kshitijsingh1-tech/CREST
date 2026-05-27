@@ -73,6 +73,11 @@ async def instagram_webhook(
                     logger.info("Skipping Instagram webhook event with no text/attachments")
                     continue
 
+                # Check if they are responding to a nodal region request
+                from backend.api.complaints import try_update_complaint_region
+                if await try_update_complaint_region(db, "instagram", f"@{sender_id}", text):
+                    continue
+
                 # Classify intent (COMPLAINT vs CONVERSATION)
                 from ai.utils.intent import classify_message_intent, get_cresty_response
                 intent = classify_message_intent(text)
@@ -112,6 +117,11 @@ async def instagram_webhook(
         raise HTTPException(status_code=422, detail="Invalid simulator payload")
 
     text = payload.message_text.strip()
+    # Check if they are responding to a nodal region request
+    from backend.api.complaints import try_update_complaint_region
+    if await try_update_complaint_region(db, "instagram", f"@{payload.username}", text):
+        return {"status": "region_updated"}
+
     # Classify intent (COMPLAINT vs CONVERSATION)
     from ai.utils.intent import classify_message_intent, get_cresty_response
     intent = classify_message_intent(text)

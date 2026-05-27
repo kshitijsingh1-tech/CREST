@@ -83,6 +83,20 @@ async def telegram_webhook(
     chat_id = chat.get("id")
     chat_type = chat.get("type", "unknown")
 
+    sender = msg.get("from") or {}
+    sender_id = sender.get("id")
+    username = sender.get("username")
+    first_name = sender.get("first_name") or ""
+    last_name = sender.get("last_name") or ""
+    display_name = (f"{first_name} {last_name}".strip() or username or str(sender_id or chat_id or "unknown"))
+    message_id = msg.get("message_id")
+    customer_id = str(sender_id or chat_id or "unknown")
+
+    # Check if they are responding to a nodal region request
+    from backend.api.complaints import try_update_complaint_region
+    if await try_update_complaint_region(db, "telegram", customer_id, text):
+        return {"status": "region_updated"}
+
     # Classify intent (COMPLAINT vs CONVERSATION)
     from ai.utils.intent import classify_message_intent, get_cresty_response
     intent = classify_message_intent(text)
@@ -96,17 +110,7 @@ async def telegram_webhook(
                 logger.error(f"Failed to send Cresty response to Telegram: {send_err}")
         return {"status": "replied_via_cresty"}
 
-    sender = msg.get("from") or {}
-    sender_id = sender.get("id")
-    username = sender.get("username")
-    first_name = sender.get("first_name") or ""
-    last_name = sender.get("last_name") or ""
-    display_name = (f"{first_name} {last_name}".strip() or username or str(sender_id or chat_id or "unknown"))
 
-    message_id = msg.get("message_id")
-
-    # Keep customer_id stable. For private chats, sender_id is best. For groups/channels, use chat_id.
-    customer_id = str(sender_id or chat_id or "unknown")
 
     complaint_data = {
         "channel": "telegram",

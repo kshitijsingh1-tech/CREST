@@ -81,6 +81,12 @@ async def sms_webhook(
             # Return blank TwiML to Twilio for empty texts
             return Response(content="<Response></Response>", media_type="application/xml")
 
+        # Check if they are responding to a nodal region request
+        channel_name = "whatsapp" if from_number.startswith("whatsapp:") else "sms"
+        from backend.api.complaints import try_update_complaint_region
+        if await try_update_complaint_region(db, channel_name, from_number, text):
+            return Response(content="<Response></Response>", media_type="application/xml")
+
         # Classify intent (COMPLAINT vs CONVERSATION)
         from ai.utils.intent import classify_message_intent, get_cresty_response
         intent = classify_message_intent(text)

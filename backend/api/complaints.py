@@ -653,3 +653,104 @@ def celery_broadcast_webhook(payload: WebhookBroadcast):
     except Exception as e:
         logger.error(f"Celery webhook broadcast failed: {e}")
         raise HTTPException(status_code=500, detail="Socket broadcast failed")
+
+
+async def try_update_complaint_region(db: Session, channel_name: str, customer_id: str, text: str) -> bool:
+    """
+    Checks if the user has an open complaint in the given channel with no region set,
+    and if the input text matches one of the known regions.
+    If so, updates the complaint's region and assigns it to the least loaded employee.
+    Returns True if updated, else False.
+    """
+    from backend.models.complaint import Complaint, Channel
+    from backend.models.user import Region
+    from backend.services.complaint_service import find_least_loaded_employee, _write_audit
+    
+    # 1. Look up open complaints for this customer on this channel without a region
+    complaint = (
+        db.query(Complaint)
+        .join(Complaint.channel)
+        .filter(
+            Complaint.customer_id == str(customer_id),
+            Channel.name.ilike(channel_name),
+            Complaint.region_id.is_(None),
+            Complaint.status.in_(["open", "in_progress"])
+        )
+        .order_by(Complaint.created_at.desc())
+        .first()
+    )
+    if not complaint:
+        return False
+        
+    # 2. Normalize text and search for region names
+    cleaned_text = text.strip().lower()
+    
+    # Get all regions
+    regions = db.query(Region).all()
+    matched_region = None
+    for r in regions:
+        # Match exact word or contains logic
+        r_name = r.name.lower()
+        if r_name in cleaned_text or cleaned_text in r_name:
+            matched_region = r
+            break
+            
+    if not matched_region:
+        return False
+        
+    # 3. Update the complaint with region_id
+    complaint.region_id = matched_region.id
+    
+    # Auto-assign to least-loaded officer in that region
+    assigned_employee_id = find_least_loaded_employee(db, matched_region.id)
+    if assigned_employee_id:
+        complaint.assigned_employee_id = assigned_employee_id
+        from datetime import datetime, timezone
+        complaint.assigned_at = datetime.now(timezone.utc)
+        complaint.status = "in_progress"
+    else:
+        complaint.assigned_employee_id = None
+        complaint.assigned_at = None
+        complaint.status = "open"
+        
+    db.commit()
+    db.refresh(complaint)
+    
+    # Write audit log
+    _write_audit(db, complaint.id, "system", "region_assigned", None, {
+        "region": matched_region.name,
+        "region_id": matched_region.id,
+        "assigned_employee_id": assigned_employee_id
+    })
+    
+    # 4. Dispatch confirmation DM back to user
+    msg = (
+        f"Thank you! We have updated your nodal region to **{matched_region.name}** "
+        f"and successfully routed your ticket (Ref: {complaint.id}) to our regional branch office."
+    )
+    
+    try:
+        if channel_name == "discord":
+            from integrations.discord.sender import send_discord_dm
+            send_discord_dm(recipient_user_id=customer_id, reply_text=msg)
+        elif channel_name == "telegram":
+            from integrations.telegram.sender import send_telegram_reply
+            send_telegram_reply(chat_id=customer_id, reply_text=msg, external_ref=str(complaint.id))
+        elif channel_name == "whatsapp" or channel_name == "sms":
+            from integrations.whatsapp.sender import send_whatsapp_reply
+            send_whatsapp_reply(recipient_phone=customer_id, reply_body=msg, external_ref=str(complaint.id))
+        elif channel_name == "instagram":
+            from integrations.instagram.sender import send_instagram_dm
+            send_instagram_dm(customer_username=customer_id, reply_text=msg)
+    except Exception as dispatch_err:
+        logger.error(f"Failed to send region update confirmation message: {dispatch_err}")
+        
+    # Broadcast updates over socket
+    try:
+        from backend.utils.socket import broadcast_queue_update
+        import asyncio
+        asyncio.create_task(broadcast_queue_update())
+    except Exception as ws_err:
+        pass
+        
+    return True

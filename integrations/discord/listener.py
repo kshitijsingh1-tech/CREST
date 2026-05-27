@@ -14,6 +14,11 @@ Environment Variables:
 import os
 import httpx
 import asyncio
+from dotenv import load_dotenv
+
+# Load local environment variables from .env
+load_dotenv()
+
 from backend.utils.logger import get_logger
 
 logger = get_logger("crest.integrations.discord")
@@ -52,7 +57,7 @@ async def forward_to_crest(user_id: str, username: str, message_id: str, content
             response.raise_for_status()
             logger.info(f"Forwarded Discord DM to CREST: user={username}, msg_id={message_id}")
     except Exception as e:
-        logger.error(f"Failed to forward Discord DM to CREST: {e}")
+        logger.error(f"Failed to forward Discord DM to CREST: {e!r}", exc_info=True)
 
 
 

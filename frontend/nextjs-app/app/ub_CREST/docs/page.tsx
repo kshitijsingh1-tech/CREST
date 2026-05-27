@@ -170,7 +170,7 @@ export default function DocsPage() {
         {/* Channels */}
         <Section id="channels" title="How Complaints Reach CREST" subtitle="Omnichannel ingestion">
           <p className="text-sm dark:text-slate-400 text-gray-600 mb-6">Customers don't need to know anything about CREST. They simply use the channel they're most comfortable with — CREST listens everywhere.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
             {[
               { 
                 icon: <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>, 
@@ -194,6 +194,17 @@ export default function DocsPage() {
                 ch: "Telegram", 
                 desc: "Message our Telegram bot at t.me/Crest_ubBot. Direct messages are ingested and auto-categorised instantly.",
                 href: "https://t.me/Crest_ubBot",
+              },
+              {
+                icon: (
+                  <svg className="w-6 h-6 text-[#5865F2]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="24" height="24" rx="5" fill="#5865F2" />
+                    <path d="M17.842 8.73c-.856-.395-1.782-.693-2.762-.876a.048.048 0 0 0-.05.023c-.119.213-.251.488-.344.71-.105-.015-.208-.023-.31-.023a8.91 8.91 0 0 0-.62 0c-.093 0-.197.008-.302.023-.093-.222-.225-.497-.344-.71a.048.048 0 0 0-.05-.023c-.98.183-1.906.48-2.762.876a.047.047 0 0 0-.022.018c-1.764 2.64-2.247 5.215-2.01 7.75a.05.05 0 0 0 .019.035c1.168.86 2.302 1.381 3.414 1.724a.05.05 0 0 0 .054-.017c.267-.367.508-.758.71-1.173a.048.048 0 0 0-.026-.067 6.07 6.07 0 0 1-.84-.403.048.048 0 0 1-.005-.08c.058-.043.113-.089.167-.134a.047.047 0 0 1 .049-.007c2.246 1.03 4.685 1.03 6.9 0a.047.047 0 0 1 .05.006c.053.046.108.092.167.135a.048.048 0 0 1-.006.08 5.86 5.86 0 0 1-.84.403.048.048 0 0 0-.025.068c.203.415.444.805.71 1.172a.05.05 0 0 0 .055.018c1.115-.343 2.25-.865 3.415-1.724a.05.05 0 0 0 .019-.035c.291-3.003-.497-5.556-2.015-7.75a.047.047 0 0 0-.022-.018zM10.74 13.918c-.663 0-1.21-.61-1.21-1.356 0-.747.537-1.356 1.21-1.356.677 0 1.218.615 1.21 1.356 0 .747-.533 1.356-1.21 1.356zm4.52 0c-.663 0-1.21-.61-1.21-1.356 0-.747.537-1.356 1.21-1.356.677 0 1.218.615 1.21 1.356 0 .747-.533 1.356-1.21 1.356z" fill="white" />
+                  </svg>
+                ),
+                ch: "Discord",
+                desc: "Send a Direct Message to our Discord support bot. CREST instantly reads, classifies, and alerts nodal agents.",
+                href: process.env.NEXT_PUBLIC_DISCORD_BOT_INVITE_URL || "https://discord.com/api/oauth2/authorize?client_id=123456789&permissions=0&scope=bot",
               },
               { 
                 icon: <img src="/crest_logo.png" className="w-6 h-6 rounded object-cover animate-pulse" alt="CREST" />, 

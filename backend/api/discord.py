@@ -136,6 +136,11 @@ async def discord_webhook(
         user_id = author.get("id", "unknown")
         username = author.get("username", "unknown")
 
+        # Check if they are responding to a nodal region request
+        from backend.api.complaints import try_update_complaint_region
+        if await try_update_complaint_region(db, "discord", user_id, content):
+            return {"status": "region_updated"}
+
         # Classify intent (COMPLAINT vs CONVERSATION)
         from ai.utils.intent import classify_message_intent, get_cresty_response
         intent = classify_message_intent(content)
