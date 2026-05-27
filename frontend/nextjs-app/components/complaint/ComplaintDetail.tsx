@@ -382,12 +382,26 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
               <p className="text-sm text-green-600 dark:text-green-500 mb-6">
                 The resolution note has been securely locked into the RBI Audit Trail.
               </p>
-              <a
-                href="/ub_CREST/home"
-                className="inline-flex items-center justify-center px-6 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500 text-white text-sm font-semibold rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-              >
-                Return to Home ➔
-              </a>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <a
+                  href="/ub_CREST/queue"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                >
+                  Back to Queue
+                </a>
+                <a
+                  href="/ub_CREST/analytics"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                >
+                  View Performance Analytics
+                </a>
+                <a
+                  href="/ub_CREST/home"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-gray-200 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all border border-gray-300 dark:border-white/10"
+                >
+                  Return to Home
+                </a>
+              </div>
             </div>
           )}
 
