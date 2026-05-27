@@ -38,7 +38,7 @@ def dashboard_summary(
     if region_id is not None:
         base_query = base_query.filter(Complaint.region_id == region_id)
     if scope == "queue":
-        base_query = base_query.filter(Complaint.status.in_(["open", "in_progress"]))
+        base_query = base_query.filter(Complaint.status.in_(["open", "in_progress"]), Complaint.is_duplicate == False)
 
     total_open = base_query.filter(Complaint.status == "open").with_entities(func.count(Complaint.id)).scalar()
     p0_open = base_query.filter(
@@ -77,13 +77,16 @@ def complaints_by_category(
 ):
     from backend.models.complaint import Complaint
 
-    since = datetime.now(timezone.utc) - timedelta(days=days)
-    query = db.query(Complaint.category, func.count(Complaint.id).label("count")).filter(Complaint.created_at >= since).filter(Complaint.is_duplicate == False)
+    query = db.query(Complaint.category, func.count(Complaint.id).label("count")).filter(Complaint.is_duplicate == False)
     
-    if region_id is not None:
-        query = query.filter(Complaint.region_id == region_id)
     if scope == "queue":
         query = query.filter(Complaint.status.in_(["open", "in_progress"]))
+    else:
+        since = datetime.now(timezone.utc) - timedelta(days=days)
+        query = query.filter(Complaint.created_at >= since)
+
+    if region_id is not None:
+        query = query.filter(Complaint.region_id == region_id)
 
     rows = (
         query
@@ -126,9 +129,11 @@ def volume_trend(
     region_id: int | None = Query(None),
     db: Session | None = Depends(get_db_optional),
 ):
-    status_filter = ""
+    status_filter_sqlite = ""
+    status_filter_postgres = ""
     if scope == "queue":
-        status_filter = "AND status IN ('open', 'in_progress')"
+        status_filter_sqlite = "AND status IN ('open', 'in_progress') AND is_duplicate = 0"
+        status_filter_postgres = "AND status IN ('open', 'in_progress') AND is_duplicate = FALSE"
 
     region_filter = ""
     if region_id is not None:
@@ -148,7 +153,7 @@ def volume_trend(
                        SUM(CASE WHEN is_duplicate = 1 THEN 1 ELSE 0 END) AS duplicates,
                        SUM(CASE WHEN severity = 0 THEN 1 ELSE 0 END) AS p0_count
                 FROM complaints
-                WHERE created_at >= datetime('now', '-' || :days || ' days') {status_filter} {region_filter}
+                WHERE created_at >= datetime('now', '-' || :days || ' days') {status_filter_sqlite} {region_filter}
                 GROUP BY day
                 ORDER BY day ASC
                 """
@@ -165,7 +170,7 @@ def volume_trend(
                        COUNT(*) FILTER (WHERE is_duplicate = TRUE) AS duplicates,
                        COUNT(*) FILTER (WHERE severity = 0) AS p0_count
                 FROM complaints
-                WHERE created_at >= NOW() - make_interval(days => :days) {status_filter} {region_filter}
+                WHERE created_at >= NOW() - make_interval(days => :days) {status_filter_postgres} {region_filter}
                 GROUP BY day
                 ORDER BY day ASC
                 """
@@ -206,13 +211,16 @@ def channel_distribution(
 ):
     from backend.models.complaint import Channel, Complaint
 
-    since = datetime.now(timezone.utc) - timedelta(days=days)
-    query = db.query(Channel.name, func.count(Complaint.id).label("count")).join(Complaint, Complaint.channel_id == Channel.id).filter(Complaint.created_at >= since)
+    query = db.query(Channel.name, func.count(Complaint.id).label("count")).join(Complaint, Complaint.channel_id == Channel.id).filter(Complaint.is_duplicate == False)
     
-    if region_id is not None:
-        query = query.filter(Complaint.region_id == region_id)
     if scope == "queue":
         query = query.filter(Complaint.status.in_(["open", "in_progress"]))
+    else:
+        since = datetime.now(timezone.utc) - timedelta(days=days)
+        query = query.filter(Complaint.created_at >= since)
+
+    if region_id is not None:
+        query = query.filter(Complaint.region_id == region_id)
 
     rows = (
         query
@@ -256,17 +264,21 @@ def complaints_by_region(
     from backend.models.complaint import Complaint
 
     if scope == "queue":
-        total_expr = func.sum(case((Complaint.status.in_(["open", "in_progress"]), 1), else_=0))
+        total_expr = func.sum(case(((Complaint.status.in_(["open", "in_progress"])) & (Complaint.is_duplicate == False), 1), else_=0))
+        open_expr = func.sum(case(((Complaint.status.in_(["open", "in_progress"])) & (Complaint.is_duplicate == False), 1), else_=0))
+        breached_expr = func.sum(case(((Complaint.sla_status == "breached") & (Complaint.status.in_(["open", "in_progress"])) & (Complaint.is_duplicate == False), 1), else_=0))
     else:
         total_expr = func.count(Complaint.id)
+        open_expr = func.sum(case(((Complaint.status != "resolved"), 1), else_=0))
+        breached_expr = func.sum(case(((Complaint.sla_status == "breached"), 1), else_=0))
 
     rows = (
         db.query(
             Region.id.label("region_id"),
             Region.name.label("region_name"),
             total_expr.label("total_count"),
-            func.sum(case((Complaint.status != "resolved", 1), else_=0)).label("open_count"),
-            func.sum(case((Complaint.sla_status == "breached", 1), else_=0)).label("breached_count"),
+            open_expr.label("open_count"),
+            breached_expr.label("breached_count"),
         )
         .outerjoin(Complaint, Complaint.region_id == Region.id)
         .group_by(Region.id, Region.name)
@@ -286,16 +298,22 @@ def complaints_by_region(
         
     unassigned_query = db.query(Complaint).filter(Complaint.region_id.is_(None))
     if scope == "queue":
-        unassigned_query = unassigned_query.filter(Complaint.status.in_(["open", "in_progress"]))
+        unassigned_query = unassigned_query.filter(Complaint.status.in_(["open", "in_progress"]), Complaint.is_duplicate == False)
 
     unassigned_total = unassigned_query.count()
     if unassigned_total > 0:
-        unassigned_open = db.query(Complaint).filter(Complaint.region_id.is_(None), Complaint.status != "resolved").count()
-        unassigned_breached = db.query(Complaint).filter(Complaint.region_id.is_(None), Complaint.sla_status == "breached").count()
+        unassigned_open_query = db.query(Complaint).filter(Complaint.region_id.is_(None), Complaint.status != "resolved")
+        unassigned_breached_query = db.query(Complaint).filter(Complaint.region_id.is_(None), Complaint.sla_status == "breached")
+        if scope == "queue":
+            unassigned_open_query = unassigned_open_query.filter(Complaint.is_duplicate == False)
+            unassigned_breached_query = unassigned_breached_query.filter(Complaint.status.in_(["open", "in_progress"]), Complaint.is_duplicate == False)
+        else:
+            unassigned_open_query = unassigned_open_query.filter(Complaint.is_duplicate == False)
+
         result.append({
             "region": "Unassigned / Central Nodal",
-            "open": unassigned_open,
-            "breached": unassigned_breached,
+            "open": unassigned_open_query.count(),
+            "breached": unassigned_breached_query.count(),
             "total": unassigned_total
         })
 

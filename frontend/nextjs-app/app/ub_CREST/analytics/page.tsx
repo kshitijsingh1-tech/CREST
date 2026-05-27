@@ -290,7 +290,7 @@ export default async function CrestAnalyticsPage({
             dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:hover:bg-black dark:shadow-lg dark:hover:shadow-[0_10px_40px_rgba(96,165,250,0.1)] dark:hover:border-blue-500/30
             bg-white border-gray-200 shadow-xl hover:border-black hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02]">
             <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-indigo-500/10 dark:bg-indigo-400/10 rounded-full blur-3xl scale-0 group-hover/card:scale-[3] transition-transform duration-700 ease-out z-0 pointer-events-none"></div>
-            <h3 className="text-xs font-black uppercase tracking-widest mb-8 transition-colors duration-500 dark:text-white text-black relative z-10">By Channel (30d)</h3>
+            <h3 className="text-xs font-black uppercase tracking-widest mb-8 transition-colors duration-500 dark:text-white text-black relative z-10">By Channel ({scope === "queue" ? "Active" : "30d"})</h3>
             <div className="space-y-6">
               {channels.map(c => {
                 const pct = Math.round((c.count / (totalChannels || 1)) * 100);
@@ -316,13 +316,13 @@ export default async function CrestAnalyticsPage({
               })}
             </div>
           </div>
-
+ 
           {/* Category breakdown */}
           <div className="rounded-3xl border p-6 md:p-8 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] relative overflow-hidden group/card flex-1
             dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:hover:bg-black dark:shadow-lg dark:hover:shadow-[0_10px_40px_rgba(20,184,166,0.1)] dark:hover:border-teal-500/30
             bg-white border-gray-200 shadow-xl hover:border-black hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02]">
             <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-teal-500/10 dark:bg-teal-400/10 rounded-full blur-3xl scale-0 group-hover/card:scale-[3] transition-transform duration-700 ease-out z-0 pointer-events-none"></div>
-            <h3 className="text-xs font-black uppercase tracking-widest mb-8 transition-colors duration-500 dark:text-white text-black relative z-10">By Category (30d)</h3>
+            <h3 className="text-xs font-black uppercase tracking-widest mb-8 transition-colors duration-500 dark:text-white text-black relative z-10">By Category ({scope === "queue" ? "Active" : "30d"})</h3>
             <div className="space-y-6">
               {categories.map(c => {
                 const pct = Math.round((c.count / (totalComplaints || 1)) * 100);
