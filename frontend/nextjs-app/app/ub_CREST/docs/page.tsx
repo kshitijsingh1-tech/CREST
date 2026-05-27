@@ -240,6 +240,11 @@ export default function DocsPage() {
               );
             })}
           </div>
+          <div className="mt-6 rounded-2xl border p-5 dark:bg-indigo-500/5 dark:border-indigo-500/20 bg-indigo-50 border-indigo-200">
+            <p className="text-xs font-bold dark:text-indigo-300 text-indigo-700 leading-relaxed">
+              🤖 <strong>Conversational Assistance & Intelligent Intent Detection</strong> — You can chat and converse with <strong>Cresty</strong> naturally through any of these integration platforms! Our AI models inspect incoming messages in real-time. If you are lodging a complaint, it will automatically register a new grievance ticket, route it to the correct nodal region, and reply with your tracking details. For general inquiries, greetings, or questions, Cresty will simply chat with you and assist you directly.
+            </p>
+          </div>
         </Section>
 
         {/* Journey */}
