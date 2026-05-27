@@ -374,32 +374,26 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
 
           {/* Resolved Success State */}
           {c.status === "resolved" && (
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-900/50 shadow-sm p-8 text-center backdrop-blur-md">
-              <div className="w-14 h-14 bg-green-100 dark:bg-green-800 text-green-600 dark:text-green-300 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold shadow-sm">
+            <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-8 text-center backdrop-blur-md">
+              <div className="w-14 h-14 bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold shadow-sm animate-pulse">
                 ✓
               </div>
-              <h3 className="text-lg font-bold text-green-800 dark:text-green-400 mb-2">Complaint Successfully Resolved</h3>
-              <p className="text-sm text-green-600 dark:text-green-500 mb-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Complaint Successfully Resolved</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                 The resolution note has been securely locked into the RBI Audit Trail.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
                   href="/ub_CREST/queue"
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
                   Back to Queue
                 </a>
                 <a
                   href="/ub_CREST/analytics"
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
                   View Performance Analytics
-                </a>
-                <a
-                  href="/ub_CREST/home"
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-gray-200 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all border border-gray-300 dark:border-white/10"
-                >
-                  Return to Home
                 </a>
               </div>
             </div>
