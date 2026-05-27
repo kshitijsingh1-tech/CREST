@@ -55,6 +55,51 @@ async def forward_to_crest(user_id: str, username: str, message_id: str, content
         logger.error(f"Failed to forward Discord DM to CREST: {e}")
 
 
+
+async def run_mock_console_simulator():
+    """
+    Interactive console simulator to test Discord DM forwarding locally.
+    """
+    print("\n" + "="*60)
+    print("CREST - Discord Interactive Console Simulator")
+    print("Allows simulating Discord DMs to test the webhook and ingestion pipeline.")
+    print("Type your message below and press Enter to send a mock DM to CREST.")
+    print("Type 'exit' or 'quit' to stop.")
+    print("="*60 + "\n")
+    
+    import random
+    loop = asyncio.get_event_loop()
+    
+    while True:
+        try:
+            # Run input in executor to avoid blocking the event loop
+            message_content = await loop.run_in_executor(None, input, "Discord User > ")
+            message_content = message_content.strip()
+            
+            if not message_content:
+                continue
+            if message_content.lower() in ("exit", "quit"):
+                print("Exiting simulator...")
+                break
+                
+            mock_user_id = "123456789"
+            mock_username = "DiscordSimUser"
+            mock_msg_id = f"mock_{random.randint(10000, 99999)}"
+            
+            print(f"[Simulator] Forwarding DM '{message_content}' to webhook...")
+            await forward_to_crest(
+                user_id=mock_user_id,
+                username=mock_username,
+                message_id=mock_msg_id,
+                content=message_content
+            )
+            print("[Simulator] Forwarded! Check CREST backend logs and dashboard.\n")
+            
+        except Exception as e:
+            logger.error(f"Simulator error: {e}")
+            break
+
+
 async def run_bot():
     """
     Connect to Discord using discord.py and listen for DMs.
@@ -112,8 +157,11 @@ async def run_bot():
 
 if __name__ == "__main__":
     if not DISCORD_BOT_TOKEN or DISCORD_BOT_TOKEN in ("mock_discord_token", "your_discord_bot_token_here", ""):
-        logger.error("DISCORD_BOT_TOKEN not set or is placeholder. Exiting.")
-        exit(1)
-        
-    logger.info(f"Starting Discord listener (forwarding to {CREST_WEBHOOK_URL})...")
-    asyncio.run(run_bot())
+        logger.info("DISCORD_BOT_TOKEN not set or is placeholder. Launching interactive console simulator...")
+        try:
+            asyncio.run(run_mock_console_simulator())
+        except KeyboardInterrupt:
+            print("\nExiting simulator...")
+    else:
+        logger.info(f"Starting Discord listener (forwarding to {CREST_WEBHOOK_URL})...")
+        asyncio.run(run_bot())
