@@ -279,6 +279,18 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
         except Exception as auto_err:
             logger.error(f"Failed to dispatch polite region request for channel {channel}: {auto_err}")
 
+    # --- AUTO-APPROVE AI DRAFT ---
+    # If AUTO_APPROVE_DRAFTS is enabled, we automatically approve and dispatch the draft reply
+    import os
+    from backend.utils.runtime import is_truthy
+    if is_truthy(os.getenv("AUTO_APPROVE_DRAFTS", "0")):
+        try:
+            from backend.services.complaint_service import approve_draft
+            logger.info(f"Auto-approving draft for complaint {complaint.id} due to AUTO_APPROVE_DRAFTS=1")
+            approve_draft(db, str(complaint.id), agent="AI Auto-Responder")
+        except Exception as auto_approve_err:
+            logger.error(f"Failed to auto-approve draft for complaint {complaint.id}: {auto_approve_err}")
+
     return complaint
 
 
