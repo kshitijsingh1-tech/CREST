@@ -185,10 +185,15 @@ export default function DocsPage() {
                 href: "https://wa.me/14155238886",
               },
               { 
-                icon: <svg className="w-6 h-6 text-gray-900 dark:text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>, 
-                ch: "Twitter / X", 
-                desc: "Mention or DM the bank's handle @CREST_ub. Social complaints are captured instantly.",
-                href: "https://x.com/CREST_ub",
+                icon: (
+                  <svg className="w-6 h-6 text-[#2AABEE]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="24" height="24" rx="5" fill="#2AABEE" />
+                    <path d="M18.8 6.2c-.1-.1-.3-.1-.4 0l-14 5.4c-.2.1-.3.3-.3.5s.1.4.3.4l3.5 1.1 1.3 4.1c.1.2.2.3.4.3.1 0 .2 0 .3-.1l2.2-1.8 3.5 2.6c.1.1.3.1.4 0 .1-.1.2-.2.2-.4l3-11.5c0-.2-.1-.4-.2-.5zm-10 6.6l6.8-4.2-5.3 4.9v2.2l-1.5-2.9z" fill="white" />
+                  </svg>
+                ),
+                ch: "Telegram", 
+                desc: "Message our Telegram bot at t.me/Crest_ubBot. Direct messages are ingested and auto-categorised instantly.",
+                href: "https://t.me/Crest_ubBot",
               },
               { 
                 icon: <img src="/crest_logo.png" className="w-6 h-6 rounded object-cover animate-pulse" alt="CREST" />, 

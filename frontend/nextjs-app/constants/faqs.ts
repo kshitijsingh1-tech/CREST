@@ -86,7 +86,7 @@ export const FAQ_CATEGORIES = [
     faqs: [
       {
         q: "How can I submit a complaint through branch, phone, email, app, or social media?",
-        a: "The CREST system natively integrates all channels. You can email us, use the web portal, call the helpline, visit a branch, or even tweet to our official handle. All complaints converge into a single tracking system."
+        a: "The CREST system natively integrates all channels. You can email us, use the web portal, call the helpline, visit a branch, or message our Telegram bot (@Crest_ubBot). All complaints converge into a single tracking system."
       },
       {
         q: "What are the standard response and resolution timelines for complaints?",
