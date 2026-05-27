@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from backend.api.complaints import ingest_complaint_logic
 from backend.utils.db import get_db_optional
 from backend.utils.logger import get_logger
+from integrations.telegram.sender import send_telegram_reply
 
 router = APIRouter(prefix="/api/integrations/telegram", tags=["integrations"])
 logger = get_logger("crest.api.telegram")
@@ -62,14 +63,18 @@ async def telegram_webhook(
             chat = msg.get("chat") or {}
             chat_id = chat.get("id")
             if chat_id:
-                from integrations.telegram.sender import send_telegram_reply
-                welcome_msg = (
+                welcome_msg_1 = (
                     "Welcome to the Union Bank of India CREST Nodal Grievance Support Bot! 🙏\n\n"
                     "Please describe your grievance or complaint in this chat. Our AI system will "
                     "instantly register and track it for you."
                 )
+                welcome_msg_2 = (
+                    "To help us route your ticket to the correct nodal branch for faster resolution, "
+                    "please also let us know your city or region."
+                )
                 try:
-                    send_telegram_reply(chat_id=str(chat_id), reply_text=welcome_msg)
+                    send_telegram_reply(chat_id=str(chat_id), reply_text=welcome_msg_1)
+                    send_telegram_reply(chat_id=str(chat_id), reply_text=welcome_msg_2)
                 except Exception as send_err:
                     logger.error(f"Failed to send Telegram welcome message: {send_err}")
         return {"status": "ignored"}
