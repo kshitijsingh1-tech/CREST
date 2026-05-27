@@ -361,11 +361,16 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                     />
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <button onClick={handleResolve} disabled={loading || !agent}
-                      className="mt-2 w-full text-sm px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded transition-colors disabled:opacity-50">
+                  <div className="flex flex-col items-center gap-1.5 w-full">
+                    <button onClick={handleResolve} disabled={loading || !agent || !c.draft_approved}
+                      className="mt-2 w-full text-sm px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                       ✓ Mark Resolved
                     </button>
+                    {!c.draft_approved && (
+                      <p className="text-[10px] text-amber-500 font-bold uppercase tracking-wider text-center mt-1">
+                        ⚠️ Draft reply must be approved first
+                      </p>
+                    )}
                   </div>
                 </>
               )}

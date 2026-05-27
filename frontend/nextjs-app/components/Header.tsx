@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import GoogleTranslate from '@/components/GoogleTranslate';
 import Cookies from 'js-cookie';
+import { logout } from '@/lib/api';
 
 export default function Header({ theme, toggleTheme }: { theme: "dark" | "light", toggleTheme: () => void }) {
   const pathname = usePathname();
@@ -68,12 +69,12 @@ export default function Header({ theme, toggleTheme }: { theme: "dark" | "light"
           )}
         </button>
 
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-colors duration-500
+        <button onClick={logout} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all duration-300 cursor-pointer
           dark:bg-blue-900/20 dark:border-blue-500/30 dark:text-blue-400
-          bg-black border-black text-white shadow-sm">
+          bg-black border-black text-white hover:bg-gray-800 hover:border-gray-800 shadow-sm active:scale-[0.97]">
           <span className="w-2 h-2 rounded-full animate-pulse dark:bg-blue-400 bg-white"></span>
-          Secure Session
-        </div>
+          Logout
+        </button>
       </div>
     </header>
   );
