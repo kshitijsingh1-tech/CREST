@@ -65,6 +65,8 @@ def _smtp_use_starttls(port: int) -> bool:
 
 
 def can_send_customer_email() -> tuple[bool, str | None]:
+    if os.getenv("RESEND_API_KEY") or os.getenv("SENDGRID_API_KEY"):
+        return True, None
     if not _smtp_host():
         return False, "EMAIL_SMTP_HOST is not configured"
     if not _smtp_user():
@@ -97,15 +99,89 @@ def send_customer_reply(
 
     ok, reason = can_send_customer_email()
     if not ok:
-        raise ValueError(reason or "SMTP is not configured")
+        raise ValueError(reason or "SMTP or API key is not configured")
 
+    resend_key = os.getenv("RESEND_API_KEY")
+    sendgrid_key = os.getenv("SENDGRID_API_KEY")
+    smtp_from_email = _smtp_from_email()
+    smtp_from_name = _smtp_from_name()
+    mail_subject = build_reply_subject(subject)
+
+    # ── Option 1: Send via Resend HTTP API ──
+    if resend_key:
+        logger.info("Attempting to send email via Resend API")
+        try:
+            import json
+            import urllib.request
+            # Resend requires verified domains, but allows onboarding@resend.dev for test emails to the account owner
+            from_addr = f"{smtp_from_name} <onboarding@resend.dev>" if "@" not in smtp_from_email or "gmail.com" in smtp_from_email.lower() else f"{smtp_from_name} <{smtp_from_email}>"
+            data = {
+                "from": from_addr,
+                "to": [recipient],
+                "subject": mail_subject,
+                "text": reply_body
+            }
+            req = urllib.request.Request(
+                "https://api.resend.com/emails",
+                data=json.dumps(data).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {resend_key}",
+                    "Content-Type": "application/json"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=15) as res:
+                res_data = json.loads(res.read().decode("utf-8"))
+                logger.info(f"Resend success: {res_data}")
+                return {
+                    "recipient": recipient,
+                    "subject": mail_subject,
+                    "from_email": from_addr,
+                    "service": "resend",
+                    "id": res_data.get("id")
+                }
+        except Exception as e:
+            logger.error("Failed to send customer reply via Resend API", exc_info=True)
+            raise
+
+    # ── Option 2: Send via SendGrid HTTP API ──
+    elif sendgrid_key:
+        logger.info("Attempting to send email via SendGrid API")
+        try:
+            import json
+            import urllib.request
+            data = {
+                "personalizations": [{"to": [{"email": recipient}]}],
+                "from": {"email": smtp_from_email, "name": smtp_from_name},
+                "subject": mail_subject,
+                "content": [{"type": "text/plain", "value": reply_body}]
+            }
+            req = urllib.request.Request(
+                "https://api.sendgrid.com/v3/mail/send",
+                data=json.dumps(data).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {sendgrid_key}",
+                    "Content-Type": "application/json"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=15) as res:
+                logger.info("SendGrid API request succeeded")
+                return {
+                    "recipient": recipient,
+                    "subject": mail_subject,
+                    "from_email": smtp_from_email,
+                    "service": "sendgrid"
+                }
+        except Exception as e:
+            logger.error("Failed to send customer reply via SendGrid API", exc_info=True)
+            raise
+
+    # ── Option 3: Fall back to SMTP ──
     smtp_host = _smtp_host()
     smtp_port = _smtp_port()
     smtp_user = _smtp_user()
     smtp_password = _smtp_password()
-    smtp_from_email = _smtp_from_email()
-    smtp_from_name = _smtp_from_name()
-    mail_subject = build_reply_subject(subject)
 
     message = EmailMessage()
     message["Subject"] = mail_subject
