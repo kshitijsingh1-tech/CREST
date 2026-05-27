@@ -207,7 +207,7 @@ export default function DocsPage() {
                 href: process.env.NEXT_PUBLIC_DISCORD_BOT_INVITE_URL || "https://discord.com/api/oauth2/authorize?client_id=123456789&permissions=0&scope=bot",
               },
               { 
-                icon: <img src="/crest_logo.png" className="w-6 h-6 rounded object-cover animate-pulse" alt="CREST" />, 
+                icon: <img src="/crest_logo.png" className="w-6 h-6 rounded object-cover" alt="CREST" />, 
                 ch: "Web Portal", 
                 desc: "Fill out the online complaint form at the public portal. No account needed — just your contact details.",
                 href: "/crest_publicPortal",
