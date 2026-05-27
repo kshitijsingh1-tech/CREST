@@ -97,10 +97,10 @@ async def sms_webhook(
             return Response(content=twiml_content, media_type="application/xml")
 
         complaint_data = {
-            "channel": "sms",
+            "channel": channel_name,
             "customer_id": from_number,
             "body": text,
-            "subject": f"SMS from {from_number}",
+            "subject": f"{channel_name.upper()} from {from_number}",
             "external_ref": msg_id
         }
 

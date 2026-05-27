@@ -736,9 +736,12 @@ async def try_update_complaint_region(db: Session, channel_name: str, customer_i
         elif channel_name == "telegram":
             from integrations.telegram.sender import send_telegram_reply
             send_telegram_reply(chat_id=customer_id, reply_text=msg, external_ref=str(complaint.id))
-        elif channel_name == "whatsapp" or channel_name == "sms":
+        elif channel_name == "whatsapp":
             from integrations.whatsapp.sender import send_whatsapp_reply
             send_whatsapp_reply(recipient_phone=customer_id, reply_body=msg, external_ref=str(complaint.id))
+        elif channel_name == "sms":
+            from integrations.sms.sender import send_sms_reply
+            send_sms_reply(recipient_phone=customer_id, reply_body=msg, external_ref=str(complaint.id))
         elif channel_name == "instagram":
             from integrations.instagram.sender import send_instagram_dm
             send_instagram_dm(customer_username=customer_id, reply_text=msg)
