@@ -46,13 +46,21 @@ export default function CrestLoginPage() {
   useEffect(() => {
     setCaptchaText(generateCaptchaText());
 
-    // Check if we arrived here via a recovery redirect (stale token)
+    // Check if we arrived here via a recovery redirect (stale token) or a direct login link
     const params = new URLSearchParams(window.location.search);
-    if (params.get("recovered") === "1" || Cookies.get("crest_token")) {
+    const qEmail = params.get("email");
+    const qPassword = params.get("password");
+
+    if (qEmail) setEmail(qEmail);
+    if (qPassword) setPassword(qPassword);
+
+    if (params.get("recovered") === "1" || Cookies.get("crest_token") || qEmail) {
       // Clear stale token/auth state
       removeCrestTokenCookie();
       localStorage.removeItem("crest_user");
-      setError("Your session has expired or is invalid. Please sign in again.");
+      if (!qEmail && params.get("recovered") === "1") {
+        setError("Your session has expired or is invalid. Please sign in again.");
+      }
     }
   }, []);
 
@@ -171,16 +179,12 @@ export default function CrestLoginPage() {
                   value={email} 
                   onChange={e => setEmail(e.target.value)} 
                   className="w-full pl-10 pr-4 py-4 dark:bg-black/80 bg-white border dark:border-white/10 border-gray-200 rounded-2xl focus:ring-2 dark:focus:ring-blue-500 focus:ring-blue-600 dark:text-white text-black outline-none transition-all text-sm"
-                  placeholder="admin@unionbank.com / mumbai_admin@unionbank.com / mumbai_officer@unionbank.com"
+                  placeholder="admin@unionbank.com"
                 />
               </div>
               <div className="mt-2 flex flex-wrap gap-x-2 text-[9px] dark:text-slate-400 text-slate-500 font-medium">
                 <span className="font-bold uppercase tracking-wider text-[8px] dark:text-slate-500 text-slate-400">Autofill:</span>
-                <button type="button" onClick={() => { setEmail("admin@unionbank.com"); setPassword("admin123"); }} className="underline hover:text-blue-500 transition-colors">Super Admin</button>
-                <span>•</span>
-                <button type="button" onClick={() => { setEmail("mumbai_admin@unionbank.com"); setPassword("admin123"); }} className="underline hover:text-blue-500 transition-colors">Mumbai Sub-Admin</button>
-                <span>•</span>
-                <button type="button" onClick={() => { setEmail("mumbai_officer@unionbank.com"); setPassword("officer123"); }} className="underline hover:text-blue-500 transition-colors">Mumbai Employee</button>
+                <button type="button" onClick={() => { setEmail("admin@unionbank.com"); setPassword("admin123"); }} className="underline hover:text-blue-500 transition-colors">Super Admin (admin@unionbank.com / admin123)</button>
               </div>
             </div>
 
@@ -196,7 +200,7 @@ export default function CrestLoginPage() {
                   value={password} 
                   onChange={e => setPassword(e.target.value)} 
                   className="w-full pl-10 pr-4 py-4 dark:bg-black/80 bg-white border dark:border-white/10 border-gray-200 rounded-2xl focus:ring-2 dark:focus:ring-blue-500 focus:ring-blue-600 dark:text-white text-black outline-none transition-all text-sm"
-                  placeholder="admin123 / officer123"
+                  placeholder="••••••••"
                 />
               </div>
             </div>
