@@ -157,40 +157,6 @@ export default function CrestLoginPage() {
             </div>
           )}
 
-          {/* Default Credentials Helper */}
-          <div className="mb-5 p-4 bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 rounded-2xl space-y-2">
-            <p className="text-[10px] font-black dark:text-blue-300 text-blue-800 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" /> Click to Auto-Fill Credentials:
-            </p>
-            <div className="grid grid-cols-1 gap-2">
-              {[
-                { label: "Super Admin", email: "admin@unionbank.com", pass: "admin123" },
-                { label: "Mumbai Sub-Admin", email: "mumbai_admin@unionbank.com", pass: "admin123" },
-                { label: "Mumbai Employee", email: "mumbai_officer@unionbank.com", pass: "officer123" }
-              ].map((cred, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    setEmail(cred.email);
-                    setPassword(cred.pass);
-                  }}
-                  className="flex items-center justify-between p-2.5 rounded-xl dark:bg-black/40 bg-white/60 dark:hover:bg-blue-600/20 hover:bg-blue-50 border dark:border-white/5 border-gray-200 hover:border-blue-400/50 transition-all text-left text-[11px] group"
-                >
-                  <div className="space-y-0.5">
-                    <span className="font-bold dark:text-white text-slate-800 block leading-tight">{cred.label}</span>
-                    <span className="font-mono dark:text-slate-400 text-slate-600">{cred.email}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-mono bg-blue-500/10 dark:bg-blue-500/20 px-1.5 py-0.5 rounded dark:text-blue-300 text-blue-700 font-bold group-hover:bg-blue-600 group-hover:text-white transition-all">
-                      {cred.pass}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Integrated Form */}
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
@@ -205,8 +171,16 @@ export default function CrestLoginPage() {
                   value={email} 
                   onChange={e => setEmail(e.target.value)} 
                   className="w-full pl-10 pr-4 py-4 dark:bg-black/80 bg-white border dark:border-white/10 border-gray-200 rounded-2xl focus:ring-2 dark:focus:ring-blue-500 focus:ring-blue-600 dark:text-white text-black outline-none transition-all text-sm"
-                  placeholder="officer@unionbank.com"
+                  placeholder="admin@unionbank.com / mumbai_admin@unionbank.com / mumbai_officer@unionbank.com"
                 />
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-2 text-[9px] dark:text-slate-400 text-slate-500 font-medium">
+                <span className="font-bold uppercase tracking-wider text-[8px] dark:text-slate-500 text-slate-400">Autofill:</span>
+                <button type="button" onClick={() => { setEmail("admin@unionbank.com"); setPassword("admin123"); }} className="underline hover:text-blue-500 transition-colors">Super Admin</button>
+                <span>•</span>
+                <button type="button" onClick={() => { setEmail("mumbai_admin@unionbank.com"); setPassword("admin123"); }} className="underline hover:text-blue-500 transition-colors">Mumbai Sub-Admin</button>
+                <span>•</span>
+                <button type="button" onClick={() => { setEmail("mumbai_officer@unionbank.com"); setPassword("officer123"); }} className="underline hover:text-blue-500 transition-colors">Mumbai Employee</button>
               </div>
             </div>
 
@@ -222,7 +196,7 @@ export default function CrestLoginPage() {
                   value={password} 
                   onChange={e => setPassword(e.target.value)} 
                   className="w-full pl-10 pr-4 py-4 dark:bg-black/80 bg-white border dark:border-white/10 border-gray-200 rounded-2xl focus:ring-2 dark:focus:ring-blue-500 focus:ring-blue-600 dark:text-white text-black outline-none transition-all text-sm"
-                  placeholder="••••••••"
+                  placeholder="admin123 / officer123"
                 />
               </div>
             </div>
