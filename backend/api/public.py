@@ -79,6 +79,7 @@ def track_complaint(req: TrackRequest, db: Session = Depends(get_db_optional)):
         "resolved_at": complaint.resolved_at,
         "subject": complaint.subject,
         "category": complaint.category,
+        "region_id": complaint.region_id,
         "masked_contact": masked_contact,
         "assignee_masked": assignee_name,
         "priority_score": complaint.priority_score,
@@ -93,6 +94,51 @@ def track_complaint(req: TrackRequest, db: Session = Depends(get_db_optional)):
             "withdrawn": complaint.status == "withdrawn"
         }
     }
+
+class SetRegionRequest(BaseModel):
+    reference_token: str
+    region_name: str
+
+
+@router.post("/set-region")
+def set_complaint_region(req: SetRegionRequest, db: Session = Depends(get_db_optional)):
+    try:
+        complaint_id = uuid.UUID(req.reference_token)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid Reference Token")
+
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+
+    from backend.models.user import Region
+    region = db.query(Region).filter(Region.name.ilike(req.region_name)).first()
+    if not region:
+        raise HTTPException(status_code=400, detail=f"Region '{req.region_name}' not found")
+
+    complaint.region_id = region.id
+    
+    # Auto-Assignment Logic (Least-Loaded Active Employee in Region)
+    from backend.services.complaint_service import find_least_loaded_employee
+    assigned_employee_id = find_least_loaded_employee(db, region.id)
+    if assigned_employee_id:
+        complaint.assigned_employee_id = assigned_employee_id
+    
+    db.commit()
+    
+    # Broadcast change to dashboard clients
+    try:
+        from backend.utils.socket import broadcast_queue_update
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(broadcast_queue_update())
+        loop.close()
+    except Exception:
+        pass
+        
+    return {"status": "success", "message": f"Complaint successfully routed to {region.name} branch."}
+
 
 @router.post("/action")
 def submit_public_action(req: PublicActionRequest, db: Session = Depends(get_db_optional)):

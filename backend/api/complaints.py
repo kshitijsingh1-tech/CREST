@@ -222,7 +222,12 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
                 f"Ticket Ref: {ref}\n\n"
                 "Track your grievance status anytime here:\n"
                 f"{tracking_link}\n\n"
-                "To route this to the nearest nodal branch, please reply with your city or region.\n\n"
+                "📍 QUICK BRANCH ROUTING:\n"
+                "To route this to the nearest branch immediately, click one of the links below:\n"
+                f"• Route to Delhi Nodal Branch: {tracking_link}?set_region=Delhi\n"
+                f"• Route to Mumbai Nodal Branch: {tracking_link}?set_region=Mumbai\n"
+                f"• Route to Bangalore Nodal Branch: {tracking_link}?set_region=Bangalore\n\n"
+                "Alternatively, you can reply directly to this email mentioning your city/region.\n\n"
                 "Thank you! 🙏"
             )
         

@@ -3,23 +3,64 @@
 import { useEffect, useState } from "react";
 import { trackComplaint } from "@/lib/api";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 
 export default function CustomerTrackPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params.id as string;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [routingStatus, setRoutingStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [routingMsg, setRoutingMsg] = useState("");
 
-  useEffect(() => {
+  const fetchComplaintDetails = () => {
     if (id) {
       trackComplaint(id)
         .then(setData)
         .catch((err) => setError("Grievance ID not found or invalid"))
         .finally(() => setLoading(false));
     }
+  };
+
+  useEffect(() => {
+    fetchComplaintDetails();
   }, [id]);
+
+  // Handle auto-routing via query param (e.g. ?set_region=Mumbai)
+  useEffect(() => {
+    const targetRegion = searchParams.get("set_region");
+    if (targetRegion && id && data && !data.region_id && routingStatus === "idle") {
+      handleSetRegion(targetRegion);
+    }
+  }, [searchParams, id, data]);
+
+  const handleSetRegion = async (regionName: string) => {
+    setRoutingStatus("loading");
+    try {
+      const res = await fetch("/api/public/set-region", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference_token: id, region_name: regionName })
+      });
+      if (res.ok) {
+        setRoutingStatus("success");
+        setRoutingMsg(`Grievance successfully routed to ${regionName} nodal branch!`);
+        // Refresh complaint data to reflect the new region and assigned agent
+        trackComplaint(id).then((freshData) => {
+          setData(freshData);
+        });
+      } else {
+        const errData = await res.json();
+        setRoutingStatus("error");
+        setRoutingMsg(errData.detail || "Failed to set region.");
+      }
+    } catch (err) {
+      setRoutingStatus("error");
+      setRoutingMsg("Network error routing grievance.");
+    }
+  };
 
   if (loading) {
     return (
@@ -105,6 +146,63 @@ export default function CustomerTrackPage() {
             ))}
           </div>
         </div>
+
+        {/* Region Routing Selector (if none set) */}
+        {!data.region_id && data.status !== 'resolved' && data.status !== 'withdrawn' && (
+          <div className="dark:bg-black/80 dark:backdrop-blur-2xl dark:border-white/10 bg-white shadow-2xl border border-gray-200 rounded-3xl p-8 space-y-6 transition-all duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500">Action Required: Nodal Branch Routing</h2>
+                </div>
+                <p className="dark:text-white text-black font-black text-lg tracking-tight">Select your nearest nodal branch to route your ticket.</p>
+                <p className="text-gray-400 text-xs">Routing your ticket connects you to a specialized agent in your region for faster resolution.</p>
+              </div>
+            </div>
+
+            {routingStatus === "loading" && (
+              <div className="flex items-center gap-3 text-xs text-blue-500 font-bold uppercase tracking-wider animate-pulse">
+                <span className="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></span>
+                Routing ticket, please wait...
+              </div>
+            )}
+
+            {routingStatus === "success" && (
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-xs text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-3">
+                <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+                {routingMsg}
+              </div>
+            )}
+
+            {routingStatus === "error" && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-xs text-red-400 font-bold uppercase tracking-wider flex items-center gap-3">
+                <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                {routingMsg}
+              </div>
+            )}
+
+            {routingStatus !== "success" && routingStatus !== "loading" && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {["Delhi", "Mumbai", "Bangalore"].map((region) => (
+                  <button
+                    key={region}
+                    onClick={() => handleSetRegion(region)}
+                    className="group relative overflow-hidden px-6 py-4 rounded-2xl dark:bg-white/5 bg-gray-50 border dark:border-white/10 border-gray-200 text-left hover:-translate-y-0.5 transition-all duration-300 active:scale-95"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-blue-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] dark:text-blue-400 text-blue-600 mb-1">📍 Nodal Branch</p>
+                    <p className="dark:text-white text-black font-black text-base tracking-tight uppercase">{region}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Details Grid */}
         <div className="grid md:grid-cols-2 gap-8">
