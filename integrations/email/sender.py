@@ -113,8 +113,42 @@ def send_customer_reply(
     smtp_from_name = _smtp_from_name()
     mail_subject = build_reply_subject(subject)
 
-    # ── Option 1: Send via Resend HTTP API ──
-    if resend_key:
+    # ── Option 1: Send via SendGrid HTTP API (Preferred to avoid Resend sandbox constraints) ──
+    if sendgrid_key:
+        logger.info("Attempting to send email via SendGrid API")
+        try:
+            import json
+            import urllib.request
+            data = {
+                "personalizations": [{"to": [{"email": recipient}]}],
+                "from": {"email": smtp_from_email, "name": smtp_from_name},
+                "subject": mail_subject,
+                "content": [{"type": "text/plain", "value": reply_body}]
+            }
+            req = urllib.request.Request(
+                "https://api.sendgrid.com/v3/mail/send",
+                data=json.dumps(data).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {sendgrid_key}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=15) as res:
+                logger.info("SendGrid API request succeeded")
+                return {
+                    "recipient": recipient,
+                    "subject": mail_subject,
+                    "from_email": smtp_from_email,
+                    "service": "sendgrid"
+                }
+        except Exception as e:
+            logger.error("Failed to send customer reply via SendGrid API", exc_info=True)
+            raise
+
+    # ── Option 2: Send via Resend HTTP API ──
+    elif resend_key:
         logger.info("Attempting to send email via Resend API")
         try:
             import json
@@ -149,40 +183,6 @@ def send_customer_reply(
                 }
         except Exception as e:
             logger.error("Failed to send customer reply via Resend API", exc_info=True)
-            raise
-
-    # ── Option 2: Send via SendGrid HTTP API ──
-    elif sendgrid_key:
-        logger.info("Attempting to send email via SendGrid API")
-        try:
-            import json
-            import urllib.request
-            data = {
-                "personalizations": [{"to": [{"email": recipient}]}],
-                "from": {"email": smtp_from_email, "name": smtp_from_name},
-                "subject": mail_subject,
-                "content": [{"type": "text/plain", "value": reply_body}]
-            }
-            req = urllib.request.Request(
-                "https://api.sendgrid.com/v3/mail/send",
-                data=json.dumps(data).encode("utf-8"),
-                headers={
-                    "Authorization": f"Bearer {sendgrid_key}",
-                    "Content-Type": "application/json",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                },
-                method="POST"
-            )
-            with urllib.request.urlopen(req, timeout=15) as res:
-                logger.info("SendGrid API request succeeded")
-                return {
-                    "recipient": recipient,
-                    "subject": mail_subject,
-                    "from_email": smtp_from_email,
-                    "service": "sendgrid"
-                }
-        except Exception as e:
-            logger.error("Failed to send customer reply via SendGrid API", exc_info=True)
             raise
 
     # ── Option 3: Fall back to SMTP ──
