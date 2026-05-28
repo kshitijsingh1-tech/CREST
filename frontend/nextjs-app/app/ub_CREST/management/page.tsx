@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Users, ShieldCheck, MapPin, UserCheck, Activity, Search } from "lucide-react";
 import AddOfficerModal from "./AddOfficerModal";
 import DeleteUserButton from "./DeleteUserButton";
+import OfficerIdentityLink from "./OfficerIdentityLink";
 
 export default async function ManagementConsolePage() {
   let user;
@@ -119,12 +120,7 @@ export default async function ManagementConsolePage() {
                     <span className="font-mono text-xs font-bold dark:text-slate-400 text-gray-500">#{u.id.toString().padStart(4, '0')}</span>
                   </td>
                   <td className="py-5 px-4">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-black dark:text-white text-black">{u.name}</span>
-                      <span className="text-[10px] font-bold dark:text-slate-500 text-gray-400">
-                        {u.email} {u.phone ? `• ${u.phone}` : ""}
-                      </span>
-                    </div>
+                    <OfficerIdentityLink email={u.email} name={u.name} phone={u.phone} role={u.role} />
                   </td>
                   <td className="py-5 px-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[9px] font-black uppercase tracking-wider border ${

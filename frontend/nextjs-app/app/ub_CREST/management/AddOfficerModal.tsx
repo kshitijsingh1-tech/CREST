@@ -39,6 +39,18 @@ export default function AddOfficerModal({ regions, currentUserRole }: Props) {
         role: formData.role,
         region_id: formData.region_id ? parseInt(formData.region_id) : null
       });
+
+      // Save credentials in localStorage for auto-fill helper in Directory
+      if (typeof window !== "undefined") {
+        try {
+          const stored = localStorage.getItem("crest_created_passwords");
+          const mapping = stored ? JSON.parse(stored) : {};
+          mapping[formData.email.toLowerCase()] = formData.password;
+          localStorage.setItem("crest_created_passwords", JSON.stringify(mapping));
+        } catch (e) {
+          console.error("Failed to save credentials mapping", e);
+        }
+      }
       
       setIsOpen(false);
       setFormData({
