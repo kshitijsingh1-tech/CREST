@@ -157,6 +157,11 @@ export default function CrestLoginPage() {
             </div>
           )}
 
+          {/* Default Credentials Helper */}
+          <div className="mb-5 p-3.5 bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 rounded-2xl text-[11px] leading-relaxed dark:text-blue-300 text-blue-700">
+            <span className="font-bold">Sandbox Credentials:</span> Use <code className="font-mono bg-blue-500/10 px-1 py-0.5 rounded">admin@unionbank.com</code> / <code className="font-mono bg-blue-500/10 px-1 py-0.5 rounded">admin123</code>
+          </div>
+
           {/* Integrated Form */}
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
