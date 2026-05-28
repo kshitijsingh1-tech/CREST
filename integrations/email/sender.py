@@ -103,6 +103,12 @@ def send_customer_reply(
 
     resend_key = os.getenv("RESEND_API_KEY")
     sendgrid_key = os.getenv("SENDGRID_API_KEY")
+
+    # Render Free Tier blocks outbound SMTP traffic (587/465). Avoid hanging for 20 seconds.
+    if os.getenv("RENDER") == "true" and not resend_key and not sendgrid_key:
+        logger.warning("SMTP ports 587/465 are blocked on Render Free plan. Bypassing SMTP connection attempt to prevent hang.")
+        raise ConnectionError("SMTP is blocked on Render Free Tier. Please configure RESEND_API_KEY or SENDGRID_API_KEY.")
+
     smtp_from_email = _smtp_from_email()
     smtp_from_name = _smtp_from_name()
     mail_subject = build_reply_subject(subject)
