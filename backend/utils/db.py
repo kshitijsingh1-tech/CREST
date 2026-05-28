@@ -22,11 +22,22 @@ DATABASE_URL = os.getenv(
 )
 
 # ── SQLAlchemy engine (used by models & FastAPI dependency) ──
+# Use smaller connection pool limits on Render to prevent database connection exhaustion deadlocks
+if os.getenv("RENDER") == "true":
+    pool_size = 3
+    max_overflow = 2
+    connect_args = {"connect_timeout": 10} if DATABASE_URL.startswith("postgresql") else {}
+else:
+    pool_size = 10
+    max_overflow = 20
+    connect_args = {}
+
 engine = create_engine(
     DATABASE_URL,
-    pool_size=10,
-    max_overflow=20,
+    pool_size=pool_size,
+    max_overflow=max_overflow,
     pool_pre_ping=True,          # auto-reconnect on stale connections
+    connect_args=connect_args,
     echo=False,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
