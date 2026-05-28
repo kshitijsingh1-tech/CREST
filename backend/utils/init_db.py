@@ -64,5 +64,33 @@ def initialize_database() -> None:
             db.add(admin)
             db.commit()
             logger.info("Seeded default Super Admin")
+
+        # Seed Sub Admin (Mumbai)
+        if db.query(User).filter(User.email == "mumbai_admin@unionbank.com").count() == 0:
+            mumbai = db.query(Region).filter(Region.name == "Mumbai").first()
+            sub_admin = User(
+                email="mumbai_admin@unionbank.com",
+                name="Mumbai Admin",
+                hashed_password=get_password_hash("admin123"),
+                role="SUB_ADMIN",
+                region_id=mumbai.id if mumbai else None
+            )
+            db.add(sub_admin)
+            db.commit()
+            logger.info("Seeded default Mumbai Sub Admin")
+
+        # Seed Employee (Mumbai)
+        if db.query(User).filter(User.email == "mumbai_officer@unionbank.com").count() == 0:
+            mumbai = db.query(Region).filter(Region.name == "Mumbai").first()
+            officer = User(
+                email="mumbai_officer@unionbank.com",
+                name="Mumbai Officer",
+                hashed_password=get_password_hash("officer123"),
+                role="EMPLOYEE",
+                region_id=mumbai.id if mumbai else None
+            )
+            db.add(officer)
+            db.commit()
+            logger.info("Seeded default Mumbai Officer")
     finally:
         db.close()

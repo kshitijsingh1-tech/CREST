@@ -158,8 +158,37 @@ export default function CrestLoginPage() {
           )}
 
           {/* Default Credentials Helper */}
-          <div className="mb-5 p-3.5 bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 rounded-2xl text-[11px] leading-relaxed dark:text-blue-300 text-blue-700">
-            <span className="font-bold">Sandbox Credentials:</span> Use <code className="font-mono bg-blue-500/10 px-1 py-0.5 rounded">admin@unionbank.com</code> / <code className="font-mono bg-blue-500/10 px-1 py-0.5 rounded">admin123</code>
+          <div className="mb-5 p-4 bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 rounded-2xl space-y-2">
+            <p className="text-[10px] font-black dark:text-blue-300 text-blue-800 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5" /> Click to Auto-Fill Credentials:
+            </p>
+            <div className="grid grid-cols-1 gap-2">
+              {[
+                { label: "Super Admin", email: "admin@unionbank.com", pass: "admin123" },
+                { label: "Mumbai Sub-Admin", email: "mumbai_admin@unionbank.com", pass: "admin123" },
+                { label: "Mumbai Employee", email: "mumbai_officer@unionbank.com", pass: "officer123" }
+              ].map((cred, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setEmail(cred.email);
+                    setPassword(cred.pass);
+                  }}
+                  className="flex items-center justify-between p-2.5 rounded-xl dark:bg-black/40 bg-white/60 dark:hover:bg-blue-600/20 hover:bg-blue-50 border dark:border-white/5 border-gray-200 hover:border-blue-400/50 transition-all text-left text-[11px] group"
+                >
+                  <div className="space-y-0.5">
+                    <span className="font-bold dark:text-white text-slate-800 block leading-tight">{cred.label}</span>
+                    <span className="font-mono dark:text-slate-400 text-slate-600">{cred.email}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-mono bg-blue-500/10 dark:bg-blue-500/20 px-1.5 py-0.5 rounded dark:text-blue-300 text-blue-700 font-bold group-hover:bg-blue-600 group-hover:text-white transition-all">
+                      {cred.pass}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Integrated Form */}
