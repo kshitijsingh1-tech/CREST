@@ -42,25 +42,19 @@ export default function CrestLoginPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Initialize Captcha & Recover Stale Session
   useEffect(() => {
     setCaptchaText(generateCaptchaText());
 
-    // Check if we arrived here via a recovery redirect (stale token) or a direct login link
     const params = new URLSearchParams(window.location.search);
     const qEmail = params.get("email");
-    const qPassword = params.get("password");
-
     if (qEmail) setEmail(qEmail);
-    if (qPassword) setPassword(qPassword);
 
-    if (params.get("recovered") === "1" || Cookies.get("crest_token") || qEmail) {
-      // Clear stale token/auth state
-      removeCrestTokenCookie();
-      localStorage.removeItem("crest_user");
-      if (!qEmail && params.get("recovered") === "1") {
-        setError("Your session has expired or is invalid. Please sign in again.");
-      }
+    // Clear any stale session on arriving at login
+    Cookies.remove("crest_token", { path: "/" });
+    localStorage.removeItem("crest_user");
+
+    if (params.get("recovered") === "1") {
+      setError("Your session has expired or is invalid. Please sign in again.");
     }
   }, []);
 
