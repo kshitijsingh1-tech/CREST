@@ -456,6 +456,70 @@ def generate_draft_reply(
         )
         resolutions = []
 
+    # Retrieve similar active complaints from the live queue to include as context references
+    try:
+        active_complaints = []
+        if USE_PGVECTOR and embedding:
+            serialized_embedding = serialize_embedding(embedding)
+            with raw_conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        SELECT  id, subject, category, body, status, severity,
+                                1 - (embedding <=> %s::vector) AS relevance
+                        FROM    complaints
+                        WHERE   is_duplicate = FALSE
+                          AND   status IN ('open', 'in_progress')
+                          AND   1 - (embedding <=> %s::vector) > 0.70
+                        ORDER   BY relevance DESC
+                        LIMIT   2
+                        """,
+                        [serialized_embedding, serialized_embedding]
+                    )
+                    active_complaints = [dict(row) for row in cur.fetchall()]
+        elif embedding:
+            db = SessionLocal()
+            try:
+                from backend.models.complaint import Complaint
+                query = db.query(Complaint).filter(
+                    Complaint.is_duplicate == False,
+                    Complaint.status.in_(["open", "in_progress"])
+                )
+                for row in query.all():
+                    if not row.embedding:
+                        continue
+                    relevance = _cosine_similarity(embedding, row.embedding)
+                    if relevance > 0.70:
+                        active_complaints.append({
+                            "id": str(row.id),
+                            "category": row.category,
+                            "subject": row.subject,
+                            "body": row.body,
+                            "status": row.status,
+                            "severity": row.severity,
+                            "relevance": relevance
+                        })
+                active_complaints.sort(key=lambda x: x["relevance"], reverse=True)
+                active_complaints = active_complaints[:2]
+            finally:
+                db.close()
+
+        for ac in active_complaints:
+            resolutions.append({
+                "id": str(ac["id"]),
+                "category": ac["category"],
+                "title": ac["subject"] or "Active Complaint",
+                "problem_desc": ac["body"],
+                "resolution_text": f"In Live Queue (Severity: P{ac['severity']})",
+                "relevance": ac["relevance"],
+                "status": ac["status"]
+            })
+    except Exception as active_err:
+        logger.warning(
+            "Failed to retrieve similar active complaints for draft metadata",
+            extra={"error": str(active_err)}
+        )
+
     try:
         document_chunks = search_document_chunks(
             query=complaint_body,

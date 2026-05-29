@@ -246,15 +246,24 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                       <p className="text-gray-500 dark:text-gray-500 italic line-clamp-2">"{doc.content}"</p>
                     </div>
                   ))}
-                  {c.draft_metadata.resolutions?.map((res: any, i: number) => (
-                    <div key={i} className="text-xs bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/20">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-blue-700 dark:text-blue-400">Past Resolution: {res.title}</span>
-                        <span className="text-[10px] text-blue-400">Similarity: {(res.relevance * 100).toFixed(0)}%</span>
+                  {c.draft_metadata.resolutions?.map((res: any, i: number) => {
+                    const isLiveQueue = res.status === "open" || res.status === "in_progress" || (res.resolution_text && res.resolution_text.startsWith("In Live Queue"));
+                    const displayText = res.problem_desc || res.title;
+                    return (
+                      <div key={i} className="text-xs bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/20">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="font-bold text-blue-700 dark:text-blue-400">
+                            {isLiveQueue ? "In Live Queue" : "Past Resolution"}
+                          </span>
+                          <span className="text-[10px] text-blue-400">Similarity: {(res.relevance * 100).toFixed(0)}%</span>
+                        </div>
+                        <p className="text-gray-700 dark:text-gray-300 font-medium mb-1.5 line-clamp-2">
+                          {displayText}
+                        </p>
+                        <p className="text-blue-600/80 dark:text-blue-500/80">Key: {res.resolution_text}</p>
                       </div>
-                      <p className="text-blue-600/80 dark:text-blue-500/80">Key: {res.resolution_text}</p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
