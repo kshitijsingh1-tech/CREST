@@ -480,13 +480,20 @@ def update_sla_statuses(db: Session) -> None:
 # PRIORITY QUEUE
 # ─────────────────────────────────────────────
 
-def get_priority_queue(db: Session, limit: int = 50, region_id: Optional[int] = None) -> list[Complaint]:
+def get_priority_queue(
+    db: Session,
+    limit: int = 50,
+    region_id: Optional[int] = None,
+    assigned_employee_id: Optional[int] = None
+) -> list[Complaint]:
     query = (
         db.query(Complaint)
         .filter(Complaint.status.in_(["open", "in_progress"]))
         .filter(Complaint.is_duplicate == False)
     )
-    if region_id:
+    if assigned_employee_id is not None:
+        query = query.filter(Complaint.assigned_employee_id == assigned_employee_id)
+    elif region_id is not None:
         query = query.filter(Complaint.region_id == region_id)
 
     return (

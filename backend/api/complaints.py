@@ -353,25 +353,21 @@ def priority_queue(
         return mock_get_priority_queue(limit=limit)
 
     # Scoping logic based on role
-    effective_region_id = region_id
-    if user.role == "SUB_ADMIN":
-        effective_region_id = user.region_id
-    elif user.role == "EMPLOYEE":
-        # Employees see their assigned queue, handled by service if we pass user filter
-        # For now, let's just use the regional filter if they are regional
-        effective_region_id = user.region_id
-
-    complaints = get_priority_queue(db, limit=limit, region_id=effective_region_id)
-    
-    for c in complaints:
-        if c.assigned_employee_id is None and c.region_id is not None:
-            new_assignee = find_least_loaded_employee(db, c.region_id)
-            if new_assignee:
-                assign_complaint(db, str(c.id), str(new_assignee))
-                c.assigned_employee_id = new_assignee
-    
     if user.role == "EMPLOYEE":
-        complaints = [c for c in complaints if c.assigned_employee_id == user.id]
+        complaints = get_priority_queue(db, limit=limit, assigned_employee_id=user.id)
+    else:
+        effective_region_id = region_id
+        if user.role == "SUB_ADMIN":
+            effective_region_id = user.region_id
+
+        complaints = get_priority_queue(db, limit=limit, region_id=effective_region_id)
+        
+        for c in complaints:
+            if c.assigned_employee_id is None and c.region_id is not None:
+                new_assignee = find_least_loaded_employee(db, c.region_id)
+                if new_assignee:
+                    assign_complaint(db, str(c.id), str(new_assignee))
+                    c.assigned_employee_id = new_assignee
 
     return [
         {
