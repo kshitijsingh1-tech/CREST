@@ -78,7 +78,13 @@ async def lifespan(app: FastAPI):
                 conn.execute(text("ALTER TABLE users ADD COLUMN phone VARCHAR(50)"))
                 conn.commit()
             except Exception as e:
-                logger.warning(f"Startup ALTER TABLE skipped or failed (likely already exists or locked): {e}")
+                logger.warning(f"Startup ALTER TABLE for users skipped or failed (likely already exists or locked): {e}")
+            
+            try:
+                conn.execute(text("ALTER TABLE complaints ADD COLUMN rating INTEGER"))
+                conn.commit()
+            except Exception as e:
+                logger.warning(f"Startup ALTER TABLE for complaints skipped or failed (likely already exists or locked): {e}")
         
         initialize_database()
         logger.info("Database connection verified and schema initialized")
