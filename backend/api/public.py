@@ -56,6 +56,13 @@ def track_complaint(req: TrackRequest, db: Session = Depends(get_db_optional)):
     if req.otp != "123456":
         raise HTTPException(status_code=401, detail="Invalid OTP")
 
+    # Ensure rating column is added if not exists
+    try:
+        db.execute("ALTER TABLE complaints ADD COLUMN rating INTEGER;")
+        db.commit()
+    except Exception:
+        pass
+
     try:
         complaint_id = uuid.UUID(req.reference_token)
     except ValueError:
@@ -84,6 +91,7 @@ def track_complaint(req: TrackRequest, db: Session = Depends(get_db_optional)):
         "assignee_masked": assignee_name,
         "priority_score": complaint.priority_score,
         "resolution_note": complaint.resolution_note,
+        "rating": complaint.rating,
         # Timeline stages helper boolean
         "timeline": {
             "received": True,
@@ -151,6 +159,13 @@ def submit_public_action(req: PublicActionRequest, db: Session = Depends(get_db_
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
 
+    # Ensure rating column is added if not exists
+    try:
+        db.execute("ALTER TABLE complaints ADD COLUMN rating INTEGER;")
+        db.commit()
+    except Exception:
+        pass
+
     if req.action_type == "withdraw":
         if complaint.status != "open":
             raise HTTPException(status_code=400, detail="Only open complaints can be withdrawn.")
@@ -169,6 +184,18 @@ def submit_public_action(req: PublicActionRequest, db: Session = Depends(get_db_
     elif req.action_type == "upload":
         # Mock upload success
         return {"status": "success", "message": "Documents uploaded successfully."}
+
+    elif req.action_type.startswith("rate_"):
+        try:
+            score = int(req.action_type.split("_")[1])
+            if not (1 <= score <= 5):
+                raise ValueError()
+        except (IndexError, ValueError):
+            raise HTTPException(status_code=400, detail="Invalid rating score")
+
+        complaint.rating = score
+        db.commit()
+        return {"status": "success", "message": f"Rating of {score} submitted successfully"}
 
     raise HTTPException(status_code=400, detail="Invalid action type")
 

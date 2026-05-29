@@ -28,6 +28,7 @@ export default function PublicTrackingPage() {
   const [success, setSuccess] = useState("");
 
   const [complaintData, setComplaintData] = useState<any>(null);
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
 
   useEffect(() => {
     setCaptchaText(generateCaptchaText());
@@ -265,15 +266,24 @@ export default function PublicTrackingPage() {
                 <div className="mt-8 bg-emerald-500/5 dark:bg-emerald-500/5 p-8 rounded-3xl border border-emerald-500/10 dark:border-emerald-500/10 text-center">
                   <h3 className="text-sm font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest mb-4">Rate Your Resolution Experience</h3>
                   <div className="flex justify-center gap-3 mb-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => handleRating(star)}
-                        className="text-4xl text-slate-300 dark:text-slate-700 hover:text-yellow-400 dark:hover:text-yellow-500 focus:text-yellow-500 transition-colors drop-shadow-sm hover:scale-110 active:scale-95"
-                      >
-                        ★
-                      </button>
-                    ))}
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const isHighlighted = star <= (hoverRating ?? complaintData.rating ?? 0);
+                      return (
+                        <button
+                          key={star}
+                          onClick={() => handleRating(star)}
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(null)}
+                          className={`text-4xl transition-colors drop-shadow-sm hover:scale-110 active:scale-95 ${
+                            isHighlighted
+                              ? "text-yellow-400 dark:text-yellow-500"
+                              : "text-slate-300 dark:text-slate-700"
+                          }`}
+                        >
+                          ★
+                        </button>
+                      );
+                    })}
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Your feedback (1-5 stars) is securely submitted directly to the Central Audit Team.</p>
                 </div>

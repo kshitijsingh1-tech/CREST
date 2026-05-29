@@ -99,6 +99,7 @@ class Complaint(Base):
     draft_reply     = Column(Text)
     draft_metadata  = Column(JSONB, default=dict)
     draft_approved  = Column(Boolean, default=False)
+    rating          = Column(Integer, nullable=True)
 
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
     updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
