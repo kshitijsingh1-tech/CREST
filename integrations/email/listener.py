@@ -136,7 +136,6 @@ def _process_email(mail: imaplib.IMAP4_SSL, uid: str) -> None:
                     "body": body,
                     "subject": subject,
                     "external_ref": msg_id,
-                    "region_id": 1
                 },
                 timeout=30.0
             )
