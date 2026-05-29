@@ -105,10 +105,30 @@ export default function CrestLoginPage() {
           throw err;
         }
       }
-      
+
+      // Decode role from JWT to determine correct landing page
+      const roleRedirect = (() => {
+        try {
+          const token = Cookies.get("crest_token");
+          if (!token) return "/ub_CREST/home";
+          const parts = token.split(".");
+          let base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+          const rem = base64.length % 4;
+          if (rem === 2) base64 += "==";
+          else if (rem === 3) base64 += "=";
+          const payload = JSON.parse(atob(base64));
+          if (payload.role === "SUPER_ADMIN") return "/ub_CREST/home";
+          if (payload.role === "SUB_ADMIN") return "/ub_CREST/queue";
+          if (payload.role === "EMPLOYEE") return "/ub_CREST/queue";
+          return "/ub_CREST/home";
+        } catch {
+          return "/ub_CREST/home";
+        }
+      })();
+
       setSuccess("Operational clearance confirmed!");
       setTimeout(() => {
-        window.location.assign("/ub_CREST/home");
+        window.location.assign(roleRedirect);
       }, 600);
     } catch (err) {
       const status = getApiErrorStatus(err);
@@ -181,10 +201,6 @@ export default function CrestLoginPage() {
                   className="w-full pl-10 pr-4 py-4 dark:bg-black/80 bg-white border dark:border-white/10 border-gray-200 rounded-2xl focus:ring-2 dark:focus:ring-blue-500 focus:ring-blue-600 dark:text-white text-black outline-none transition-all text-sm"
                   placeholder="admin@unionbank.com"
                 />
-              </div>
-              <div className="mt-2 flex flex-wrap gap-x-2 text-[9px] dark:text-slate-400 text-slate-500 font-medium">
-                <span className="font-bold uppercase tracking-wider text-[8px] dark:text-slate-500 text-slate-400">Autofill:</span>
-                <button type="button" onClick={() => { setEmail("admin@unionbank.com"); setPassword("admin123"); }} className="underline hover:text-blue-500 transition-colors">Super Admin (admin@unionbank.com / admin123)</button>
               </div>
             </div>
 

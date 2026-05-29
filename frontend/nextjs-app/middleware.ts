@@ -66,17 +66,36 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // 1b. If trying to access management dashboard but user is a Regional Officer (EMPLOYEE), block access
-  if (pathname.startsWith('/ub_CREST/management') && hasValidToken) {
+  // 1b. Role-based page access enforcement
+  if (hasValidToken) {
     try {
-      const parts = token.split('.');
-      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const parts = token!.split('.');
+      let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const remainder = base64.length % 4;
+      if (remainder === 2) base64 += '==';
+      else if (remainder === 3) base64 += '=';
       const payload = JSON.parse(atob(base64));
-      if (payload.role === 'EMPLOYEE') {
-        return NextResponse.redirect(new URL('/ub_CREST/home', request.url));
+      const role: string = payload.role ?? '';
+
+      // EMPLOYEE: can only access /queue — redirect from home, management, analytics
+      if (role === 'EMPLOYEE') {
+        if (
+          pathname.startsWith('/ub_CREST/home') ||
+          pathname.startsWith('/ub_CREST/management') ||
+          pathname.startsWith('/ub_CREST/analytics')
+        ) {
+          return NextResponse.redirect(new URL('/ub_CREST/queue', request.url));
+        }
+      }
+
+      // SUB_ADMIN: can access home and queue but not management (super admin only)
+      if (role === 'SUB_ADMIN') {
+        if (pathname.startsWith('/ub_CREST/management')) {
+          return NextResponse.redirect(new URL('/ub_CREST/home', request.url));
+        }
       }
     } catch (e) {
-      // Fallback
+      // Token decode failed — fall through, protected route check above will handle it
     }
   }
 
