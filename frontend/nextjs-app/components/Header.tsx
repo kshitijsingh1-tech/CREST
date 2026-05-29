@@ -10,9 +10,23 @@ import { logout } from '@/lib/api';
 export default function Header({ theme, toggleTheme }: { theme: "dark" | "light", toggleTheme: () => void }) {
   const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsAuthenticated(!!Cookies.get("crest_token"));
+    const token = Cookies.get("crest_token");
+    setIsAuthenticated(!!token);
+    if (token) {
+      try {
+        const parts = token.split('.');
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(atob(base64));
+        setRole(payload.role);
+      } catch (e) {
+        setRole(null);
+      }
+    } else {
+      setRole(null);
+    }
   }, [pathname]);
   
   // Hide the admin header entirely for public customer pages, or if accessing docs without an active admin session
@@ -45,7 +59,9 @@ export default function Header({ theme, toggleTheme }: { theme: "dark" | "light"
       <nav className="hidden lg:flex items-center gap-6">
         <Link href="/ub_CREST/home" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Home</Link>
         <Link href="/ub_CREST/analytics" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Analytics</Link>
-        <Link href="/ub_CREST/management" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Management</Link>
+        {role !== 'EMPLOYEE' && (
+          <Link href="/ub_CREST/management" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Management</Link>
+        )}
         <Link href="/ub_CREST/queue" className="text-sm font-bold transition-all duration-300 dark:text-blue-100 dark:hover:text-red-400 text-black hover:text-red-600">Live Queue</Link>
         <Link href="/ub_CREST/docs" className="text-sm font-bold transition-all duration-300 dark:text-cyan-300 dark:hover:text-red-400 text-cyan-700 hover:text-red-600">Docs</Link>
       </nav>

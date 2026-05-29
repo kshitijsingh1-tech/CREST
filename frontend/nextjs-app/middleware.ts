@@ -66,6 +66,20 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
+  // 1b. If trying to access management dashboard but user is a Regional Officer (EMPLOYEE), block access
+  if (pathname.startsWith('/ub_CREST/management') && hasValidToken) {
+    try {
+      const parts = token.split('.');
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(base64));
+      if (payload.role === 'EMPLOYEE') {
+        return NextResponse.redirect(new URL('/ub_CREST/home', request.url));
+      }
+    } catch (e) {
+      // Fallback
+    }
+  }
+
   // If we explicitly arrived here to recover from an invalid session, expire the stale token first.
   if (pathname === '/ub_CREST/login' && token && (isRecovered || isExpired)) {
     const response = NextResponse.next();

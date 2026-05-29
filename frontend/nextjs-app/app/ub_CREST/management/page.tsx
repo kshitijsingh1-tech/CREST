@@ -14,6 +14,10 @@ export default async function ManagementConsolePage() {
     redirect("/ub_CREST/login?recovered=1");
   }
 
+  if (user.role === "EMPLOYEE") {
+    redirect("/ub_CREST/home");
+  }
+
   // Ensure only authenticated staff can view team stats
   const [users, regions] = await Promise.all([
     listUsers().catch(() => []),

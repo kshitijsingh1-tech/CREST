@@ -131,6 +131,7 @@ export default async function CommandCenterHome() {
             </Link>
 
             {/* Management */}
+            {user.role !== "EMPLOYEE" && (
             <Link href="/ub_CREST/management" className="group rounded-3xl p-6 border transition-all duration-500 relative overflow-hidden hover:-translate-y-1
               dark:bg-black/80 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl dark:hover:border-emerald-500/30 dark:hover:shadow-[0_0_30px_rgba(16,185,129,0.12)]
               bg-white border-gray-200 shadow-xl hover:border-emerald-400 hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]">
@@ -145,6 +146,7 @@ export default async function CommandCenterHome() {
               <h3 className="text-lg font-black uppercase tracking-wider mb-2 dark:text-white text-gray-900">Management Console</h3>
               <p className="text-xs font-medium leading-relaxed dark:text-slate-400 text-gray-500">Oversee junior officers, review assigned regions, and manage personnel access across branches.</p>
             </Link>
+            )}
 
             {/* Analytics */}
             <Link href="/ub_CREST/analytics" className="group rounded-3xl p-6 border transition-all duration-500 relative overflow-hidden hover:-translate-y-1
