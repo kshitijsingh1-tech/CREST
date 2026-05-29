@@ -58,6 +58,58 @@ const CHANNEL_ICONS: Record<string, React.ReactNode> = {
   voice: <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>,
 };
 
+const CATEGORY_THEMES = [
+  {
+    bg: "bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30",
+    border: "border-l-indigo-400 dark:border-l-indigo-500",
+    text: "text-indigo-700 dark:text-indigo-300",
+  },
+  {
+    bg: "bg-emerald-50/40 dark:bg-emerald-950/20 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30",
+    border: "border-l-emerald-400 dark:border-l-emerald-500",
+    text: "text-emerald-700 dark:text-emerald-300",
+  },
+  {
+    bg: "bg-amber-50/40 dark:bg-amber-950/20 hover:bg-amber-100/50 dark:hover:bg-amber-900/30",
+    border: "border-l-amber-400 dark:border-l-amber-500",
+    text: "text-amber-700 dark:text-amber-300",
+  },
+  {
+    bg: "bg-rose-50/40 dark:bg-rose-950/20 hover:bg-rose-100/50 dark:hover:bg-rose-900/30",
+    border: "border-l-rose-400 dark:border-l-rose-500",
+    text: "text-rose-700 dark:text-rose-300",
+  },
+  {
+    bg: "bg-sky-50/40 dark:bg-sky-950/20 hover:bg-sky-100/50 dark:hover:bg-sky-900/30",
+    border: "border-l-sky-400 dark:border-l-sky-500",
+    text: "text-sky-700 dark:text-sky-300",
+  },
+  {
+    bg: "bg-purple-50/40 dark:bg-purple-950/20 hover:bg-purple-100/50 dark:hover:bg-purple-900/30",
+    border: "border-l-purple-400 dark:border-l-purple-500",
+    text: "text-purple-700 dark:text-purple-300",
+  },
+  {
+    bg: "bg-teal-50/40 dark:bg-teal-950/20 hover:bg-teal-100/50 dark:hover:bg-teal-900/30",
+    border: "border-l-teal-400 dark:border-l-teal-500",
+    text: "text-teal-700 dark:text-teal-300",
+  },
+  {
+    bg: "bg-pink-50/40 dark:bg-pink-950/20 hover:bg-pink-100/50 dark:hover:bg-pink-900/30",
+    border: "border-l-pink-400 dark:border-l-pink-500",
+    text: "text-pink-700 dark:text-pink-300",
+  }
+];
+
+const getCategoryTheme = (category: string) => {
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) {
+    hash = category.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % CATEGORY_THEMES.length;
+  return CATEGORY_THEMES[index];
+};
+
 function hoursUntilSLA(deadline: string | null): string {
   if (!deadline) return "—";
   const diff = new Date(deadline).getTime() - Date.now();
@@ -187,6 +239,16 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
     }
     return 0;
   });
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const c of sortedQueue) {
+      if (c.category && c.category.toLowerCase() !== "general") {
+        counts[c.category] = (counts[c.category] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [sortedQueue]);
 
   return (
     <div className="w-full">
@@ -318,150 +380,171 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-white/5">
-            {sortedQueue.map((c, idx) => (
-              <tr 
-                key={c.id} 
-                className={`${idx % 2 === 0 ? "bg-white dark:bg-black" : "bg-slate-50 dark:bg-white/5"} ${c.severity === 0 ? "animate-p0-glow border-l-4 border-l-red-500" : "border-l-4 border-l-transparent"}`}
-              >
-                {/* Priority score */}
-                <td className="px-3 py-3 font-mono text-xs text-indigo-700 dark:text-indigo-400 font-bold">
-                  {Number(c.priority_score).toFixed(2)}
-                </td>
+            {sortedQueue.map((c, idx) => {
+              const isDuplicateCategory = c.category && categoryCounts[c.category] > 1;
+              const theme = isDuplicateCategory ? getCategoryTheme(c.category || "") : null;
+              
+              return (
+                <tr 
+                  key={c.id} 
+                  className={`
+                    transition-all duration-150 relative border-l-4
+                    ${theme ? theme.bg : (idx % 2 === 0 ? "bg-white dark:bg-black" : "bg-slate-50 dark:bg-white/5")} 
+                    ${c.severity === 0 ? "animate-p0-glow border-l-red-500" : (theme ? theme.border : "border-l-transparent")}
+                  `}
+                >
+                  {/* Priority score */}
+                  <td className="px-3 py-3 font-mono text-xs text-indigo-700 dark:text-indigo-400 font-bold">
+                    {Number(c.priority_score).toFixed(2)}
+                  </td>
 
-                {/* Severity badge */}
-                <td className="px-3 py-3">
-                  <span className={`inline-block px-2 py-0.5 text-xs font-bold rounded border ${SEVERITY_BADGE[c.severity ?? 4]}`}>
-                    {SEVERITY_LABEL[c.severity ?? 4]}
-                  </span>
-                </td>
-
-                {/* Category */}
-                <td className="px-3 py-3 text-gray-800 dark:text-gray-200 font-medium">
-                  {c.category ?? "—"}
-                  {c.sub_category && (
-                    <span className="block text-gray-400 dark:text-gray-500 text-xs">{c.sub_category}</span>
-                  )}
-                </td>
-
-                {/* Customer */}
-                <td className="px-3 py-3 text-gray-700 dark:text-gray-300">
-                  <span className="font-mono text-xs">{c.customer_id}</span>
-                  {c.customer_name && (
-                    <span className="block text-gray-400 dark:text-gray-500 text-xs">{c.customer_name}</span>
-                  )}
-                </td>
-
-                {/* Channel */}
-                <td className="px-3 py-3">
-                  <div className="flex items-center gap-2">
-                    {CHANNEL_ICONS[c.channel] || <span className="w-4 h-4 bg-gray-200 rounded-sm" />}
-                    <span className="text-gray-600 dark:text-gray-400">
-                      {c.channel === "web" ? "Public Portal" : c.channel.charAt(0).toUpperCase() + c.channel.slice(1)}
+                  {/* Severity badge */}
+                  <td className="px-3 py-3">
+                    <span className={`inline-block px-2 py-0.5 text-xs font-bold rounded border ${SEVERITY_BADGE[c.severity ?? 4]}`}>
+                      {SEVERITY_LABEL[c.severity ?? 4]}
                     </span>
-                  </div>
-                </td>
+                  </td>
 
-                {/* Anger score */}
-                <td className="px-3 py-3">
-                  <div className="flex items-center gap-1">
-                    <div className="w-16 bg-gray-200 dark:bg-gray-800 rounded-full h-1.5">
-                      <div
-                        className="h-1.5 rounded-full"
-                        style={{
-                          width: `${(c.anger_score ?? 0) * 100}%`,
-                          backgroundColor: (c.anger_score ?? 0) > 0.8 ? "#ef4444"
-                            : (c.anger_score ?? 0) > 0.5 ? "#f97316" : "#22c55e",
-                        }}
-                      />
-                    </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{((c.anger_score ?? 0) * 100).toFixed(0)}%</span>
-                  </div>
-                </td>
-
-                {/* SLA */}
-                <td className={`px-3 py-3 text-xs ${SLA_COLOR[c.sla_status]}`}>
-                  {hoursUntilSLA(c.sla_deadline)}
-                </td>
-
-                {/* Status */}
-                <td className="px-3 py-3">
-                  <span className="capitalize text-xs text-gray-600 dark:text-gray-400">{c.status.replace("_", " ")}</span>
-                </td>
-
-                {/* Employee */}
-                <td className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
-                  {c.assigned_employee_id ? (
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-[10px] text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800">
-                        {c.assigned_employee_id}
-                      </div>
-                      <span>Agent ID</span>
-                      {userRole !== "EMPLOYEE" && c.assigned_employee_id !== currentUserId && (
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            try {
-                              if (!currentUserId) return;
-                              await import("@/lib/api").then(api => api.assignComplaint(c.id, currentUserId));
-                              refresh();
-                            } catch (err) { console.error(err); }
-                          }}
-                          className="ml-2 text-[10px] px-2 py-0.5 bg-red-50 text-red-600 border border-red-200 rounded font-bold uppercase hover:bg-red-100 transition-colors"
-                        >
-                          Takeover
-                        </button>
+                  {/* Category */}
+                  <td className="px-3 py-3 text-gray-800 dark:text-gray-200 font-medium">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span>{c.category ?? "—"}</span>
+                      {isDuplicateCategory && (
+                        <span className={`
+                          inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md
+                          bg-white/80 dark:bg-black/40 border border-current shadow-sm ${theme?.text}
+                          animate-pulse
+                        `}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-current animate-ping" />
+                          Cluster ({categoryCounts[c.category || ""]})
+                        </span>
                       )}
                     </div>
-                  ) : userRole === "EMPLOYEE" ? (
-                    <span className="text-gray-400 italic">Unassigned</span>
-                  ) : (
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        try {
-                          if (!currentUserId) return;
-                          await import("@/lib/api").then(api => api.assignComplaint(c.id, currentUserId));
-                          refresh();
-                        } catch (err) { console.error(err); }
-                      }}
-                      className="text-[10px] px-2 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-500 border border-amber-200 dark:border-amber-900/50 rounded-lg font-black uppercase tracking-tighter hover:bg-amber-100 transition-colors"
-                    >
-                      Assign to Me
-                    </button>
-                  )}
-                </td>
+                    {c.sub_category && (
+                      <span className="block text-gray-400 dark:text-gray-500 text-xs mt-0.5">{c.sub_category}</span>
+                    )}
+                  </td>
 
-                {/* Actions */}
-                <td className="px-3 py-3 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    {c.draft_reply && c.status === "OPEN" && (
+                  {/* Customer */}
+                  <td className="px-3 py-3 text-gray-700 dark:text-gray-300">
+                    <span className="font-mono text-xs">{c.customer_id}</span>
+                    {c.customer_name && (
+                      <span className="block text-gray-400 dark:text-gray-500 text-xs">{c.customer_name}</span>
+                    )}
+                  </td>
+
+                  {/* Channel */}
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      {CHANNEL_ICONS[c.channel] || <span className="w-4 h-4 bg-gray-200 rounded-sm" />}
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {c.channel === "web" ? "Public Portal" : c.channel.charAt(0).toUpperCase() + c.channel.slice(1)}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Anger score */}
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-1">
+                      <div className="w-16 bg-gray-200 dark:bg-gray-800 rounded-full h-1.5">
+                        <div
+                          className="h-1.5 rounded-full"
+                          style={{
+                            width: `${(c.anger_score ?? 0) * 100}%`,
+                            backgroundColor: (c.anger_score ?? 0) > 0.8 ? "#ef4444"
+                              : (c.anger_score ?? 0) > 0.5 ? "#f97316" : "#22c55e",
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{((c.anger_score ?? 0) * 100).toFixed(0)}%</span>
+                    </div>
+                  </td>
+
+                  {/* SLA */}
+                  <td className={`px-3 py-3 text-xs ${SLA_COLOR[c.sla_status]}`}>
+                    {hoursUntilSLA(c.sla_deadline)}
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-3 py-3">
+                    <span className="capitalize text-xs text-gray-600 dark:text-gray-400">{c.status.replace("_", " ")}</span>
+                  </td>
+
+                  {/* Employee */}
+                  <td className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
+                    {c.assigned_employee_id ? (
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-[10px] text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800">
+                          {c.assigned_employee_id}
+                        </div>
+                        <span>Agent ID</span>
+                        {userRole !== "EMPLOYEE" && c.assigned_employee_id !== currentUserId && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                if (!currentUserId) return;
+                                await import("@/lib/api").then(api => api.assignComplaint(c.id, currentUserId));
+                                refresh();
+                              } catch (err) { console.error(err); }
+                            }}
+                            className="ml-2 text-[10px] px-2 py-0.5 bg-red-50 text-red-600 border border-red-200 rounded font-bold uppercase hover:bg-red-100 transition-colors"
+                          >
+                            Takeover
+                          </button>
+                        )}
+                      </div>
+                    ) : userRole === "EMPLOYEE" ? (
+                      <span className="text-gray-400 italic">Unassigned</span>
+                    ) : (
                       <button
                         onClick={async (e) => {
                           e.stopPropagation();
-                          if (!confirm("Quick Resolve using AI Draft?")) return;
                           try {
-                            const userStr = localStorage.getItem("crest_user");
-                            const user = userStr ? JSON.parse(userStr) : { name: "System" };
-                            await import("@/lib/api").then(api => api.resolveComplaint(c.id, user.name, "Resolved via Quick-Action Dashboard"));
+                            if (!currentUserId) return;
+                            await import("@/lib/api").then(api => api.assignComplaint(c.id, currentUserId));
                             refresh();
                           } catch (err) { console.error(err); }
                         }}
-                        title="Quick Resolve with AI Draft"
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white transition-all border border-green-500/20"
+                        className="text-[10px] px-2 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-500 border border-amber-200 dark:border-amber-900/50 rounded-lg font-black uppercase tracking-tighter hover:bg-amber-100 transition-colors"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                        Assign to Me
                       </button>
                     )}
-                    <Link
-                      href={`/complaints/${c.id}`}
-                      className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:bg-indigo-600 hover:text-white transition-all"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                    </Link>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-3 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {c.draft_reply && c.status === "OPEN" && (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!confirm("Quick Resolve using AI Draft?")) return;
+                            try {
+                              const userStr = localStorage.getItem("crest_user");
+                              const user = userStr ? JSON.parse(userStr) : { name: "System" };
+                              await import("@/lib/api").then(api => api.resolveComplaint(c.id, user.name, "Resolved via Quick-Action Dashboard"));
+                              refresh();
+                            } catch (err) { console.error(err); }
+                          }}
+                          title="Quick Resolve with AI Draft"
+                          className="w-8 h-8 flex items-center justify-center rounded-full bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white transition-all border border-green-500/20"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                        </button>
+                      )}
+                      <Link
+                        href={`/complaints/${c.id}`}
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:bg-indigo-600 hover:text-white transition-all"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
