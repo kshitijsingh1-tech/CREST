@@ -481,38 +481,45 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
                   {/* Employee */}
                   <td className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
                     {userRole === "SUPER_ADMIN" || userRole === "SUB_ADMIN" ? (
-                      <select
-                        value={c.assigned_employee_id || ""}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={async (e) => {
-                          const val = e.target.value;
-                          if (!val) return;
-                          try {
-                            await import("@/lib/api").then(api => api.assignComplaint(c.id, Number(val)));
-                            refresh();
-                          } catch (err) {
-                            console.error(err);
-                          }
-                        }}
-                        className="text-[11px] bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded px-2 py-1 outline-none text-gray-700 dark:text-slate-300 max-w-[170px] truncate shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-bold"
-                      >
-                        {!c.assigned_employee_id && (
-                          <option value="">Select Officer...</option>
-                        )}
-                        {c.assigned_employee_id && !users.some(u => u.id === c.assigned_employee_id) && (
-                          <option value={c.assigned_employee_id}>
-                            Officer ID {c.assigned_employee_id}
-                          </option>
-                        )}
-                        {users
-                          .filter(u => u.role === "EMPLOYEE" && u.is_active)
-                          .map(u => (
-                            <option key={u.id} value={u.id}>
-                              {u.name} ({regions.find(r => r.id === u.region_id)?.name || "HQ"})
+                      <div className="relative group max-w-[170px]">
+                        <select
+                          value={c.assigned_employee_id || ""}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={async (e) => {
+                            const val = e.target.value;
+                            if (!val) return;
+                            try {
+                              await import("@/lib/api").then(api => api.assignComplaint(c.id, Number(val)));
+                              refresh();
+                            } catch (err) {
+                              console.error(err);
+                            }
+                          }}
+                          className="appearance-none block w-full bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 rounded-lg pl-2.5 pr-7 py-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/50 outline-none cursor-pointer shadow-sm"
+                        >
+                          {!c.assigned_employee_id && (
+                            <option value="">Select Officer...</option>
+                          )}
+                          {c.assigned_employee_id && !users.some(u => u.id === c.assigned_employee_id) && (
+                            <option value={c.assigned_employee_id}>
+                              Officer ID {c.assigned_employee_id}
                             </option>
-                          ))
-                        }
-                      </select>
+                          )}
+                          {users
+                            .filter(u => u.role === "EMPLOYEE" && u.is_active)
+                            .map(u => (
+                              <option key={u.id} value={u.id}>
+                                {u.name} ({regions.find(r => r.id === u.region_id)?.name || "HQ"})
+                              </option>
+                            ))
+                          }
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-1.5 pointer-events-none text-gray-400">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
                     ) : c.assigned_employee_id ? (
                       <div className="flex items-center gap-1.5">
                         <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-[10px] text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800">
