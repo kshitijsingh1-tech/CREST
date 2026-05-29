@@ -478,58 +478,42 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
                     <span className="capitalize text-xs text-gray-600 dark:text-gray-400">{c.status.replace("_", " ")}</span>
                   </td>
 
-                  {/* Employee */}
+                  {/* Employee — read-only; assignment is handled automatically */}
                   <td className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
-                    {userRole === "SUPER_ADMIN" || userRole === "SUB_ADMIN" ? (
-                      <div className="relative group max-w-[170px]">
-                        <select
-                          value={c.assigned_employee_id || ""}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={async (e) => {
-                            const val = e.target.value;
-                            if (!val) return;
-                            try {
-                              await import("@/lib/api").then(api => api.assignComplaint(c.id, Number(val)));
-                              refresh();
-                            } catch (err) {
-                              console.error(err);
-                            }
-                          }}
-                          className="appearance-none block w-full bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 rounded-lg pl-2.5 pr-7 py-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/50 outline-none cursor-pointer shadow-sm"
-                        >
-                          {!c.assigned_employee_id && (
-                            <option value="">Select Officer...</option>
-                          )}
-                          {c.assigned_employee_id && !users.some(u => u.id === c.assigned_employee_id) && (
-                            <option value={c.assigned_employee_id}>
-                              Officer ID {c.assigned_employee_id}
-                            </option>
-                          )}
-                          {users
-                            .filter(u => u.role === "EMPLOYEE" && u.is_active)
-                            .map(u => (
-                              <option key={u.id} value={u.id}>
-                                {u.name} ({regions.find(r => r.id === u.region_id)?.name || "HQ"})
-                              </option>
-                            ))
-                          }
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center px-1.5 pointer-events-none text-gray-400">
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    {(() => {
+                      const assignedUser = users.find(u => u.id === c.assigned_employee_id);
+                      if (assignedUser) {
+                        return (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-[10px] text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800 shrink-0">
+                              {assignedUser.name?.charAt(0).toUpperCase() ?? "#"}
+                            </div>
+                            <span className="font-medium text-gray-700 dark:text-gray-300 truncate max-w-[120px]" title={assignedUser.name}>
+                              {assignedUser.name}
+                            </span>
+                          </div>
+                        );
+                      }
+                      if (c.assigned_employee_id) {
+                        return (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-[10px] text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800 shrink-0">
+                              #
+                            </div>
+                            <span className="text-gray-500 dark:text-gray-400">Officer {c.assigned_employee_id}</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <span className="inline-flex items-center gap-1 text-amber-500 dark:text-amber-400 italic text-[11px]">
+                          <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                           </svg>
-                        </div>
-                      </div>
-                    ) : c.assigned_employee_id ? (
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-[10px] text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800">
-                          {c.assigned_employee_id}
-                        </div>
-                        <span>Agent ID</span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400 italic">Unassigned</span>
-                    )}
+                          Auto-Routing...
+                        </span>
+                      );
+                    })()}
                   </td>
 
                   {/* Actions */}

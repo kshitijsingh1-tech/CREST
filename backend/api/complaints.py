@@ -54,48 +54,71 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
     body = payload_dict.get("body", "")
     subject = payload_dict.get("subject", "")
     language = payload_dict.get("language", "en")
-
-    # ── Check for region update follow-up ──
+    # ── Helpers ──
+    import re as _re
     from backend.models.complaint import Complaint
     from backend.models.user import Region
-    
+    from backend.services.complaint_service import find_least_loaded_employee
+
     customer_id = payload_dict.get("customer_id", "unknown")
     channel = (payload_dict.get("channel") or "app").lower().strip()
-    
+
+    def _detect_region_from_text(text: str, regions: list) -> object | None:
+        """
+        Strict token-level region detection.
+        Intentionally avoids substring containment ('r_name in body') because that
+        false-matches region names embedded in quoted email threads (e.g. a previous
+        confirmation saying 'Delhi' appears in the reply body when user writes 'Mumbai').
+        """
+        cleaned = text.strip().lower()
+        tokens = {t for t in _re.split(r"[\s,.!?;:-]+", cleaned) if t}
+        for r in regions:
+            words = {w for w in r.name.lower().strip().split() if len(w) >= 3}
+            if words & tokens:
+                return r
+        return None
+
+    # ── Check for region update follow-up (existing complaint, second message) ──
     if customer_id != "unknown" and db is not None:
         open_complaint = (
             db.query(Complaint)
             .filter(Complaint.customer_id == customer_id)
-            .filter(Complaint.status == "open")
-            .filter(Complaint.region_id == None)
+            .filter(Complaint.status.in_(["open", "in_progress"]))
+            .filter(Complaint.region_id.is_(None))
             .order_by(Complaint.created_at.desc())
             .first()
         )
         if open_complaint:
-            # Check if body mentions any of our active regions (Delhi, Mumbai, Bangalore)
             regions = db.query(Region).all()
-            matched_region = None
-            body_lower = body.lower()
-            for r in regions:
-                if r.name.lower() in body_lower:
-                    matched_region = r
-                    break
-            
+            matched_region = _detect_region_from_text(body, regions)
+
             if matched_region:
-                open_complaint.region_id = matched_region.id
-                db.commit()
-                
+                try:
+                    open_complaint.region_id = matched_region.id
+                    assigned_employee_id = find_least_loaded_employee(db, matched_region.id)
+                    if assigned_employee_id:
+                        open_complaint.assigned_employee_id = assigned_employee_id
+                        from datetime import datetime, timezone
+                        open_complaint.assigned_at = datetime.now(timezone.utc)
+                        open_complaint.status = "in_progress"
+                    db.commit()
+                    logger.info(
+                        f"ingest_complaint_logic: follow-up region '{matched_region.name}' "
+                        f"set on existing complaint {open_complaint.id} for customer {customer_id}"
+                    )
+                except Exception as upd_err:
+                    logger.error(f"ingest_complaint_logic: failed to update follow-up region: {upd_err}")
+                    db.rollback()
+
                 ref_id = str(open_complaint.id)
                 tracking_link = build_tracking_link(ref_id, customer_id)
-
                 confirm_msg = (
                     f"Thank you! We have successfully routed your ticket to our {matched_region.name} branch.\n\n"
                     f"Ticket Ref: {ref_id}\n\n"
                     f"Track your live grievance status here:\n"
                     f"{tracking_link}\n\n"
-                    f"Thank you! 🙏"
+                    "Thank you! 🙏"
                 )
-                
                 try:
                     if channel == "email":
                         from integrations.email.sender import send_customer_reply
@@ -121,10 +144,7 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
                         )
                     elif channel == "instagram":
                         from integrations.instagram.sender import send_instagram_dm
-                        send_instagram_dm(
-                            customer_username=customer_id,
-                            reply_text=confirm_msg,
-                        )
+                        send_instagram_dm(customer_username=customer_id, reply_text=confirm_msg)
                     elif channel == "telegram":
                         from integrations.telegram.sender import send_telegram_reply
                         send_telegram_reply(
@@ -134,7 +154,7 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
                         )
                 except Exception as auto_err:
                     logger.error(f"Failed to dispatch region confirmation response: {auto_err}")
-                
+
                 return open_complaint
     
     # Bidirectional Pivot-Translation for regional Indian languages (MeitY Bhashini Gateway) abhi ke liye google translate fallback
@@ -150,6 +170,21 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
         else:
             subject_for_ai = subject
     
+    # ── Auto-detect region from the NEW complaint body at ingestion time ──
+    # If the customer already mentioned their city/region in the complaint itself,
+    # we route it immediately without requiring a follow-up reply.
+    auto_region_id = payload_dict.get("region_id")
+    if not auto_region_id and db is not None:
+        regions_all = db.query(Region).all()
+        # Check both the original body and the translated version for broader coverage
+        detected = _detect_region_from_text(body, regions_all) or _detect_region_from_text(body_for_ai, regions_all)
+        if detected:
+            auto_region_id = detected.id
+            logger.info(
+                f"ingest_complaint_logic: auto-detected region '{detected.name}' "
+                f"from new complaint body for customer {customer_id}"
+            )
+
     classification  = classify(body_for_ai)
     entities        = extract(body_for_ai)
     embedding       = embed(body_for_ai)
@@ -189,9 +224,27 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
         named_entities= entities.to_dict(),
         draft_reply   = draft_reply_final,  # Store the back-translated draft!
         draft_metadata= rag_result["sources"],
-        region_id     = payload_dict.get("region_id"),
+        region_id     = auto_region_id,
     )
     
+    # ── Auto-assign least-loaded employee if region was detected at ingestion ──
+    if auto_region_id and db is not None:
+        try:
+            assigned_employee_id = find_least_loaded_employee(db, auto_region_id)
+            if assigned_employee_id:
+                complaint.assigned_employee_id = assigned_employee_id
+                from datetime import datetime, timezone
+                complaint.assigned_at = datetime.now(timezone.utc)
+                complaint.status = "in_progress"
+                db.commit()
+                db.refresh(complaint)
+                logger.info(
+                    f"ingest_complaint_logic: auto-assigned complaint {complaint.id} "
+                    f"to employee {assigned_employee_id} in region {auto_region_id}"
+                )
+        except Exception as assign_err:
+            logger.error(f"ingest_complaint_logic: auto-assignment failed: {assign_err}")
+
     try:
         await broadcast_queue_update()
         await broadcast_new_complaint(str(complaint.id), complaint.severity, complaint.category)
