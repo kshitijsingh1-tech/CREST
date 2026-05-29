@@ -387,6 +387,7 @@ def priority_queue(
             "sla_status":     c.sla_status,
             "status":         c.status,
             "region_id":      c.region_id,
+            "region_name":    c.region.name if c.region else None,
             "assigned_employee_id": c.assigned_employee_id,
             "is_escalated":   c.is_escalated,
             "draft_approved": c.draft_approved,
@@ -449,6 +450,7 @@ def get_complaint(
         "sla_status":      c.sla_status,
         "status":          c.status,
         "region_id":       c.region_id,
+        "region_name":      c.region.name if c.region else None,
         "assigned_employee_id": c.assigned_employee_id,
         "is_escalated":    c.is_escalated,
         "is_duplicate":    c.is_duplicate,
@@ -698,11 +700,12 @@ async def try_update_complaint_region(db: Session, channel_name: str, customer_i
     from backend.services.complaint_service import find_least_loaded_employee, _write_audit
     
     # 1. Look up open complaints for this customer on this channel without a region
+    cust_id_clean = str(customer_id).replace("whatsapp:", "")
     complaint = (
         db.query(Complaint)
         .join(Complaint.channel)
         .filter(
-            Complaint.customer_id == str(customer_id),
+            Complaint.customer_id.in_([cust_id_clean, "whatsapp:" + cust_id_clean]),
             Channel.name.ilike(channel_name),
             Complaint.region_id.is_(None),
             Complaint.status.in_(["open", "in_progress"])

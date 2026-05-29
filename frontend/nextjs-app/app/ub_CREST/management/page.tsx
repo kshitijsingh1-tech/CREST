@@ -100,7 +100,7 @@ export default async function ManagementConsolePage() {
             </div>
             
             {(user.role === "SUPER_ADMIN" || user.role === "SUB_ADMIN") && (
-              <AddOfficerModal regions={regions} currentUserRole={user.role} />
+              <AddOfficerModal regions={regions} currentUserRole={user.role} currentUserRegionId={user.region_id} />
             )}
           </div>
         </div>

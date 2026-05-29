@@ -83,6 +83,9 @@ async def sms_webhook(
 
         # Check if they are responding to a nodal region request
         channel_name = "whatsapp" if from_number.startswith("whatsapp:") else "sms"
+        if from_number.startswith("whatsapp:"):
+            from_number = from_number.replace("whatsapp:", "")
+
         from backend.api.complaints import try_update_complaint_region
         if await try_update_complaint_region(db, channel_name, from_number, text):
             return Response(content="<Response></Response>", media_type="application/xml")

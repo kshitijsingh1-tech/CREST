@@ -152,6 +152,8 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
     }
   }, [searchParams]);
 
+  const [users, setUsers] = useState<any[]>([]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("crest_user");
@@ -160,6 +162,12 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
            const u = JSON.parse(stored);
            setUserRole(u.role || "");
            setCurrentUserId(u.user_id || null);
+
+           if (u.role === "SUPER_ADMIN" || u.role === "SUB_ADMIN") {
+             import("@/lib/api").then(api => {
+               api.listUsers().then(setUsers).catch(console.error);
+             });
+           }
         } catch {}
       }
     }
@@ -472,44 +480,48 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
 
                   {/* Employee */}
                   <td className="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
-                    {c.assigned_employee_id ? (
+                    {userRole === "SUPER_ADMIN" || userRole === "SUB_ADMIN" ? (
+                      <select
+                        value={c.assigned_employee_id || ""}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={async (e) => {
+                          const val = e.target.value;
+                          if (!val) return;
+                          try {
+                            await import("@/lib/api").then(api => api.assignComplaint(c.id, Number(val)));
+                            refresh();
+                          } catch (err) {
+                            console.error(err);
+                          }
+                        }}
+                        className="text-[11px] bg-slate-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded px-2 py-1 outline-none text-gray-700 dark:text-slate-300 max-w-[170px] truncate shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-bold"
+                      >
+                        {!c.assigned_employee_id && (
+                          <option value="">Select Officer...</option>
+                        )}
+                        {c.assigned_employee_id && !users.some(u => u.id === c.assigned_employee_id) && (
+                          <option value={c.assigned_employee_id}>
+                            Officer ID {c.assigned_employee_id}
+                          </option>
+                        )}
+                        {users
+                          .filter(u => u.role === "EMPLOYEE" && u.is_active)
+                          .map(u => (
+                            <option key={u.id} value={u.id}>
+                              {u.name} ({regions.find(r => r.id === u.region_id)?.name || "HQ"})
+                            </option>
+                          ))
+                        }
+                      </select>
+                    ) : c.assigned_employee_id ? (
                       <div className="flex items-center gap-1.5">
                         <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-[10px] text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800">
                           {c.assigned_employee_id}
                         </div>
                         <span>Agent ID</span>
-                        {userRole !== "EMPLOYEE" && c.assigned_employee_id !== currentUserId && (
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                if (!currentUserId) return;
-                                await import("@/lib/api").then(api => api.assignComplaint(c.id, currentUserId));
-                                refresh();
-                              } catch (err) { console.error(err); }
-                            }}
-                            className="ml-2 text-[10px] px-2 py-0.5 bg-red-50 text-red-600 border border-red-200 rounded font-bold uppercase hover:bg-red-100 transition-colors"
-                          >
-                            Takeover
-                          </button>
-                        )}
                       </div>
-                    ) : userRole === "EMPLOYEE" ? (
-                      <span className="text-gray-400 italic">Unassigned</span>
                     ) : (
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            if (!currentUserId) return;
-                            await import("@/lib/api").then(api => api.assignComplaint(c.id, currentUserId));
-                            refresh();
-                          } catch (err) { console.error(err); }
-                        }}
-                        className="text-[10px] px-2 py-1 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-500 border border-amber-200 dark:border-amber-900/50 rounded-lg font-black uppercase tracking-tighter hover:bg-amber-100 transition-colors"
-                      >
-                        Assign to Me
-                      </button>
+                      <span className="text-gray-400 italic">Unassigned</span>
                     )}
                   </td>
 

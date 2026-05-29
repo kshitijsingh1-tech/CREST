@@ -8,9 +8,10 @@ import { useRouter } from "next/navigation";
 interface Props {
   regions: Region[];
   currentUserRole: string;
+  currentUserRegionId?: number | null;
 }
 
-export default function AddOfficerModal({ regions, currentUserRole }: Props) {
+export default function AddOfficerModal({ regions, currentUserRole, currentUserRegionId }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +23,9 @@ export default function AddOfficerModal({ regions, currentUserRole }: Props) {
     phone: "",
     password: "",
     role: "EMPLOYEE",
-    region_id: regions.length > 0 ? String(regions[0].id) : ""
+    region_id: currentUserRole === "SUB_ADMIN" && currentUserRegionId
+      ? String(currentUserRegionId)
+      : (regions.length > 0 ? String(regions[0].id) : "")
   });
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -184,6 +184,7 @@ export interface Complaint {
   sla_status: string;
   status: string;
   region_id: number | null;
+  region_name: string | null;
   assigned_employee_id: number | null;
   is_escalated: boolean;
   is_duplicate: boolean;
