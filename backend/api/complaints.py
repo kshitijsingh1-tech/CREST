@@ -714,11 +714,15 @@ def celery_broadcast_webhook(payload: WebhookBroadcast):
 
 async def try_update_complaint_region(db: Session, channel_name: str, customer_id: str, text: str) -> bool:
     """
-    Checks if the user has an open complaint in the given channel with no region set,
+    Checks if the user has an open complaint with no region set,
     and if the input text matches one of the known regions.
-    If so, updates the complaint's region and assigns it to the least loaded employee.
-    Returns True if updated, else False.
+    Strict token-level matching is used intentionally to prevent quoted email
+    thread bodies from causing false region matches (e.g. 'Delhi' appearing in
+    the previous confirmation message would trigger a wrong match if the user
+    replies 'MUMBAI' via email and the full thread is passed as body).
+    Returns True if region was updated, else False.
     """
+    import re as _re
     from backend.models.complaint import Complaint, Channel
     from backend.models.user import Region
     from backend.services.complaint_service import find_least_loaded_employee, _write_audit
@@ -772,36 +776,36 @@ async def try_update_complaint_region(db: Session, channel_name: str, customer_i
 
     if not complaint:
         logger.info(
-            f"try_update_complaint_region: no open regionless complaint — "
+            f"try_update_complaint_region: no open regionless complaint - "
             f"customer={cust_id_clean}, channel={channel_name}"
         )
         return False
-        
-    # 2. Normalize text and search for region names
+
+    # 2. Strict token matching only.
+    # We deliberately avoid substring containment (r_name in body) because quoted
+    # email threads contain old region names from confirmation messages, which
+    # causes the wrong region to match when the user writes e.g. "MUMBAI" and the
+    # full body still includes "Delhi" from the thread.
     cleaned_text = text.strip().lower()
+    tokens = {t for t in _re.split(r"[\s,.!?;:-]+", cleaned_text) if t}
     regions = db.query(Region).all()
     matched_region = None
-    
-    import re
-    tokens = [t for t in re.split(r'[\s,.!?;:-]+', cleaned_text) if t]
 
     for r in regions:
-        r_name_clean = r.name.lower().strip()
-        r_words = r_name_clean.split()
-        # Full-string match: entire message is contained in region name or vice-versa
-        if r_name_clean in cleaned_text or cleaned_text in r_name_clean:
+        significant_words = {w for w in r.name.lower().strip().split() if len(w) >= 3}
+        overlap = significant_words & tokens
+        if overlap:
             matched_region = r
-            break
-        # Token-level match: any region word (≥3 chars) appears as a token in the message
-        significant_r_words = {w for w in r_words if len(w) >= 3}
-        if significant_r_words & set(tokens):
-            matched_region = r
+            logger.info(
+                f"try_update_complaint_region: matched region '{r.name}' "
+                f"via tokens {overlap} in text '{text[:80]}'"
+            )
             break
 
     if not matched_region:
-        logger.info(f"try_update_complaint_region: text '{text}' did not match any region name")
+        logger.info(f"try_update_complaint_region: no region matched in text '{text[:80]}'")
         return False
-        
+
     # 3. Update the complaint with region_id
     try:
         complaint.region_id = matched_region.id
@@ -815,10 +819,8 @@ async def try_update_complaint_region(db: Session, channel_name: str, customer_i
             complaint.assigned_employee_id = None
             complaint.assigned_at = None
             complaint.status = "open"
-            
         db.commit()
         db.refresh(complaint)
-        
         _write_audit(db, complaint.id, "system", "region_assigned", None, {
             "region": matched_region.name,
             "region_id": matched_region.id,
@@ -828,13 +830,12 @@ async def try_update_complaint_region(db: Session, channel_name: str, customer_i
         logger.error(f"Failed to update region for complaint {complaint.id}: {e}")
         db.rollback()
         return False
-    
-    # 4. Dispatch confirmation DM
+
+    # 4. Send confirmation message back on the originating channel
     msg = (
         f"Thank you! We have updated your nodal region to **{matched_region.name}** "
         f"and successfully routed your ticket (Ref: {complaint.id}) to our regional branch office."
     )
-    
     try:
         if channel_name == "discord":
             from integrations.discord.sender import send_discord_dm
@@ -843,9 +844,9 @@ async def try_update_complaint_region(db: Session, channel_name: str, customer_i
             from integrations.telegram.sender import send_telegram_reply
             send_telegram_reply(chat_id=customer_id, reply_text=msg, external_ref=str(complaint.id))
         elif channel_name in ("whatsapp", "sms"):
-            cust_id_clean = str(customer_id).replace("whatsapp:", "").replace("sms:", "").strip()
+            _cid = str(customer_id).replace("whatsapp:", "").replace("sms:", "").strip()
             from integrations.whatsapp.sender import send_whatsapp_reply
-            send_whatsapp_reply(recipient_phone=cust_id_clean, reply_body=msg, external_ref=str(complaint.id))
+            send_whatsapp_reply(recipient_phone=_cid, reply_body=msg, external_ref=str(complaint.id))
         elif channel_name == "instagram":
             from integrations.instagram.sender import send_instagram_dm
             send_instagram_dm(customer_username=customer_id, reply_text=msg)
@@ -858,13 +859,14 @@ async def try_update_complaint_region(db: Session, channel_name: str, customer_i
                 in_reply_to=complaint.external_ref
             )
     except Exception as dispatch_err:
-        logger.error(f"Failed to send region update confirmation message: {dispatch_err}")
-        
+        logger.error(f"Failed to send region confirmation: {dispatch_err}")
+
     try:
         from backend.utils.socket import broadcast_queue_update
         import asyncio
         asyncio.create_task(broadcast_queue_update())
     except Exception:
         pass
-        
+
     return True
+

@@ -80,9 +80,34 @@ def _process_email(mail: imaplib.IMAP4_SSL, uid: str) -> None:
     body         = _extract_body(msg)
     msg_id       = str(msg.get("Message-ID", ""))
 
-    if not body or len(body.strip()) < 10:
-        logger.debug(f"Skipping empty/tiny email: {msg_id}")
+    if not body:
+        logger.debug(f"Skipping empty email: {msg_id}")
         return
+
+    # Strip quoted reply thread (lines starting with '>' or 'On ... wrote:', '--- Original Message ---' etc.)
+    # so that previous emails in the thread don't poison region matching.
+    def _strip_quoted_reply(text: str) -> str:
+        lines = text.splitlines()
+        clean: list[str] = []
+        for line in lines:
+            stripped = line.strip()
+            # Common quoted-reply markers
+            if stripped.startswith(">"):
+                break
+            if re.match(r"^[-_]{3,}\s*(original message|forwarded message|reply)?", stripped, re.IGNORECASE):
+                break
+            if re.match(r"^on .{5,} wrote:", stripped, re.IGNORECASE):
+                break
+            if re.match(r"^from:\s+", stripped, re.IGNORECASE) and clean:
+                # Secondary 'From:' header inside a reply usually signals quoted thread start
+                break
+            clean.append(line)
+        return "\n".join(clean).strip()
+
+    reply_body = _strip_quoted_reply(body)
+    if not reply_body:
+        # Nothing above the quote — fall through to ingest as new complaint
+        reply_body = body
 
     # customer_id = email address
     customer_id = from_addr or "unknown@email"
@@ -98,7 +123,7 @@ def _process_email(mail: imaplib.IMAP4_SSL, uid: str) -> None:
             # Run the async helper in the listener thread synchronously
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            updated = loop.run_until_complete(try_update_complaint_region(db, "email", customer_id, body))
+            updated = loop.run_until_complete(try_update_complaint_region(db, "email", customer_id, reply_body))
             loop.close()
             if updated:
                 logger.info(f"Customer {customer_id} confirmed region via email reply.")
