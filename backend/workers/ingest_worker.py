@@ -140,15 +140,32 @@ def process_complaint(self, payload: dict) -> dict:
             if recipient and recipient != "unknown":
                 ref = str(complaint.id)
                 tracking_link = build_tracking_link(ref, recipient)
-                msg = (
-                    "Hello! 👋\n\n"
-                    "We have received your complaint.\n\n"
-                    f"Ticket Ref: {ref}\n\n"
-                    "Track your grievance status anytime here:\n"
-                    f"{tracking_link}\n\n"
-                    "To route this to the nearest nodal branch, please reply with your city or region.\n\n"
-                    "Thank you! 🙏"
-                )
+                
+                # Check if region is already set
+                if complaint.region_id:
+                    msg = (
+                        "Hello! 👋\n\n"
+                        "We have successfully received your complaint.\n\n"
+                        f"Ticket Ref: {ref}\n\n"
+                        "Track your grievance status anytime here:\n"
+                        f"{tracking_link}\n\n"
+                        "Thank you! 🙏"
+                    )
+                else:
+                    msg = (
+                        "Hello! 👋\n\n"
+                        "We have received your complaint.\n\n"
+                        f"Ticket Ref: {ref}\n\n"
+                        "Track your grievance status anytime here:\n"
+                        f"{tracking_link}\n\n"
+                        "📍 QUICK BRANCH ROUTING:\n"
+                        "To route this to the nearest branch immediately, click one of the links below:\n"
+                        f"• Route to Delhi Nodal Branch: {tracking_link}?set_region=Delhi\n"
+                        f"• Route to Mumbai Nodal Branch: {tracking_link}?set_region=Mumbai\n"
+                        f"• Route to Bangalore Nodal Branch: {tracking_link}?set_region=Bangalore\n\n"
+                        f"Alternatively, you can reply directly to this {channel} mentioning your city/region.\n\n"
+                        "Thank you! 🙏"
+                    )
                 
                 try:
                     if channel == "email":
@@ -183,6 +200,21 @@ def process_complaint(self, payload: dict) -> dict:
                             reply_text=msg,
                         )
                         logger.info(f"Polite region request Instagram DM sent to {recipient}")
+                    elif channel == "telegram":
+                        from integrations.telegram.sender import send_telegram_reply
+                        send_telegram_reply(
+                            chat_id=recipient,
+                            reply_text=msg,
+                            external_ref=ref
+                        )
+                        logger.info(f"Polite region request Telegram sent to {recipient}")
+                    elif channel == "discord":
+                        from integrations.discord.sender import send_discord_dm
+                        send_discord_dm(
+                            recipient_user_id=recipient,
+                            reply_text=msg
+                        )
+                        logger.info(f"Polite region request Discord DM sent to {recipient}")
                 except Exception as auto_err:
                     logger.error(f"Failed to dispatch polite region request for channel {channel}: {auto_err}")
 

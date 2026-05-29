@@ -227,7 +227,7 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
                 f"• Route to Delhi Nodal Branch: {tracking_link}?set_region=Delhi\n"
                 f"• Route to Mumbai Nodal Branch: {tracking_link}?set_region=Mumbai\n"
                 f"• Route to Bangalore Nodal Branch: {tracking_link}?set_region=Bangalore\n\n"
-                "Alternatively, you can reply directly to this email mentioning your city/region.\n\n"
+                f"Alternatively, you can reply directly to this {channel} mentioning your city/region.\n\n"
                 "Thank you! 🙏"
             )
         
@@ -266,21 +266,22 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
                     reply_text=msg,
                 )
                 logger.info(f"Polite region request Instagram DM sent to {recipient}")
-            elif channel == "discord":
-                from integrations.discord.sender import send_discord_dm
-                send_discord_dm(
-                    recipient_user_id=recipient,
-                    reply_text=msg,
-                )
-                logger.info(f"Polite region request Discord DM sent to {recipient}")
             elif channel == "telegram":
                 from integrations.telegram.sender import send_telegram_reply
                 send_telegram_reply(
                     chat_id=recipient,
                     reply_text=msg,
-                    external_ref=payload_dict.get("external_ref")
+                    external_ref=ref
                 )
                 logger.info(f"Polite region request Telegram sent to {recipient}")
+            elif channel == "discord":
+                from integrations.discord.sender import send_discord_dm
+                send_discord_dm(
+                    recipient_user_id=recipient,
+                    reply_text=msg
+                )
+                logger.info(f"Polite region request Discord DM sent to {recipient}")
+
         except Exception as auto_err:
             logger.error(f"Failed to dispatch polite region request for channel {channel}: {auto_err}")
 
