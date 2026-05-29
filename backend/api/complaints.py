@@ -775,6 +775,14 @@ async def try_update_complaint_region(db: Session, channel_name: str, customer_i
         elif channel_name == "instagram":
             from integrations.instagram.sender import send_instagram_dm
             send_instagram_dm(customer_username=customer_id, reply_text=msg)
+        elif channel_name == "email":
+            from integrations.email.sender import send_customer_reply
+            send_customer_reply(
+                recipient=customer_id,
+                reply_body=msg,
+                subject=f"Re: [Ticket Ref: {complaint.id}] Region Confirmed",
+                in_reply_to=complaint.external_ref
+            )
     except Exception as dispatch_err:
         logger.error(f"Failed to send region update confirmation message: {dispatch_err}")
         

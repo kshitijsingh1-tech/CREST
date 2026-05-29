@@ -87,6 +87,27 @@ def _process_email(mail: imaplib.IMAP4_SSL, uid: str) -> None:
     # customer_id = email address
     customer_id = from_addr or "unknown@email"
 
+    # First, check if the customer is responding to a nodal region request for an open email complaint
+    try:
+        from backend.api.complaints import try_update_complaint_region
+        from backend.utils.db import SessionLocal
+        import asyncio
+
+        db = SessionLocal()
+        try:
+            # Run the async helper in the listener thread synchronously
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            updated = loop.run_until_complete(try_update_complaint_region(db, "email", customer_id, body))
+            loop.close()
+            if updated:
+                logger.info(f"Customer {customer_id} confirmed region via email reply.")
+                return
+        finally:
+            db.close()
+    except Exception as reg_err:
+        logger.warning(f"Error checking email region confirmation: {reg_err}")
+
     payload = {
         "channel": "email",
         "customer_id": customer_id,
