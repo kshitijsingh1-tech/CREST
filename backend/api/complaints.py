@@ -706,11 +706,10 @@ def celery_broadcast_webhook(payload: WebhookBroadcast):
             async_to_sync(broadcast_queue_update)()
             if payload.complaint_id:
                 async_to_sync(broadcast_new_complaint)(payload.complaint_id, payload.severity, payload.category)
-        
-        return {"status": "broadcast_fired"}
+        return {"status": "ok"}
     except Exception as e:
-        logger.error(f"Celery webhook broadcast failed: {e}")
-        raise HTTPException(status_code=500, detail="Socket broadcast failed")
+        logger.error(f"celery_broadcast_webhook failed: {e}")
+        return {"status": "error", "detail": str(e)}
 
 
 async def try_update_complaint_region(db: Session, channel_name: str, customer_id: str, text: str) -> bool:
@@ -723,66 +722,114 @@ async def try_update_complaint_region(db: Session, channel_name: str, customer_i
     from backend.models.complaint import Complaint, Channel
     from backend.models.user import Region
     from backend.services.complaint_service import find_least_loaded_employee, _write_audit
-    
-    # 1. Look up open complaints for this customer on this channel without a region
-    cust_id_clean = str(customer_id).replace("whatsapp:", "")
-    complaint = (
-        db.query(Complaint)
-        .join(Complaint.channel)
-        .filter(
-            Complaint.customer_id.in_([cust_id_clean, "whatsapp:" + cust_id_clean]),
-            Channel.name.ilike(channel_name),
-            Complaint.region_id.is_(None),
-            Complaint.status.in_(["open", "in_progress"])
+
+    if db is None:
+        logger.warning("try_update_complaint_region: db is None, skipping")
+        return False
+
+    # 1. Build all customer_id variants to match however it was stored
+    cust_id_clean = str(customer_id).replace("whatsapp:", "").replace("sms:", "").strip()
+    customer_id_variants = list({
+        cust_id_clean,
+        f"whatsapp:{cust_id_clean}",
+        f"sms:{cust_id_clean}",
+        customer_id.strip(),
+    })
+
+    # 1a. Primary query: with channel join
+    complaint = None
+    try:
+        complaint = (
+            db.query(Complaint)
+            .join(Complaint.channel)
+            .filter(
+                Complaint.customer_id.in_(customer_id_variants),
+                Channel.name.ilike(channel_name),
+                Complaint.region_id.is_(None),
+                Complaint.status.in_(["open", "in_progress"])
+            )
+            .order_by(Complaint.created_at.desc())
+            .first()
         )
-        .order_by(Complaint.created_at.desc())
-        .first()
-    )
+    except Exception as q_err:
+        logger.warning(f"try_update_complaint_region: primary query failed: {q_err}")
+
+    # 1b. Fallback: without channel filter (catches channel-name mismatches)
     if not complaint:
+        try:
+            complaint = (
+                db.query(Complaint)
+                .filter(
+                    Complaint.customer_id.in_(customer_id_variants),
+                    Complaint.region_id.is_(None),
+                    Complaint.status.in_(["open", "in_progress"])
+                )
+                .order_by(Complaint.created_at.desc())
+                .first()
+            )
+        except Exception as q_err2:
+            logger.warning(f"try_update_complaint_region: fallback query failed: {q_err2}")
+
+    if not complaint:
+        logger.info(
+            f"try_update_complaint_region: no open regionless complaint — "
+            f"customer={cust_id_clean}, channel={channel_name}"
+        )
         return False
         
     # 2. Normalize text and search for region names
     cleaned_text = text.strip().lower()
-    
-    # Get all regions
     regions = db.query(Region).all()
     matched_region = None
+    
+    import re
+    tokens = [t for t in re.split(r'[\s,.!?;:-]+', cleaned_text) if t]
+
     for r in regions:
-        # Match exact word or contains logic
-        r_name = r.name.lower()
-        if r_name in cleaned_text or cleaned_text in r_name:
+        r_name_clean = r.name.lower().strip()
+        r_words = r_name_clean.split()
+        # Full-string match: entire message is contained in region name or vice-versa
+        if r_name_clean in cleaned_text or cleaned_text in r_name_clean:
             matched_region = r
             break
-            
+        # Token-level match: any region word (≥3 chars) appears as a token in the message
+        significant_r_words = {w for w in r_words if len(w) >= 3}
+        if significant_r_words & set(tokens):
+            matched_region = r
+            break
+
     if not matched_region:
+        logger.info(f"try_update_complaint_region: text '{text}' did not match any region name")
         return False
         
     # 3. Update the complaint with region_id
-    complaint.region_id = matched_region.id
-    
-    # Auto-assign to least-loaded officer in that region
-    assigned_employee_id = find_least_loaded_employee(db, matched_region.id)
-    if assigned_employee_id:
-        complaint.assigned_employee_id = assigned_employee_id
-        from datetime import datetime, timezone
-        complaint.assigned_at = datetime.now(timezone.utc)
-        complaint.status = "in_progress"
-    else:
-        complaint.assigned_employee_id = None
-        complaint.assigned_at = None
-        complaint.status = "open"
+    try:
+        complaint.region_id = matched_region.id
+        assigned_employee_id = find_least_loaded_employee(db, matched_region.id)
+        if assigned_employee_id:
+            complaint.assigned_employee_id = assigned_employee_id
+            from datetime import datetime, timezone
+            complaint.assigned_at = datetime.now(timezone.utc)
+            complaint.status = "in_progress"
+        else:
+            complaint.assigned_employee_id = None
+            complaint.assigned_at = None
+            complaint.status = "open"
+            
+        db.commit()
+        db.refresh(complaint)
         
-    db.commit()
-    db.refresh(complaint)
+        _write_audit(db, complaint.id, "system", "region_assigned", None, {
+            "region": matched_region.name,
+            "region_id": matched_region.id,
+            "assigned_employee_id": assigned_employee_id
+        })
+    except Exception as e:
+        logger.error(f"Failed to update region for complaint {complaint.id}: {e}")
+        db.rollback()
+        return False
     
-    # Write audit log
-    _write_audit(db, complaint.id, "system", "region_assigned", None, {
-        "region": matched_region.name,
-        "region_id": matched_region.id,
-        "assigned_employee_id": assigned_employee_id
-    })
-    
-    # 4. Dispatch confirmation DM back to user
+    # 4. Dispatch confirmation DM
     msg = (
         f"Thank you! We have updated your nodal region to **{matched_region.name}** "
         f"and successfully routed your ticket (Ref: {complaint.id}) to our regional branch office."
@@ -795,12 +842,10 @@ async def try_update_complaint_region(db: Session, channel_name: str, customer_i
         elif channel_name == "telegram":
             from integrations.telegram.sender import send_telegram_reply
             send_telegram_reply(chat_id=customer_id, reply_text=msg, external_ref=str(complaint.id))
-        elif channel_name == "whatsapp":
+        elif channel_name in ("whatsapp", "sms"):
+            cust_id_clean = str(customer_id).replace("whatsapp:", "").replace("sms:", "").strip()
             from integrations.whatsapp.sender import send_whatsapp_reply
-            send_whatsapp_reply(recipient_phone=customer_id, reply_body=msg, external_ref=str(complaint.id))
-        elif channel_name == "sms":
-            from integrations.sms.sender import send_sms_reply
-            send_sms_reply(recipient_phone=customer_id, reply_body=msg, external_ref=str(complaint.id))
+            send_whatsapp_reply(recipient_phone=cust_id_clean, reply_body=msg, external_ref=str(complaint.id))
         elif channel_name == "instagram":
             from integrations.instagram.sender import send_instagram_dm
             send_instagram_dm(customer_username=customer_id, reply_text=msg)
@@ -815,12 +860,11 @@ async def try_update_complaint_region(db: Session, channel_name: str, customer_i
     except Exception as dispatch_err:
         logger.error(f"Failed to send region update confirmation message: {dispatch_err}")
         
-    # Broadcast updates over socket
     try:
         from backend.utils.socket import broadcast_queue_update
         import asyncio
         asyncio.create_task(broadcast_queue_update())
-    except Exception as ws_err:
+    except Exception:
         pass
         
     return True
