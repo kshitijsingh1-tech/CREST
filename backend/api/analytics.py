@@ -34,38 +34,45 @@ def dashboard_summary(
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    base_query = db.query(Complaint)
+    # Base query for this region (if specified)
+    base_q = db.query(Complaint)
     if region_id is not None:
-        base_query = base_query.filter(Complaint.region_id == region_id)
-    if scope == "queue":
-        base_query = base_query.filter(Complaint.status.in_(["open", "in_progress"]), Complaint.is_duplicate == False)
+        base_q = base_q.filter(Complaint.region_id == region_id)
 
-    total_open = base_query.filter(Complaint.status == "open").with_entities(func.count(Complaint.id)).scalar()
-    p0_open = base_query.filter(
-        Complaint.status == "open", Complaint.severity == 0
-    ).with_entities(func.count(Complaint.id)).scalar()
-    breached = base_query.filter(
-        Complaint.sla_status == "breached", Complaint.status != "resolved"
-    ).with_entities(func.count(Complaint.id)).scalar()
-    resolved_today = base_query.filter(
-        Complaint.resolved_at >= today_start
-    ).with_entities(func.count(Complaint.id)).scalar()
-    duplicates_caught = base_query.filter(
+    # Active/open tickets in the queue (both 'open' and 'in_progress')
+    active_q = base_q.filter(Complaint.status.in_(["open", "in_progress"]), Complaint.is_duplicate == False)
+
+    total_open = active_q.with_entities(func.count(Complaint.id)).scalar() or 0
+    p0_open = active_q.filter(Complaint.severity == 0).with_entities(func.count(Complaint.id)).scalar() or 0
+    breached = active_q.filter(Complaint.sla_status == "breached").with_entities(func.count(Complaint.id)).scalar() or 0
+
+    # Resolved today, duplicates, and avg resolution should be queried from base_q so they are not poisoned by status filters
+    resolved_today = base_q.filter(
+        Complaint.status.in_(["resolved", "closed"]),
+        Complaint.resolved_at >= today_start,
+        Complaint.is_duplicate == False
+    ).with_entities(func.count(Complaint.id)).scalar() or 0
+
+    duplicates_caught = base_q.filter(
         Complaint.is_duplicate == True
-    ).with_entities(func.count(Complaint.id)).scalar()
+    ).with_entities(func.count(Complaint.id)).scalar() or 0
 
-    avg_resolution = base_query.filter(Complaint.resolved_at.isnot(None)).with_entities(
+    avg_resolution = base_q.filter(
+        Complaint.resolved_at.isnot(None),
+        Complaint.is_duplicate == False
+    ).with_entities(
         func.avg(func.extract("epoch", Complaint.resolved_at - Complaint.created_at) / 3600)
-    ).scalar()
+    ).scalar() or 0
 
     return {
-        "total_open": total_open or 0,
-        "p0_open": p0_open or 0,
-        "sla_breached": breached or 0,
-        "resolved_today": resolved_today or 0,
-        "duplicates_caught": duplicates_caught or 0,
-        "avg_resolution_hrs": round(float(avg_resolution or 0), 1),
+        "total_open": total_open,
+        "p0_open": p0_open,
+        "sla_breached": breached,
+        "resolved_today": resolved_today,
+        "duplicates_caught": duplicates_caught,
+        "avg_resolution_hrs": round(float(avg_resolution), 1),
     }
+
 
 
 @router.get("/by-category")
