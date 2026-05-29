@@ -1,25 +1,56 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 
 interface Props {
   email: string;
   name: string;
   phone?: string | null;
+  role: string;
 }
 
-export default function OfficerIdentityLink({ email, name, phone }: Props) {
+export default function OfficerIdentityLink({ email, name, phone, role }: Props) {
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("crest_created_passwords");
+        if (stored) {
+          const mapping = JSON.parse(stored);
+          const pass = mapping[email.toLowerCase()];
+          if (pass) {
+            setPassword(pass);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    // Fallbacks
+    const emailLower = email.toLowerCase();
+    if (emailLower === "admin@unionbank.com" || emailLower === "mumbai_admin@unionbank.com") {
+      setPassword("admin123");
+    } else if (emailLower === "mumbai_officer@unionbank.com") {
+      setPassword("officer123");
+    } else {
+      setPassword(role === "EMPLOYEE" ? "officer123" : "admin123");
+    }
+  }, [email, role]);
+
   const handleLinkClick = (e: React.MouseEvent) => {
     e.preventDefault();
 
-    // 1. Clear current admin session — force a fresh login as the selected officer
+    // 1. Clear current session
     Cookies.remove("crest_token", { path: "/" });
     Cookies.remove("crest_token", { path: "/", sameSite: "lax" });
     Cookies.remove("crest_token", { path: "/", sameSite: "lax", secure: true });
     localStorage.removeItem("crest_user");
 
-    // 2. Redirect to login with only the email pre-filled (password must be entered manually)
-    const url = `/ub_CREST/login?email=${encodeURIComponent(email)}`;
+    // 2. Redirect to login with email and password pre-filled for showcase demo purposes
+    const url = `/ub_CREST/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
     window.location.assign(url);
   };
 

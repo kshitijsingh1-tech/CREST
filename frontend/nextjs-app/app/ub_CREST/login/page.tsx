@@ -48,6 +48,8 @@ export default function CrestLoginPage() {
     const params = new URLSearchParams(window.location.search);
     const qEmail = params.get("email");
     if (qEmail) setEmail(qEmail);
+    const qPassword = params.get("password");
+    if (qPassword) setPassword(qPassword);
 
     // Clear any stale session on arriving at login
     Cookies.remove("crest_token", { path: "/" });
