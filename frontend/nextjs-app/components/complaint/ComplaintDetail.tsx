@@ -91,8 +91,15 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
     setLoading(true);
     try {
       await escalateComplaint(c.id, Number(agent));
-      setC(prev => ({ ...prev, is_escalated: true, assigned_employee_id: null, status: "open" }));
-      flash("ok", "Ticket escalated to your Regional Sub-Admin");
+      setC(prev => ({
+        ...prev,
+        is_escalated: true,
+        assigned_employee_id: null,
+        status: "open",
+        region_id: userRole === "SUB_ADMIN" ? null : prev.region_id,
+        region_name: userRole === "SUB_ADMIN" ? null : prev.region_name
+      }));
+      flash("ok", userRole === "SUB_ADMIN" ? "Ticket escalated to Super Admin" : "Ticket escalated to your Regional Sub-Admin");
     } catch (err: any) { flash("err", err.message || "Escalation failed"); }
     setLoading(false);
   };
@@ -346,10 +353,16 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                     Assign to Me
                   </button>
                 )}
-                {userRole !== "SUPER_ADMIN" && (
-                  <button onClick={handleEscalate} disabled={loading || !agent || c.is_escalated}
+                {userRole === "EMPLOYEE" && !c.is_escalated && (
+                  <button onClick={handleEscalate} disabled={loading || !agent}
                     className="text-xs px-3 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded border border-red-100 dark:border-red-900/30 transition-colors disabled:opacity-50">
                     Escalate
+                  </button>
+                )}
+                {userRole === "SUB_ADMIN" && c.region_id !== null && c.region_id !== undefined && (
+                  <button onClick={handleEscalate} disabled={loading || !agent}
+                    className="text-xs px-3 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded border border-red-100 dark:border-red-900/30 transition-colors disabled:opacity-50">
+                    Escalate to Super Admin
                   </button>
                 )}
                 {c.draft_reply && !c.draft_approved && !(c as any).is_superior_takeover && (

@@ -511,18 +511,47 @@ def assign(complaint_id: str, body: AssignRequest, db: Optional[Session] = Depen
 @router.patch("/{complaint_id}/escalate", response_model=dict)
 def escalate(complaint_id: str, body: EscalateRequest, db: Optional[Session] = Depends(get_db_optional)):
     """
-    Escalates a complaint to the regional Sub-Admin.
+    Escalates a complaint:
+    - From EMPLOYEE: Sets is_escalated=True, puts back in Sub-Admin's regional pool (assigned_employee_id=None).
+    - From SUB_ADMIN: Sets region_id=None (HQ/Super Admin), sets is_escalated=True, assigned_employee_id=None.
     """
-    from backend.models.complaint import Complaint
+    from backend.models.complaint import Complaint, ComplaintAudit
+    from backend.models.user import User
     c = db.query(Complaint).filter(Complaint.id == uuid.UUID(complaint_id)).first()
     if not c:
         raise HTTPException(status_code=404, detail="Complaint not found")
-    
-    c.is_escalated = True
-    c.assigned_employee_id = None # Remove from employee's queue
-    c.status = "open" # Put back in the sub-admin's regional pool
-    
+
+    escalator = db.query(User).filter(User.id == body.employee_id).first()
+    if not escalator:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    old_region = c.region_id
+    old_assignee = c.assigned_employee_id
+
+    if escalator.role == "EMPLOYEE":
+        c.is_escalated = True
+        c.assigned_employee_id = None
+        c.status = "open"
+        action_detail = "escalated_to_sub_admin"
+    elif escalator.role in ("SUB_ADMIN", "SUPER_ADMIN"):
+        c.is_escalated = True
+        c.region_id = None  # Route to HQ / Super Admin
+        c.assigned_employee_id = None
+        c.status = "open"
+        action_detail = "escalated_to_super_admin"
+    else:
+        raise HTTPException(status_code=400, detail="Invalid role for escalation")
+
+    audit = ComplaintAudit(
+        complaint_id=c.id,
+        actor=f"{escalator.name} ({escalator.role})",
+        action=action_detail,
+        old_value={"region_id": old_region, "assigned_employee_id": old_assignee},
+        new_value={"region_id": c.region_id, "assigned_employee_id": c.assigned_employee_id, "is_escalated": True}
+    )
+    db.add(audit)
     db.commit()
+
     try:
         async_to_sync(broadcast_queue_update)()
     except Exception:
