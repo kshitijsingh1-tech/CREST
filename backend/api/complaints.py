@@ -627,6 +627,20 @@ def approve_draft_reply(complaint_id: str, body: ApproveDraftRequest, db: Option
                 pass
             return result
 
+        if body.draft_reply and body.draft_reply.strip() and db is not None:
+            from backend.services.translation_service import translator
+            from backend.models.complaint import Complaint
+            complaint_obj = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+            if complaint_obj:
+                target_lang = complaint_obj.language or "en"
+                if target_lang != "en":
+                    try:
+                        translated, det_lang = async_to_sync(translator.detect_and_translate)(body.draft_reply, target_lang=target_lang)
+                        if det_lang != target_lang:
+                            body.draft_reply = translated
+                    except Exception as e:
+                        logger.warning(f"Failed to translate edited draft back to {target_lang}: {e}")
+
         res = approve_draft(db, complaint_id, body.agent, body.draft_reply)
         try:
             async_to_sync(broadcast_queue_update)()
@@ -658,6 +672,20 @@ def resolve(complaint_id: str, body: ResolveRequest, db: Optional[Session] = Dep
         }
 
     try:
+        if body.resolution_note and body.resolution_note.strip() and db is not None:
+            from backend.services.translation_service import translator
+            from backend.models.complaint import Complaint
+            complaint_obj = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+            if complaint_obj:
+                target_lang = complaint_obj.language or "en"
+                if target_lang != "en":
+                    try:
+                        translated, det_lang = async_to_sync(translator.detect_and_translate)(body.resolution_note, target_lang=target_lang)
+                        if det_lang != target_lang:
+                            body.resolution_note = translated
+                    except Exception as e:
+                        logger.warning(f"Failed to translate resolution note back to {target_lang}: {e}")
+
         c = resolve_complaint(
             db, complaint_id, body.agent, body.resolution_note,
             add_to_kb=body.add_to_kb, csat=body.csat,

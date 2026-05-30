@@ -27,6 +27,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
   const [agent, setAgent]   = useState("");
   const [note, setNote]     = useState("");
   const [isEditingDraft, setIsEditingDraft] = useState(false);
+  const [showOriginalLang, setShowOriginalLang] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [msg, setMsg]       = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -206,7 +207,14 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   ✨ AI Draft Reply
                 </h3>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowOriginalLang(!showOriginalLang)}
+                    className={`text-[10px] uppercase font-bold px-2 py-1 rounded transition-colors ${showOriginalLang ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300" : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"}`}
+                    title="Toggle translation"
+                  >
+                    {showOriginalLang ? "Original Language" : "Translated (Current)"}
+                  </button>
                   {!c.draft_approved && !(c as any).is_superior_takeover && (
                     <button onClick={() => setIsEditingDraft(!isEditingDraft)} className="text-[10px] uppercase font-bold text-indigo-500 hover:text-indigo-700 transition-colors">
                       {isEditingDraft ? "Done" : "Edit"}
@@ -218,17 +226,18 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                 </div>
               </div>
               {c.draft_reply ? (
-                <div className="flex-1 flex flex-col">
+                <div className={`flex-1 flex flex-col ${showOriginalLang ? "notranslate" : ""}`}>
                   {c.draft_approved || (c as any).is_superior_takeover || (!isEditingDraft) ? (
                     <p className="flex-1 text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 min-h-[300px]">
                       {c.draft_reply}
                     </p>
                   ) : (
-                    <textarea
-                      rows={12}
-                      className="flex-1 w-full text-sm text-gray-800 dark:text-white leading-relaxed bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 resize-y min-h-[300px]"
-                      value={c.draft_reply || ""}
-                      onChange={(e) => setC(prev => ({ ...prev, draft_reply: e.target.value }))}
+                    <div
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="flex-1 w-full text-sm text-gray-800 dark:text-white leading-relaxed bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 overflow-y-auto min-h-[300px]"
+                      onBlur={(e) => setC(prev => ({ ...prev, draft_reply: e.currentTarget.innerText }))}
+                      dangerouslySetInnerHTML={{ __html: c.draft_reply || "" }}
                     />
                   )}
                 </div>
