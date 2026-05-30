@@ -16,6 +16,19 @@ const SENT_EMOJI: Record<string, string> = {
   hostile: "😡", negative: "😞", neutral: "😐", positive: "😊",
 };
 
+/** Maps Google Translate language codes → English display names.
+ *  These labels are NOT wrapped in notranslate, so Google Translate
+ *  will render them in the page language automatically. */
+const LANG_NAMES: Record<string, string> = {
+  en: "English",   hi: "Hindi",    ta: "Tamil",    te: "Telugu",
+  bn: "Bengali",   mr: "Marathi",  gu: "Gujarati",  kn: "Kannada",
+  ml: "Malayalam", pa: "Punjabi",  ur: "Urdu",     or: "Odia",
+  as: "Assamese",  ne: "Nepali",   si: "Sinhala",   fr: "French",
+  de: "German",    es: "Spanish",  ar: "Arabic",   "zh-cn": "Chinese",
+};
+const getLangName = (code: string) =>
+  LANG_NAMES[code.toLowerCase()] ?? code.toUpperCase();
+
 interface Props {
   complaint: Complaint;
   similar:   Complaint[];
@@ -32,9 +45,59 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
   const [translatedBody, setTranslatedBody]     = useState<string | null>(null);
   const [translatedDraft, setTranslatedDraft]   = useState<string | null>(null);
   const [officerLang, setOfficerLang]           = useState("EN");
+  // Tracks in-progress edits inside the contentEditable without touching the real draft yet
+  const pendingEdit = useRef<string | null>(null);
   // Preserve the true original from the server so toggle can always restore it
   const originalBody  = useRef<string>((initial as any).body  || "");
   const originalDraft = useRef<string>(initial.draft_reply || "");
+
+  /**
+   * "Done" button handler.
+   * - If editing the ORIGINAL language view → save directly.
+   * - If editing the TRANSLATED view → back-translate the edited text to the
+   *   complaint's original language and save that as the authoritative draft.
+   */
+  const handleDone = useCallback(async () => {
+    const edited = pendingEdit.current;
+    if (edited === null) {
+      // Nothing was typed — just close editing
+      setIsEditingDraft(false);
+      return;
+    }
+    if (showOriginalLang) {
+      // Editing the original language — save directly
+      setC(prev => ({ ...prev, draft_reply: edited }));
+      originalDraft.current = edited;
+      setIsEditingDraft(false);
+      pendingEdit.current = null;
+    } else {
+      // Editing the translated view — back-translate to original language
+      const origLang = ((c as any).language || "en").toLowerCase();
+      setTranslating(true);
+      try {
+        const res = await fetch("/api/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: edited, target_lang: origLang }),
+        });
+        const data = await res.json();
+        const backTranslated: string = data.translated || edited;
+        // Save the back-translated text as the real draft
+        setC(prev => ({ ...prev, draft_reply: backTranslated }));
+        originalDraft.current = backTranslated;
+        // Keep the edited translated version as the current translated cache
+        setTranslatedDraft(edited);
+      } catch {
+        // Fallback: save the edited translation as-is
+        setC(prev => ({ ...prev, draft_reply: edited }));
+        originalDraft.current = edited;
+      } finally {
+        setTranslating(false);
+      }
+      setIsEditingDraft(false);
+      pendingEdit.current = null;
+    }
+  }, [showOriginalLang, c]);
 
   // Dynamic Officer Language Detector matching Google Translate state
   useEffect(() => {
@@ -346,8 +409,9 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                     title={`Toggle between original language and ${officerLang}`}
                     className="flex items-center gap-1 rounded-full p-1 transition-all duration-300 disabled:opacity-60 disabled:cursor-wait focus:outline-none focus:ring-1 focus:ring-blue-500/30 bg-white/95 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 shadow-md"
                   >
-                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 transition-all duration-300 ${showOriginalLang ? "text-blue-600 dark:text-sky-400 font-extrabold scale-105" : "text-gray-500 dark:text-zinc-400 font-medium"}`}>
-                      {(c as any).language?.toUpperCase() || "ORIG"}
+                    {/* Language name labels — NOT notranslate, so Google Translate renders them in the page language */}
+                    <span className={`text-[10px] font-black px-2 transition-all duration-300 ${showOriginalLang ? "text-blue-600 dark:text-sky-400 font-extrabold" : "text-gray-500 dark:text-zinc-400 font-medium"}`}>
+                      {getLangName((c as any).language || "en")}
                     </span>
                     {/* Sliding pill */}
                     <span
@@ -362,13 +426,17 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                         </span>
                       )}
                     </span>
-                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 transition-all duration-300 ${!showOriginalLang ? "text-emerald-600 dark:text-emerald-400 font-extrabold scale-105" : "text-gray-500 dark:text-zinc-400 font-medium"}`}>
-                      {officerLang}
+                    <span className={`text-[10px] font-black px-2 transition-all duration-300 ${!showOriginalLang ? "text-emerald-600 dark:text-emerald-400 font-extrabold" : "text-gray-500 dark:text-zinc-400 font-medium"}`}>
+                      {getLangName(officerLang)}
                     </span>
                   </button>
                   {!c.draft_approved && !(c as any).is_superior_takeover && (
-                    <button onClick={() => setIsEditingDraft(!isEditingDraft)} className="text-[10px] uppercase font-black tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors pl-2.5 border-l border-gray-300/40 dark:border-white/10">
-                      {isEditingDraft ? "Done" : "Edit"}
+                    <button
+                      onClick={isEditingDraft ? handleDone : () => { pendingEdit.current = null; setIsEditingDraft(true); }}
+                      disabled={translating}
+                      className="text-[10px] uppercase font-black tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors pl-2.5 border-l border-gray-300/40 dark:border-white/10 disabled:opacity-50"
+                    >
+                      {isEditingDraft ? (translating ? "Saving…" : "Done") : "Edit"}
                     </button>
                   )}
                   {c.draft_approved && (
@@ -388,7 +456,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                       contentEditable
                       suppressContentEditableWarning
                       className="flex-1 w-full text-sm text-gray-800 dark:text-white leading-relaxed bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 overflow-y-auto min-h-[300px] notranslate"
-                      onBlur={(e) => setC(prev => ({ ...prev, draft_reply: e.currentTarget.innerText }))}
+                      onInput={(e) => { pendingEdit.current = (e.currentTarget as HTMLDivElement).innerText; }}
                       dangerouslySetInnerHTML={{ __html: showOriginalLang ? (c.draft_reply || "") : (translatedDraft ?? c.draft_reply ?? "") }}
                     />
                   )}
