@@ -1,6 +1,6 @@
 # CREST — Complaint Resolution & Escalation Smart Technology
-### Union Bank of India · iDEA 2.0 Hackathon · Phase 2 (POC Stage)
-**India's first RBI-aligned, Gen-AI powered grievance intelligence platform.**
+### Union Bank of India · iDEA 2.0 Hackathon 
+**RBI-aligned, Gen-AI powered grievance intelligence platform.**
 
 ---
 
