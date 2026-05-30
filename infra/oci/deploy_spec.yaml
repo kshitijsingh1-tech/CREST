@@ -1,0 +1,13 @@
+version: 1.0
+component: deployment
+shell: bash
+files:
+  - source: docker-compose.yml
+    destination: /home/opc/crest/docker-compose.yml
+steps:
+  - type: Command
+    name: "Run Docker Compose Stack"
+    command: |
+      cd /home/opc/crest
+      docker compose down || true
+      docker compose up -d

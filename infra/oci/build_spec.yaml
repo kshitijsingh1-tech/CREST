@@ -1,0 +1,24 @@
+version: 0.1
+component: build
+timeoutInSeconds: 1000
+shell: bash
+env:
+  variables:
+    API_IMAGE_NAME: "crest-api"
+    UI_IMAGE_NAME: "crest-ui"
+steps:
+  - type: Command
+    name: "Build API Container Image"
+    command: |
+      docker build -t ${API_IMAGE_NAME}:latest -f infra/docker/Dockerfile.api .
+  - type: Command
+    name: "Build UI Container Image"
+    command: |
+      docker build -t ${UI_IMAGE_NAME}:latest --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} -f infra/docker/Dockerfile.nextjs frontend/nextjs-app
+outputArtifacts:
+  - name: crest_api_image
+    type: BINARY
+    location: ${API_IMAGE_NAME}:latest
+  - name: crest_ui_image
+    type: BINARY
+    location: ${UI_IMAGE_NAME}:latest
