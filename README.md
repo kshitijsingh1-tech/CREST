@@ -163,6 +163,23 @@ Designed for maximum ease-of-use and dynamic citizen redressal:
 
 ---
 
+## (G) Render Deployment & Background Task Support
+
+### **Render Free Tier Compatibility**
+Render's Free Tier does **not** support background worker services (Celery / Celery Beat) or persistent Kafka brokers. To accommodate this, CREST provides built-in compatibility modes configured via environment variables in `render.yaml`:
+
+1. **Direct Ingestion (`CREST_USE_DIRECT_INGEST=1`)**:
+   - Bypasses the Kafka message broker.
+   - Channel webhooks (WhatsApp, Discord, Telegram, Instagram, IMAP Email) send complaints directly to the synchronous `/api/complaints/ingest` HTTP endpoint.
+   - The AI classification, embedding, translation, and routing run in-request (synchronously).
+2. **Celery Beat & background tasks**:
+   - Periodic background tasks (such as AI Spike Signals detection, priority score updates, and SLA status monitoring) require running Celery Beat and a Celery worker.
+   - Because Render Free Tier blocks background daemons, these tasks will **not** run automatically on a Free Render instance.
+   - **Upgrade Required**: To run these background worker pipelines on Render, you must deploy them on a paid instance plan (e.g. Web Service + Background Worker).
+   - **Alternative (Railway Deployment)**: Because Railway allows multi-service deployments with custom worker commands under a shared free/usage tier, you can run the complete stack (FastAPI web app + Redis broker + Celery worker + Celery Beat scheduler) on Railway without plan limitations.
+
+---
+
 ## Team Gen Forge
 - **Kshitij Singh**: Lead Backend & AI
 - **Aayush Jaiswal**: Frontend & UI/UX
