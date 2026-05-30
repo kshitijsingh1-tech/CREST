@@ -114,6 +114,8 @@ export default function RootLandingPage() {
               </div>
               <Link
                 href="/ub_publicPortal"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="mt-8 w-full text-center bg-gradient-to-r from-[#e50000] to-[#ff7b00] hover:from-[#c40000] hover:to-[#e56b00] text-white font-black py-3.5 px-6 rounded-full transition-all duration-300 text-xs uppercase tracking-widest shadow-md hover:shadow-lg flex items-center justify-center gap-2"
               >
                 <span>Access Portal</span>
@@ -138,6 +140,8 @@ export default function RootLandingPage() {
               </div>
               <Link
                 href="/ub_CREST/login"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="mt-8 w-full text-center bg-gradient-to-r from-[#e50000] to-[#ff7b00] hover:from-[#c40000] hover:to-[#e56b00] text-white font-black py-3.5 px-6 rounded-full transition-all duration-300 text-xs uppercase tracking-widest shadow-md hover:shadow-lg flex items-center justify-center gap-2"
               >
                 <span>Officer Login</span>
@@ -162,6 +166,8 @@ export default function RootLandingPage() {
               </div>
               <Link
                 href="/ub_CREST/docs"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="mt-8 w-full text-center bg-gradient-to-r from-[#e50000] to-[#ff7b00] hover:from-[#c40000] hover:to-[#e56b00] text-white font-black py-3.5 px-6 rounded-full transition-all duration-300 text-xs uppercase tracking-widest shadow-md hover:shadow-lg flex items-center justify-center gap-2"
               >
                 <span>View Guide</span>

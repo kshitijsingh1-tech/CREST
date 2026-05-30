@@ -11,9 +11,10 @@ interface Props {
 }
 
 export default function OfficerIdentityLink({ email, name, phone, role }: Props) {
-  const [password, setPassword] = useState("");
+  const handleLinkClick = (e: React.MouseEvent) => {
+    e.preventDefault();
 
-  useEffect(() => {
+    let finalPassword = "";
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("crest_created_passwords");
@@ -21,27 +22,24 @@ export default function OfficerIdentityLink({ email, name, phone, role }: Props)
           const mapping = JSON.parse(stored);
           const pass = mapping[email.toLowerCase()];
           if (pass) {
-            setPassword(pass);
-            return;
+            finalPassword = pass;
           }
         }
       } catch (e) {
         console.error(e);
       }
     }
-    // Fallbacks
-    const emailLower = email.toLowerCase();
-    if (emailLower === "admin@unionbank.com" || emailLower === "mumbai_admin@unionbank.com") {
-      setPassword("admin123");
-    } else if (emailLower === "mumbai_officer@unionbank.com") {
-      setPassword("officer123");
-    } else {
-      setPassword(role === "EMPLOYEE" ? "officer123" : "admin123");
-    }
-  }, [email, role]);
 
-  const handleLinkClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+    if (!finalPassword) {
+      const emailLower = email.toLowerCase();
+      if (emailLower === "admin@unionbank.com" || emailLower === "mumbai_admin@unionbank.com") {
+        finalPassword = "admin123";
+      } else if (emailLower === "mumbai_officer@unionbank.com") {
+        finalPassword = "officer123";
+      } else {
+        finalPassword = role === "EMPLOYEE" ? "officer123" : "admin123";
+      }
+    }
 
     // 1. Clear current session
     Cookies.remove("crest_token", { path: "/" });
@@ -50,7 +48,7 @@ export default function OfficerIdentityLink({ email, name, phone, role }: Props)
     localStorage.removeItem("crest_user");
 
     // 2. Redirect to login with email and password pre-filled for showcase demo purposes
-    const url = `/ub_CREST/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
+    const url = `/ub_CREST/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(finalPassword)}`;
     window.location.assign(url);
   };
 
