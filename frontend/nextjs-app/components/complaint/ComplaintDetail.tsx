@@ -220,12 +220,13 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
               {c.draft_reply ? (
                 <div className="flex-1 flex flex-col">
                   {c.draft_approved || (c as any).is_superior_takeover || (!isEditingDraft) ? (
-                    <p className="flex-1 text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 min-h-[150px]">
+                    <p className="flex-1 text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 min-h-[300px]">
                       {c.draft_reply}
                     </p>
                   ) : (
                     <textarea
-                      className="flex-1 w-full text-sm text-gray-800 dark:text-white leading-relaxed bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 resize-y min-h-[150px]"
+                      rows={12}
+                      className="flex-1 w-full text-sm text-gray-800 dark:text-white leading-relaxed bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 resize-y min-h-[300px]"
                       value={c.draft_reply || ""}
                       onChange={(e) => setC(prev => ({ ...prev, draft_reply: e.target.value }))}
                     />
