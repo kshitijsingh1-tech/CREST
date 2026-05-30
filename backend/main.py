@@ -29,6 +29,7 @@ from backend.api.instagram import router as instagram_router # type: ignore
 from backend.api.discord import router as discord_router # type: ignore
 from backend.api.telegram import router as telegram_router # type: ignore
 from backend.api.public import router as public_router # type: ignore
+from backend.api.translate import router as translate_router # type: ignore
 
 logger = get_logger("crest.main")
 
@@ -148,6 +149,7 @@ app.include_router(telegram_router)
 app.include_router(public_router)
 app.include_router(users_router)
 app.include_router(auth_router)
+app.include_router(translate_router)
 
 
 @app.get("/api/health")

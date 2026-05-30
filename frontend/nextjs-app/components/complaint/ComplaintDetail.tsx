@@ -6,7 +6,7 @@
  * Agent can assign, approve draft, and resolve from this view.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { assignComplaint, escalateComplaint, approveDraft, resolveComplaint, type Complaint, type AuditEntry } from "@/lib/api";
 
 const SEV_COLOR: Record<number, string> = {
@@ -28,6 +28,47 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
   const [note, setNote]     = useState("");
   const [isEditingDraft, setIsEditingDraft] = useState(false);
   const [showOriginalLang, setShowOriginalLang] = useState(true);
+  const [translating, setTranslating]           = useState(false);
+  const [translatedBody, setTranslatedBody]     = useState<string | null>(null);
+  const [translatedDraft, setTranslatedDraft]   = useState<string | null>(null);
+  // Preserve the true original from the server so toggle can always restore it
+  const originalBody  = useRef<string>((initial as any).body  || "");
+  const originalDraft = useRef<string>(initial.draft_reply || "");
+
+  const toggleLanguage = useCallback(async () => {
+    const goingToTranslated = showOriginalLang; // we are about to flip
+    if (goingToTranslated) {
+      // Fetch translated versions
+      setTranslating(true);
+      try {
+        const [bodyRes, draftRes] = await Promise.all([
+          fetch("/api/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: originalBody.current, target_lang: "en" }),
+          }).then(r => r.json()),
+          c.draft_reply
+            ? fetch("/api/translate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: originalDraft.current, target_lang: "en" }),
+              }).then(r => r.json())
+            : Promise.resolve({ translated: null }),
+        ]);
+        setTranslatedBody(bodyRes.translated  || null);
+        setTranslatedDraft(draftRes.translated || null);
+      } catch {
+        // If translation fails, just stay in original
+      } finally {
+        setTranslating(false);
+      }
+    } else {
+      // Restore originals immediately
+      setTranslatedBody(null);
+      setTranslatedDraft(null);
+    }
+    setShowOriginalLang(!showOriginalLang);
+  }, [showOriginalLang, c.draft_reply]);
 
   const [loading, setLoading] = useState(false);
   const [msg, setMsg]       = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -196,8 +237,19 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
 
           {/* Complaint body */}
           <div className="bg-white dark:bg-black/50 rounded-xl border border-gray-200 dark:border-white/5 shadow-sm p-5 backdrop-blur-md">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Customer Complaint</h3>
-            <p className="text-sm text-gray-800 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">{(c as any).body}</p>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Customer Complaint</h3>
+              <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
+                showOriginalLang
+                  ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300"
+                  : "bg-gray-100 text-gray-400 dark:bg-white/5 dark:text-gray-500"
+              }`}>
+                {showOriginalLang ? (c as any).language?.toUpperCase() || "ORIG" : "EN"}
+              </span>
+            </div>
+            <p className="text-sm text-gray-800 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
+              {showOriginalLang ? (c as any).body : (translatedBody ?? (c as any).body)}
+            </p>
           </div>
 
           {/* RAG Draft Reply - Stretched */}
@@ -208,12 +260,34 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                   ✨ AI Draft Reply
                 </h3>
                 <div className="flex items-center gap-3">
+                  {/* Pill toggle switch */}
                   <button
-                    onClick={() => setShowOriginalLang(!showOriginalLang)}
-                    className={`text-[10px] uppercase font-bold px-2 py-1 rounded transition-colors ${showOriginalLang ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300" : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"}`}
-                    title="Toggle translation"
+                    onClick={toggleLanguage}
+                    disabled={translating}
+                    title="Toggle between original language and English"
+                    className="flex items-center gap-0 rounded-full p-1 transition-all duration-300 disabled:opacity-60 disabled:cursor-wait focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700"
+                    style={{ background: "rgba(220, 218, 235, 0.6)" }}
                   >
-                    {showOriginalLang ? "Original Language" : "Translated (Current)"}
+                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 transition-all duration-300 ${!showOriginalLang ? "text-gray-400 dark:text-gray-500" : "text-indigo-700 dark:text-indigo-300"}`}>
+                      {(c as any).language?.toUpperCase() || "ORIG"}
+                    </span>
+                    {/* Sliding pill */}
+                    <span
+                      className="relative inline-flex h-6 w-12 rounded-full transition-all duration-300"
+                      style={{ background: "rgba(200, 195, 225, 0.5)" }}
+                    >
+                      <span
+                        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-all duration-300 ${showOriginalLang ? "left-0.5" : "left-6"}`}
+                      />
+                      {translating && (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <span className="w-2.5 h-2.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                        </span>
+                      )}
+                    </span>
+                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 transition-all duration-300 ${showOriginalLang ? "text-gray-400 dark:text-gray-500" : "text-emerald-700 dark:text-emerald-300"}`}>
+                      EN
+                    </span>
                   </button>
                   {!c.draft_approved && !(c as any).is_superior_takeover && (
                     <button onClick={() => setIsEditingDraft(!isEditingDraft)} className="text-[10px] uppercase font-bold text-indigo-500 hover:text-indigo-700 transition-colors">
@@ -226,10 +300,10 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                 </div>
               </div>
               {c.draft_reply ? (
-                <div className={`flex-1 flex flex-col ${showOriginalLang ? "notranslate" : ""}`}>
+                <div className="flex-1 flex flex-col">
                   {c.draft_approved || (c as any).is_superior_takeover || (!isEditingDraft) ? (
                     <p className="flex-1 text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 min-h-[300px]">
-                      {c.draft_reply}
+                      {showOriginalLang ? c.draft_reply : (translatedDraft ?? c.draft_reply)}
                     </p>
                   ) : (
                     <div
@@ -237,7 +311,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                       suppressContentEditableWarning
                       className="flex-1 w-full text-sm text-gray-800 dark:text-white leading-relaxed bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 overflow-y-auto min-h-[300px]"
                       onBlur={(e) => setC(prev => ({ ...prev, draft_reply: e.currentTarget.innerText }))}
-                      dangerouslySetInnerHTML={{ __html: c.draft_reply || "" }}
+                      dangerouslySetInnerHTML={{ __html: showOriginalLang ? (c.draft_reply || "") : (translatedDraft ?? c.draft_reply ?? "") }}
                     />
                   )}
                 </div>
