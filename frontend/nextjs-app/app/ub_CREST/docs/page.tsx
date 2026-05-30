@@ -97,6 +97,7 @@ export default function DocsPage() {
             ["#security", "Security & Compliance"],
             ["#compliance", "AI Governance & Mandates"],
             ["#translation", "Translation Guide"],
+            ["#spikes", "AI Spike Signals"],
             ["#team", "Built By"],
           ].map(([href, label]) => (
             <a key={href} href={href as string} className="text-xs font-bold flex items-center gap-1.5 dark:text-blue-300 dark:hover:text-white text-blue-700 hover:text-black transition-colors">
@@ -480,6 +481,41 @@ export default function DocsPage() {
               </h3>
               <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-500">
                 If a customer submits their grievance in a regional language (e.g. Hindi) and the officer translates the workspace to another language (e.g. English) to edit the response, clicking <strong>Done</strong> triggers an automated back-translation process. The system translates the officer's edits back into the customer's native complaint language before saving the final draft to the database. This ensures complete comfort for the administrator without compromising the customer's regional experience.
+              </p>
+            </div>
+          </div>
+        </Section>
+
+        {/* AI Spike Signals & Early Warning System */}
+        <Section id="spikes" title="AI Spike Signals & Early Warning System" subtitle="Early Warning System & Automated Root Cause Analysis">
+          <p className="text-sm dark:text-slate-300 text-gray-700 leading-relaxed mb-6">
+            CREST deploys an autonomous early warning anomaly detection agent that tracks complaint frequency spikes to alert administrators of systemic banking outages or localized failures before they escalate.
+          </p>
+          <div className="grid grid-cols-1 gap-6">
+            <div className="rounded-2xl border p-6 dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 bg-white/60 backdrop-blur-md border-white/50">
+              <h3 className="text-xs font-black uppercase tracking-widest text-red-500 dark:text-red-400 mb-2">
+                1. Spike Detection Engine
+              </h3>
+              <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-500">
+                A scheduled Celery Beat task runs every 15 minutes to calculate category-wise volume changes. It compares the last hour's incoming unique complaint count against the 24-hour baseline. A surge is identified if the hourly volume exceeds the baseline average by <strong>250%</strong> (with a minimum of 5 complaints in the hour to filter out noise).
+              </p>
+            </div>
+
+            <div className="rounded-2xl border p-6 dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 bg-white/60 backdrop-blur-md border-white/50">
+              <h3 className="text-xs font-black uppercase tracking-widest text-red-500 dark:text-red-400 mb-2">
+                2. AI Root Cause Analysis (RCA) Agent
+              </h3>
+              <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-500">
+                Once a category surge is identified, the system passes a batch of recent complaint bodies to the RCA Agent. The agent prompts a specialized LLM (Llama 3.3 70B via Groq) to synthesize the root cause in 1-2 sentences and extract common parameters: platforms (e.g. GPay, PhonePe), error codes (e.g. 500, 503, 504), or branches/locations.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border p-6 dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 bg-white/60 backdrop-blur-md border-white/50">
+              <h3 className="text-xs font-black uppercase tracking-widest text-red-500 dark:text-red-400 mb-2">
+                3. Real-Time Dashboard Signals
+              </h3>
+              <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-500">
+                Synthesized signals are persisted as <code>SpikeSignal</code> records and immediately broadcast to the Command Center home page via Socket.IO websocket connections, allowing regional administrators and HQ nodal officers to coordinate responses and notify technical teams instantly.
               </p>
             </div>
           </div>
