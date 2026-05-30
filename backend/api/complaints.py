@@ -67,14 +67,28 @@ async def ingest_complaint_logic(payload_dict: dict, db: Session):
         """
         Strict token-level region detection.
         Intentionally avoids substring containment ('r_name in body') because that
-        false-matches region names embedded in quoted email threads (e.g. a previous
-        confirmation saying 'Delhi' appears in the reply body when user writes 'Mumbai').
+        false-matches region names embedded in quoted email threads.
         """
         cleaned = text.strip().lower()
+        import re as _re
         tokens = {t for t in _re.split(r"[\s,.!?;:-]+", cleaned) if t}
+        
+        # Add normalization for common misspellings or local names
+        aliases = {
+            "banglore": "bangalore",
+            "bengaluru": "bangalore",
+            "bengluru": "bangalore",
+            "bombay": "mumbai",
+            "mumbay": "mumbai",
+            "bambai": "mumbai",
+            "delhi ncr": "delhi",
+            "new delhi": "delhi"
+        }
+        normalized_tokens = {aliases.get(t, t) for t in tokens}
+
         for r in regions:
             words = {w for w in r.name.lower().strip().split() if len(w) >= 3}
-            if words & tokens:
+            if words & normalized_tokens:
                 return r
         return None
 
