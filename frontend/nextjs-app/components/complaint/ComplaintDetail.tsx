@@ -31,9 +31,84 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
   const [translating, setTranslating]           = useState(false);
   const [translatedBody, setTranslatedBody]     = useState<string | null>(null);
   const [translatedDraft, setTranslatedDraft]   = useState<string | null>(null);
+  const [officerLang, setOfficerLang]           = useState("EN");
   // Preserve the true original from the server so toggle can always restore it
   const originalBody  = useRef<string>((initial as any).body  || "");
   const originalDraft = useRef<string>(initial.draft_reply || "");
+
+  // Dynamic Officer Language Detector matching Google Translate state
+  useEffect(() => {
+    const updateLang = () => {
+      const select = document.querySelector(".goog-te-combo") as HTMLSelectElement | null;
+      if (select && select.value) {
+        setOfficerLang(select.value.toUpperCase());
+      } else {
+        const match = document.cookie.match(/googtrans=([^;]+)/);
+        if (match) {
+          const parts = match[1].split("/");
+          if (parts.length >= 3) {
+            setOfficerLang(parts[2].toUpperCase());
+            return;
+          }
+        }
+        setOfficerLang("EN");
+      }
+    };
+
+    updateLang();
+
+    // Check periodically for changes (such as selecting from the dropdown)
+    const interval = setInterval(updateLang, 1000);
+
+    const handleComboChange = () => {
+      updateLang();
+    };
+
+    const select = document.querySelector(".goog-te-combo");
+    if (select) {
+      select.addEventListener("change", handleComboChange);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (select) {
+        select.removeEventListener("change", handleComboChange);
+      }
+    };
+  }, []);
+
+  // Automatically update translations if the officer changes their language choice while in translation view
+  useEffect(() => {
+    if (!showOriginalLang) {
+      const updateTranslations = async () => {
+        setTranslating(true);
+        try {
+          const targetLang = officerLang.toLowerCase();
+          const [bodyRes, draftRes] = await Promise.all([
+            fetch("/api/translate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: originalBody.current, target_lang: targetLang }),
+            }).then(r => r.json()),
+            originalDraft.current
+              ? fetch("/api/translate", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ text: originalDraft.current, target_lang: targetLang }),
+                }).then(r => r.json())
+              : Promise.resolve({ translated: null }),
+          ]);
+          setTranslatedBody(bodyRes.translated || null);
+          setTranslatedDraft(draftRes.translated || null);
+        } catch {
+          // Keep old translation if fetch fails
+        } finally {
+          setTranslating(false);
+        }
+      };
+      updateTranslations();
+    }
+  }, [officerLang, showOriginalLang]);
 
   const toggleLanguage = useCallback(async () => {
     const goingToTranslated = showOriginalLang; // we are about to flip
@@ -41,17 +116,18 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
       // Fetch translated versions
       setTranslating(true);
       try {
+        const targetLang = officerLang.toLowerCase();
         const [bodyRes, draftRes] = await Promise.all([
           fetch("/api/translate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: originalBody.current, target_lang: "en" }),
+            body: JSON.stringify({ text: originalBody.current, target_lang: targetLang }),
           }).then(r => r.json()),
           c.draft_reply
             ? fetch("/api/translate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: originalDraft.current, target_lang: "en" }),
+                body: JSON.stringify({ text: originalDraft.current, target_lang: targetLang }),
               }).then(r => r.json())
             : Promise.resolve({ translated: null }),
         ]);
@@ -68,7 +144,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
       setTranslatedDraft(null);
     }
     setShowOriginalLang(!showOriginalLang);
-  }, [showOriginalLang, c.draft_reply]);
+  }, [showOriginalLang, c.draft_reply, officerLang]);
 
   const [loading, setLoading] = useState(false);
   const [msg, setMsg]       = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -244,7 +320,7 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                   ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300"
                   : "bg-gray-100 text-gray-400 dark:bg-white/5 dark:text-gray-500"
               }`}>
-                {showOriginalLang ? (c as any).language?.toUpperCase() || "ORIG" : "EN"}
+                {showOriginalLang ? (c as any).language?.toUpperCase() || "ORIG" : officerLang}
               </span>
             </div>
             <p className="text-sm text-gray-800 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
@@ -264,18 +340,18 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                   <button
                     onClick={toggleLanguage}
                     disabled={translating}
-                    title="Toggle between original language and English"
-                    className="flex items-center gap-1 rounded-full p-1 transition-all duration-300 disabled:opacity-60 disabled:cursor-wait focus:outline-none focus:ring-1 focus:ring-blue-500/30 bg-white/20 dark:bg-black/35 backdrop-blur-xl border border-gray-300/30 dark:border-white/10 shadow-sm"
+                    title={`Toggle between original language and ${officerLang}`}
+                    className="flex items-center gap-1 rounded-full p-1 transition-all duration-300 disabled:opacity-60 disabled:cursor-wait focus:outline-none focus:ring-1 focus:ring-blue-500/30 bg-white/95 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 shadow-md"
                   >
-                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 transition-all duration-300 ${showOriginalLang ? "bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 font-extrabold" : "text-gray-400 dark:text-gray-600"}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 transition-all duration-300 ${showOriginalLang ? "text-blue-600 dark:text-sky-400 font-extrabold scale-105" : "text-gray-500 dark:text-zinc-400 font-medium"}`}>
                       {(c as any).language?.toUpperCase() || "ORIG"}
                     </span>
                     {/* Sliding pill */}
                     <span
-                      className="relative inline-flex h-5 w-11 rounded-full transition-all duration-300 bg-gray-200/50 dark:bg-white/5 border border-gray-300/30 dark:border-white/10"
+                      className="relative inline-flex h-5 w-11 rounded-full transition-all duration-300 bg-gray-200 dark:bg-zinc-700 border border-gray-300 dark:border-zinc-650 shadow-inner"
                     >
                       <span
-                        className={`absolute top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${showOriginalLang ? "left-0.5" : "left-7"}`}
+                        className={`absolute top-0.5 h-3.5 w-3.5 rounded-full bg-white dark:bg-white shadow-md transition-all duration-300 ${showOriginalLang ? "left-0.5" : "left-7"}`}
                       />
                       {translating && (
                         <span className="absolute inset-0 flex items-center justify-center">
@@ -283,8 +359,8 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                         </span>
                       )}
                     </span>
-                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 transition-all duration-300 ${!showOriginalLang ? "bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-orange-500 dark:from-red-400 dark:to-orange-400 font-extrabold" : "text-gray-400 dark:text-gray-600"}`}>
-                      EN
+                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 transition-all duration-300 ${!showOriginalLang ? "text-emerald-600 dark:text-emerald-400 font-extrabold scale-105" : "text-gray-500 dark:text-zinc-400 font-medium"}`}>
+                      {officerLang}
                     </span>
                   </button>
                   {!c.draft_approved && !(c as any).is_superior_takeover && (
