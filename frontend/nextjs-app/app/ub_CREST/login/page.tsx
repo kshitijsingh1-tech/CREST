@@ -150,17 +150,19 @@ export default function CrestLoginPage() {
       <div className="max-w-md w-full relative z-10 animate-fade-in-up space-y-6">
         
         {/* Branding & Subtitle */}
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl dark:bg-blue-950/40 dark:border-blue-500/20 bg-blue-50 border border-blue-200 shadow-xl mb-4 overflow-hidden">
-            <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
+        <div className="text-center flex flex-col items-center">
+          <div className="flex items-center justify-center gap-3.5 w-fit mx-auto mb-4">
+            <div className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-[0.75rem] md:rounded-[1rem] dark:bg-blue-950/40 dark:border-blue-500/20 bg-blue-50 border border-blue-200 shadow-xl overflow-hidden">
+              <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight uppercase flex items-center gap-0.5">
+              <span className="text-[#0052ff]">ub_</span>
+              <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                CREST
+              </span>
+            </h1>
           </div>
-          <h1 className="text-2xl font-black tracking-tight uppercase flex justify-center items-center gap-0.5">
-            <span className="text-[#0052ff]">ub_</span>
-            <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              CREST
-            </span>
-          </h1>
-          <p className="text-xs uppercase tracking-widest dark:text-slate-400 text-slate-600 font-bold mt-1">
+          <p className="text-xs uppercase tracking-widest dark:text-slate-400 text-slate-600 font-bold">
             Enterprise Authorization Gate
           </p>
         </div>

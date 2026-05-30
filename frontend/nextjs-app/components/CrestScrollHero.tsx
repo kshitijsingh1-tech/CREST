@@ -94,10 +94,14 @@ export default function CrestScrollHero({
               <ShieldCheck className="w-4 h-4 text-emerald-500 animate-[pulse_2s_infinite]" /> {badgeText}
             </div>
           )}
-          
-          <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-none drop-shadow-md animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.1s_both] bg-clip-text text-transparent w-fit mx-auto" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            {title}
-          </h2>
+          <div className="flex items-center justify-center gap-4 w-fit mx-auto animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.1s_both]">
+            <div className="w-12 h-12 md:w-20 md:h-20 rounded-[1.25rem] md:rounded-[1.75rem] overflow-hidden shadow-xl border border-white/20 bg-white dark:bg-black/60 flex items-center justify-center">
+              <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
+            </div>
+            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-none drop-shadow-md bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              {title}
+            </h2>
+          </div>
           
           <p className="text-sm md:text-base font-black uppercase tracking-widest text-gray-700 dark:text-slate-300 drop-shadow-sm animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.2s_both]">
             {subtitle}

@@ -289,14 +289,15 @@ export default function PublicPortalHub() {
             <Link href="/ub_CREST/docs#compliance" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">India AI Mission Aligned</Link>
           </div>
 
-          {/* Centered Premium Logo */}
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg border dark:border-white/10 border-gray-200 mt-2 bg-white dark:bg-black/60 backdrop-blur-xl">
-            <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
+          {/* Centered Premium Logo & Title */}
+          <div className="flex items-center justify-center gap-3.5 w-fit mx-auto mt-2 animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.1s_both]">
+            <div className="w-10 h-10 md:w-16 md:h-16 rounded-[0.75rem] md:rounded-[1.25rem] flex items-center justify-center overflow-hidden shadow-lg border dark:border-white/10 border-gray-200 bg-white dark:bg-black/60 backdrop-blur-xl">
+              <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tight leading-none drop-shadow-sm bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              CREST
+            </h2>
           </div>
-
-          <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tight leading-none drop-shadow-sm bg-clip-text text-transparent mt-2 animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.1s_both]" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            CREST
-          </h2>
 
           <p className="text-xs md:text-sm font-bold uppercase tracking-wider text-gray-600/90 dark:text-slate-400 drop-shadow-sm mt-1 animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.2s_both]">
             Union Bank Citizen Grievance Hub & Redressal Matrix

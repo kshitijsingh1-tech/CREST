@@ -378,16 +378,18 @@ export default function PublicTrackingPage() {
       <div className="w-full max-w-xl animate-fade-in-up relative z-10 space-y-8">
 
         {/* Branding */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white dark:bg-black shadow-xl border border-slate-100 dark:border-white/5 overflow-hidden">
-            <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
+        <div className="text-center space-y-3 flex flex-col items-center">
+          <div className="flex items-center justify-center gap-3.5 w-fit mx-auto">
+            <div className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-[0.75rem] md:rounded-[1rem] bg-white dark:bg-black shadow-xl border border-slate-100 dark:border-white/5 overflow-hidden">
+              <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight uppercase flex items-center gap-0.5 dark:text-white text-slate-800">
+              <span className="text-[#0052ff]">ub_</span>
+              <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                CREST
+              </span>
+            </h1>
           </div>
-          <h1 className="text-2xl font-black tracking-tight uppercase flex justify-center items-center gap-0.5 dark:text-white text-slate-800">
-            <span className="text-[#0052ff]">ub_</span>
-            <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              CREST
-            </span>
-          </h1>
           <p className="text-[10px] uppercase tracking-widest dark:text-slate-400 text-slate-500 font-extrabold">Grievance Tracking Gateway</p>
         </div>
 
