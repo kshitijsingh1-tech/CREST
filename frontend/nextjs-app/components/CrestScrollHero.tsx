@@ -72,10 +72,10 @@ export default function CrestScrollHero({
   return (
     <div className="flex-grow flex flex-col w-full relative bg-transparent">
       
-      {/* 1. The Widescreen Title Banner with WebGL Red & Blue neon sweeps (Single Unified Classy Card) */}
-      <div className="w-full max-w-6xl mx-auto px-6 mt-6 mb-10 relative overflow-hidden rounded-[2.5rem] border border-white/20 dark:border-white/10 h-[280px] flex items-center justify-center shadow-[0_25px_60px_-15px_rgba(59,130,246,0.12),0_15px_30px_rgba(0,0,0,0.06)] backdrop-blur-2xl bg-white/12 dark:bg-black/25 animate-fade-in-up hover:shadow-[0_30px_70px_-10px_rgba(59,130,246,0.2),0_20px_40px_rgba(0,0,0,0.1)] hover:border-white/30 dark:hover:border-white/20 transition-all duration-700 ease-out hover:-translate-y-1">
+      {/* 1. The Widescreen Title Banner with WebGL Red & Blue neon sweeps (Single Unified Classy Card - Zoomed-in Premium) */}
+      <div className="w-full max-w-7xl mx-auto px-8 mt-8 mb-12 relative overflow-hidden rounded-[3rem] border border-white/35 dark:border-white/15 min-h-[340px] py-12 flex flex-col items-center justify-center shadow-[0_35px_80px_-15px_rgba(59,130,246,0.22),0_20px_40px_rgba(0,0,0,0.08)] backdrop-blur-3xl bg-white/30 dark:bg-black/35 animate-fade-in-up hover:shadow-[0_45px_90px_-10px_rgba(59,130,246,0.32),0_25px_50px_rgba(0,0,0,0.12)] hover:border-white/45 dark:hover:border-white/25 transition-all duration-700 ease-out hover:-translate-y-1">
         {/* ColorBends rendering beautiful WebGL neon red/blue sweeps in background */}
-        <div className="absolute inset-0 opacity-45 pointer-events-none z-0">
+        <div className="absolute inset-0 opacity-55 pointer-events-none z-0">
           <ColorBends 
             colors={["#ef4444", "#3b82f6"]} 
             speed={0.12} 
@@ -86,29 +86,29 @@ export default function CrestScrollHero({
         </div>
         
         {/* Title Details floating directly inside the single unified glassmorphic canvas */}
-        <div className="relative z-10 text-center space-y-4 max-w-4xl px-4">
+        <div className="relative z-10 text-center space-y-5 max-w-5xl px-6">
           {badgeText && (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-[8px] font-black uppercase tracking-widest backdrop-blur-md shadow-sm
-              dark:border-white/10 dark:bg-white/5 dark:text-blue-300
-              border-white/20 bg-white/10 text-gray-700 animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_both]">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 animate-[pulse_2s_infinite]" /> {badgeText}
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest backdrop-blur-md shadow-sm
+              dark:border-white/15 dark:bg-white/5 dark:text-blue-300
+              border-white/25 bg-white/15 text-gray-700 animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_both]">
+              <ShieldCheck className="w-4 h-4 text-emerald-500 animate-[pulse_2s_infinite]" /> {badgeText}
             </div>
           )}
           
-          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight leading-none drop-shadow-sm animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.1s_both] bg-clip-text text-transparent w-fit mx-auto" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-none drop-shadow-md animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.1s_both] bg-clip-text text-transparent w-fit mx-auto" style={{ backgroundImage: "linear-gradient(to right, #0052ff, #4a22ff, #9b1aff, #e31837, #ff2200)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             {title}
           </h2>
           
-          <p className="text-xs md:text-sm font-bold uppercase tracking-wider text-gray-600/90 dark:text-slate-400 drop-shadow-sm animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.2s_both]">
+          <p className="text-sm md:text-base font-black uppercase tracking-widest text-gray-700 dark:text-slate-300 drop-shadow-sm animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.2s_both]">
             {subtitle}
           </p>
           {/* Laser-style glowing neon-gradient underline replacing static solid line */}
-          <div className="h-0.5 w-24 bg-gradient-to-r from-transparent via-[#e31837] to-transparent shadow-[0_0_10px_rgba(227,24,55,0.6)] mx-auto mt-2 rounded-full animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.25s_both]" />
-
+          <div className="h-0.5 w-32 bg-gradient-to-r from-transparent via-[#e31837] to-transparent shadow-[0_0_12px_rgba(227,24,55,0.7)] mx-auto mt-2 rounded-full animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.25s_both]" />
+ 
           {subText && (
-            <p className="text-[9px] max-w-2xl mx-auto font-bold uppercase tracking-widest leading-relaxed text-gray-500/80 dark:text-slate-400/60 mt-1 animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.3s_both]">
+            <div className="text-xs md:text-sm max-w-3xl mx-auto font-black uppercase tracking-widest leading-relaxed text-gray-600 dark:text-slate-300 mt-2 animate-[fadeInUp_0.8s_cubic-bezier(0.16,1,0.3,1)_0.3s_both]">
               {subText}
-            </p>
+            </div>
           )}
         </div>
       </div>

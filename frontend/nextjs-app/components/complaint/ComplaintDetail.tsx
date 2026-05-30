@@ -265,32 +265,30 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                     onClick={toggleLanguage}
                     disabled={translating}
                     title="Toggle between original language and English"
-                    className="flex items-center gap-0 rounded-full p-1 transition-all duration-300 disabled:opacity-60 disabled:cursor-wait focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700"
-                    style={{ background: "rgba(220, 218, 235, 0.6)" }}
+                    className="flex items-center gap-1 rounded-full p-1 transition-all duration-300 disabled:opacity-60 disabled:cursor-wait focus:outline-none focus:ring-1 focus:ring-blue-500/30 bg-white/20 dark:bg-black/35 backdrop-blur-xl border border-gray-300/30 dark:border-white/10 shadow-sm"
                   >
-                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 transition-all duration-300 ${!showOriginalLang ? "text-gray-400 dark:text-gray-500" : "text-indigo-700 dark:text-indigo-300"}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 transition-all duration-300 ${showOriginalLang ? "bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 font-extrabold" : "text-gray-400 dark:text-gray-600"}`}>
                       {(c as any).language?.toUpperCase() || "ORIG"}
                     </span>
                     {/* Sliding pill */}
                     <span
-                      className="relative inline-flex h-6 w-12 rounded-full transition-all duration-300"
-                      style={{ background: "rgba(200, 195, 225, 0.5)" }}
+                      className="relative inline-flex h-5 w-11 rounded-full transition-all duration-300 bg-gray-200/50 dark:bg-white/5 border border-gray-300/30 dark:border-white/10"
                     >
                       <span
-                        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-all duration-300 ${showOriginalLang ? "left-0.5" : "left-6"}`}
+                        className={`absolute top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-all duration-300 ${showOriginalLang ? "left-0.5" : "left-7"}`}
                       />
                       {translating && (
                         <span className="absolute inset-0 flex items-center justify-center">
-                          <span className="w-2.5 h-2.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                          <span className="w-2 h-2 border border-indigo-400 border-t-transparent rounded-full animate-spin" />
                         </span>
                       )}
                     </span>
-                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 transition-all duration-300 ${showOriginalLang ? "text-gray-400 dark:text-gray-500" : "text-emerald-700 dark:text-emerald-300"}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 transition-all duration-300 ${!showOriginalLang ? "bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-orange-500 dark:from-red-400 dark:to-orange-400 font-extrabold" : "text-gray-400 dark:text-gray-600"}`}>
                       EN
                     </span>
                   </button>
                   {!c.draft_approved && !(c as any).is_superior_takeover && (
-                    <button onClick={() => setIsEditingDraft(!isEditingDraft)} className="text-[10px] uppercase font-bold text-indigo-500 hover:text-indigo-700 transition-colors">
+                    <button onClick={() => setIsEditingDraft(!isEditingDraft)} className="text-[10px] uppercase font-black tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors pl-2.5 border-l border-gray-300/40 dark:border-white/10">
                       {isEditingDraft ? "Done" : "Edit"}
                     </button>
                   )}
