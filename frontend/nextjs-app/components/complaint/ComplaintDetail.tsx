@@ -43,10 +43,12 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
       if (select && select.value) {
         setOfficerLang(select.value.toUpperCase());
       } else {
+        // googtrans cookie is URL-encoded e.g. %2Fen%2Fbn — must decode before splitting
         const match = document.cookie.match(/googtrans=([^;]+)/);
         if (match) {
-          const parts = match[1].split("/");
-          if (parts.length >= 3) {
+          const decoded = decodeURIComponent(match[1]);
+          const parts = decoded.split("/");
+          if (parts.length >= 3 && parts[2]) {
             setOfficerLang(parts[2].toUpperCase());
             return;
           }
@@ -323,7 +325,8 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
                 {showOriginalLang ? (c as any).language?.toUpperCase() || "ORIG" : officerLang}
               </span>
             </div>
-            <p className="text-sm text-gray-800 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
+            {/* notranslate: Google Translate must NOT re-translate this — we control content via API */}
+            <p className="text-sm text-gray-800 dark:text-gray-400 leading-relaxed whitespace-pre-wrap notranslate">
               {showOriginalLang ? (c as any).body : (translatedBody ?? (c as any).body)}
             </p>
           </div>
@@ -376,14 +379,15 @@ export default function ComplaintDetail({ complaint: initial, similar, audit }: 
               {c.draft_reply ? (
                 <div className="flex-1 flex flex-col">
                   {c.draft_approved || (c as any).is_superior_takeover || (!isEditingDraft) ? (
-                    <p className="flex-1 text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 min-h-[300px]">
+                    /* notranslate: we control content via API; Google must not overwrite it */
+                    <p className="flex-1 text-sm text-gray-800 dark:text-gray-300 leading-relaxed whitespace-pre-wrap bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 min-h-[300px] notranslate">
                       {showOriginalLang ? c.draft_reply : (translatedDraft ?? c.draft_reply)}
                     </p>
                   ) : (
                     <div
                       contentEditable
                       suppressContentEditableWarning
-                      className="flex-1 w-full text-sm text-gray-800 dark:text-white leading-relaxed bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 overflow-y-auto min-h-[300px]"
+                      className="flex-1 w-full text-sm text-gray-800 dark:text-white leading-relaxed bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 overflow-y-auto min-h-[300px] notranslate"
                       onBlur={(e) => setC(prev => ({ ...prev, draft_reply: e.currentTarget.innerText }))}
                       dangerouslySetInnerHTML={{ __html: showOriginalLang ? (c.draft_reply || "") : (translatedDraft ?? c.draft_reply ?? "") }}
                     />
