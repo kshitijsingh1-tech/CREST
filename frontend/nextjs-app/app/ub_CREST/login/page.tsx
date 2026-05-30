@@ -199,7 +199,6 @@ export default function CrestLoginPage() {
                 />
               </div>
             </div>
-
             <div>
               <label className="text-[10px] font-black uppercase tracking-widest dark:text-slate-400 text-slate-600 mb-2 block">Secure Keyphrase</label>
               <div className="relative">
@@ -214,6 +213,19 @@ export default function CrestLoginPage() {
                   className="w-full pl-10 pr-4 py-4 dark:bg-black/80 bg-white border dark:border-white/10 border-gray-200 rounded-2xl focus:ring-2 dark:focus:ring-blue-500 focus:ring-blue-600 dark:text-white text-black outline-none transition-all text-sm"
                   placeholder="••••••••"
                 />
+              </div>
+              <div className="flex justify-end mt-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("admin@unionbank.com");
+                    setPassword("admin123");
+                    setCaptchaInput(captchaText);
+                  }}
+                  className="text-[10px] font-black uppercase tracking-widest text-[#0052ff] hover:underline"
+                >
+                  ⚡ Auto-fill Super Admin
+                </button>
               </div>
             </div>
 

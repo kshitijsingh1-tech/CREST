@@ -115,6 +115,18 @@ python -m backend.utils.reset_db
 
 ## (F) User Hierarchy & Portal System
 
+### **Default Demo Accounts & Credentials**
+To ease testing, you can auto-fill credentials on the corporate login portal using the **⚡ Auto-fill Super Admin** button. Alternatively, the following credentials can be used manually:
+* **Super Administrator**:
+  * **Email**: `admin@unionbank.com`
+  * **Password**: `admin123`
+* **Mumbai Regional Sub-Admin**:
+  * **Email**: `mumbai_admin@unionbank.com`
+  * **Password**: `admin123`
+* **Mumbai Regional Employee/Officer**:
+  * **Email**: `mumbai_officer@unionbank.com`
+  * **Password**: `officer123`
+
 CREST divides portal scopes strictly between **Public Citizens** and **Enterprise Officers** (Super Admins, Sub-Admins, and Employees) to balance transparency with rigorous administrative security:
 
 ### **1. Public Portal (`/ub_publicPortal`)**
