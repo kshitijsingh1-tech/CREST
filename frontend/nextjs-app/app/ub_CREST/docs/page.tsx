@@ -96,6 +96,7 @@ export default function DocsPage() {
             ["#public", "Public Portal"],
             ["#security", "Security & Compliance"],
             ["#compliance", "AI Governance & Mandates"],
+            ["#deployment", "OCI Deployment Guide"],
             ["#team", "Built By"],
           ].map(([href, label]) => (
             <a key={href} href={href as string} className="text-xs font-bold flex items-center gap-1.5 dark:text-blue-300 dark:hover:text-white text-blue-700 hover:text-black transition-colors">
@@ -160,10 +161,18 @@ export default function DocsPage() {
               },
             ].map(p => <Card key={p.title} {...p} />)}
           </div>
-          <div className="relative rounded-r-2xl rounded-l-md border border-l-4 border-gray-200 dark:border-white/10 border-l-blue-500 dark:border-l-blue-400 p-5 bg-white/60 dark:bg-white/5 backdrop-blur-md transition-all duration-300 shadow-sm hover:shadow-md">
+          <div className="relative rounded-r-2xl rounded-l-md border border-l-4 border-gray-200 dark:border-white/10 border-l-blue-500 dark:border-l-blue-400 p-5 bg-white/60 dark:bg-white/5 backdrop-blur-md transition-all duration-300 shadow-sm hover:shadow-md space-y-3">
             <p className="text-xs font-semibold dark:text-slate-300 text-gray-700 leading-relaxed">
               <strong className="dark:text-blue-300 text-blue-700 font-bold">Multilingual by Default</strong> — Powered by the MeitY Digital India Bhashini gateway, CREST automatically detects regional Indian languages (Hindi, Tamil, Bengali, Telugu, and more). Complaints are translated for AI processing and replies are sent back in the customer's own language — no manual effort required.
             </p>
+            <div className="border-t border-gray-200/50 dark:border-white/5 pt-3">
+              <p className="text-[11px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-1">
+                🔄 Bidirectional Edit Synchronization & Translation Toggle
+              </p>
+              <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-600">
+                To simplify the review process, officers can toggle between the original language of the customer's complaint and their own active workspace language (synced dynamically with the global translation setting). If an officer edits the translated draft response and clicks <strong>Done</strong>, the system automatically translates those edits back into the customer's native language in the background. This ensures that the customer always receives the response in their preferred language, while the officer has complete freedom to review and customize drafts in their own active language.
+              </p>
+            </div>
           </div>
         </Section>
 
@@ -437,6 +446,68 @@ export default function DocsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </Section>
+
+        {/* OCI Deployment Guide */}
+        <Section id="deployment" title="Oracle Cloud Infrastructure (OCI) Deployment" subtitle="Enterprise Cloud Hosting Guide">
+          <p className="text-sm dark:text-slate-300 text-gray-700 leading-relaxed mb-6">
+            CREST is fully containerized and compatible with Oracle Cloud Infrastructure (OCI). The entire microservice stack runs seamlessly using Docker Compose on any standard OCI Compute Shape. Follow this guide to prepare and deploy your instance:
+          </p>
+          <div className="grid grid-cols-1 gap-6">
+            <div className="rounded-2xl border p-6 dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 bg-white/60 backdrop-blur-md border-white/50">
+              <h3 className="text-xs font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-4">
+                1. Architectural Compatibility (AMD64 vs ARM64)
+              </h3>
+              <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-500">
+                If you choose OCI's high-performance <strong>Ampere A1 (ARM64)</strong> Compute shapes, all primary service images (PostgreSQL with pgvector, Redis, Elasticsearch, FastAPI, and Next.js) will build and run natively. For Kafka and Zookeeper on ARM64, the standard Confluent platform images are fully supported, but you can also swap to standard Apache Kafka images if required.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border p-6 dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 bg-white/60 backdrop-blur-md border-white/50">
+              <h3 className="text-xs font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-4">
+                2. VCN Security Lists & Network Ingress
+              </h3>
+              <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-500 mb-3">
+                OCI Virtual Cloud Networks (VCNs) block all inbound public traffic by default. To make the portals accessible, you must add the following Ingress Rules to your VCN's Security List:
+              </p>
+              <ul className="space-y-2 text-xs dark:text-slate-400 text-gray-500">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
+                  <span><strong>Port 3000 (TCP)</strong>: For accessing the Next.js Public and Admin Dashboards.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
+                  <span><strong>Port 8000 (TCP)</strong>: For the FastAPI backend API gateways.</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="rounded-2xl border p-6 dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 bg-white/60 backdrop-blur-md border-white/50">
+              <h3 className="text-xs font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-4">
+                3. Linux OS Firewall Configuration
+              </h3>
+              <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-500 mb-3">
+                OCI OS images (Oracle Linux/Ubuntu) configure local firewalls by default. You will need to open ports 3000 and 8000 on the VM. For example, on Ubuntu, run these commands:
+              </p>
+              <pre className="p-4 rounded-lg bg-black/60 dark:bg-black/80 text-[11px] font-mono dark:text-indigo-300 text-indigo-600 overflow-x-auto">
+                sudo ufw allow 3000/tcp{"\n"}
+                sudo ufw allow 8000/tcp
+              </pre>
+            </div>
+
+            <div className="rounded-2xl border p-6 dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10 bg-white/60 backdrop-blur-md border-white/50">
+              <h3 className="text-xs font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-4">
+                4. Environment Variable Configuration
+              </h3>
+              <p className="text-xs leading-relaxed dark:text-slate-400 text-gray-500 mb-3">
+                Before launching the stack via <code>docker compose up</code>, configure your production <code>.env</code> file with your OCI instance's public IP:
+              </p>
+              <pre className="p-4 rounded-lg bg-black/60 dark:bg-black/80 text-[11px] font-mono dark:text-indigo-300 text-indigo-600 overflow-x-auto">
+                CORS_ORIGINS=http://&lt;OCI_PUBLIC_IP&gt;:3000{"\n"}
+                NEXT_PUBLIC_API_URL=http://&lt;OCI_PUBLIC_IP&gt;:8000
+              </pre>
             </div>
           </div>
         </Section>

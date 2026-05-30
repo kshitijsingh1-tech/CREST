@@ -19,6 +19,7 @@ Union Bank of India serves millions of customers across diverse regions. Current
 - **Omnichannel Auto-Responder & Intent Detection**: Integrated webhooks across Instagram (Meta Graph API), WhatsApp/SMS (Twilio), Discord, and Telegram to intercept messages. A conversational AI naturally chats with users and intelligently detects when a grievance is being lodged to auto-generate and track tickets.
 - **Dynamic Regional Auto-Routing**: Actively prompts and parses customer location replies (e.g., "Delhi", "Mumbai") across all active messaging channels, automatically mapping the complaint region and instantly load-balancing the ticket to the least-busy regional branch officer.
 - **Adaptive AI Severity Prompting**: Ingested messages with high anger, frustration, or severe abuse are dynamically escalated to P0/P1 to protect brand integrity.
+- **Bidirectional Multilingual Synchronization & Guardrails**: Automatically detects the portal's active Google Translate language (using cookie extraction and DOM polling) to synchronize text controls. By wrapping sensitive complaint and resolution blocks in exclusion boundaries (`notranslate`), the system prevents browser-level translation collisions. When an officer edits a draft reply in their active workspace language, CREST automatically back-translates the changes into the customer's original language upon submission, closing the feedback loop seamlessly.
 
 ### **Technical Workflow (Enterprise Hybrid Architecture)**
 ```mermaid
