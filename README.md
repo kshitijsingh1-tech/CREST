@@ -385,6 +385,29 @@ CREST divides portal access between **Public Citizens** and **Enterprise Officer
 
 ---
 
+## (j) Railway Deployment Guide
+
+This repository includes a `railway.toml` file at the root to configure the stack for deployment on [Railway](https://railway.com).
+
+### Provisioning Infrastructure
+1. Create a **PostgreSQL** database service on Railway and ensure you enable/install the `vector` extension (configured automatically by the database initializer).
+2. Create a **Redis** service on Railway (used as the broker for Celery and state management).
+
+### Services Deployment Setup
+Deploy the following services in your Railway project from the same GitHub repository:
+
+| Service Name | Root Directory | Builder Type | Command / Custom Override |
+|---|---|---|---|
+| **crest-api** | `/` | Dockerfile | *Uses default defined in `railway.toml`* (`uvicorn backend.main:socket_app ...`) |
+| **crest-ui** | `/frontend/nextjs-app` | Nixpacks | *Automatic Next.js detection & start* |
+| **worker-ingest** | `/` | Dockerfile | `celery -A backend.workers.celery_app worker -Q ingest -c 4 --loglevel=info` |
+| **worker-scheduler** | `/` | Dockerfile | `celery -A backend.workers.celery_app worker -Q scheduler -c 2 --loglevel=info` |
+| **celery-beat** | `/` | Dockerfile | `celery -A backend.workers.celery_app beat --loglevel=info` |
+
+> 💡 **Tip**: For the Celery worker and beat services, change the **Start Command** in the Railway service settings to the commands listed above. This overrides the default API command defined in the root `railway.toml`.
+
+---
+
 ## Team Gen Forge
 - **Kshitij Singh** — Lead Backend & AI
 - **Aayush Jaiswal** — Frontend & UI/UX

@@ -1,0 +1,28 @@
+# Railway deployment configuration for CREST API backend
+#
+# NOTE: For monorepo deployments on Railway:
+# 1. API Service:
+#    - Root Directory: /
+#    - Build: Uses Dockerfile via infra/docker/Dockerfile.api (configured below)
+# 2. Next.js Frontend Service:
+#    - Root Directory: /frontend/nextjs-app
+#    - Build: Nixpacks (automatic Next.js build detection, no custom command needed)
+# 3. Celery Ingest Worker Service:
+#    - Root Directory: /
+#    - Start Command (override in dashboard): celery -A backend.workers.celery_app worker -Q ingest -c 4 --loglevel=info
+# 4. Celery Scheduler Worker Service:
+#    - Root Directory: /
+#    - Start Command (override in dashboard): celery -A backend.workers.celery_app worker -Q scheduler -c 2 --loglevel=info
+# 5. Celery Beat Service:
+#    - Root Directory: /
+#    - Start Command (override in dashboard): celery -A backend.workers.celery_app beat --loglevel=info
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "infra/docker/Dockerfile.api"
+
+[deploy]
+startCommand = "uvicorn backend.main:socket_app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
