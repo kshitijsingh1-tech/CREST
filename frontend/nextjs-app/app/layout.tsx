@@ -5,6 +5,9 @@ import Shell from "@/components/Shell";
 export const metadata: Metadata = {
   title:       "CREST — Union Bank",
   description: "Internet Banking Grievance Intelligence",
+  icons: {
+    icon: "/crest_logo.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import ColorBends from "@/components/ColorBends";
 import CrestScrollHero from "@/components/CrestScrollHero";
+import GoogleTranslate from "@/components/GoogleTranslate";
 
 export default function RootLandingPage() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -49,8 +50,15 @@ export default function RootLandingPage() {
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-transparent">
 
-      {/* Floating Theme Toggle in Top Right */}
-      <div className="absolute top-6 right-6 z-50 pointer-events-auto">
+      {/* Floating Controls in Top Right */}
+      <div className="absolute top-6 right-6 z-50 pointer-events-auto flex items-center gap-3">
+        {/* Google Page Translation Button */}
+        <div className="px-4 py-2 rounded-full transition-all duration-300 backdrop-blur-xl border shadow-lg hover:scale-105
+          dark:bg-black/40 dark:border-white/10 bg-white/60 border-gray-200 flex items-center gap-2">
+          <GoogleTranslate />
+        </div>
+
+        {/* Theme Toggle */}
         <button 
           onClick={toggleTheme} 
           className="p-3 rounded-full transition-all duration-300 backdrop-blur-xl border shadow-lg hover:scale-105 active:scale-95
@@ -244,7 +252,11 @@ export default function RootLandingPage() {
                 href: "https://discord.gg/invite"
               },
               { 
-                icon: <Globe className="w-6 h-6 text-emerald-500" />, 
+                icon: (
+                  <div className="w-6 h-6 rounded-md overflow-hidden border border-gray-200/60 dark:border-white/15 bg-white/10 flex items-center justify-center">
+                    <img src="/crest_logo.png" alt="CREST Logo" className="w-full h-full object-cover" />
+                  </div>
+                ), 
                 ch: "Web Portal", 
                 desc: "Log details directly through the browser portal. Complete self-service form.",
                 href: "/ub_publicPortal"
