@@ -1,0 +1,3 @@
+# Railway deployment configuration for CREST frontend
+[build]
+builder = "NIXPACKS"
