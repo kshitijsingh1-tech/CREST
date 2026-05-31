@@ -20,6 +20,9 @@ DATABASE_URL = os.getenv(
     "CREST_DB_URL",
     "postgresql://crest_user:crest_pass@localhost:5432/crest_db",
 )
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 
 # ── SQLAlchemy engine (used by models & FastAPI dependency) ──
 # Use smaller connection pool limits on Render to prevent database connection exhaustion deadlocks
