@@ -504,6 +504,17 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
                           </div>
                         );
                       }
+                      if (c.region_id) {
+                        const matchedRegion = regions.find(r => r.id === c.region_id);
+                        const regionName = matchedRegion ? matchedRegion.name : `Region ${c.region_id}`;
+                        return (
+                          <div className="flex items-center gap-1.5" title={`Routed to ${regionName}`}>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30">
+                              Unassigned ({regionName})
+                            </span>
+                          </div>
+                        );
+                      }
                       return (
                         <span className="inline-flex items-center gap-1 text-amber-500 dark:text-amber-400 italic text-[11px]">
                           <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
