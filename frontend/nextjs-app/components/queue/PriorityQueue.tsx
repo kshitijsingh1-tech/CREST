@@ -510,7 +510,7 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
                         return (
                           <div className="flex items-center gap-1.5" title={`Routed to ${regionName}`}>
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30">
-                              Unassigned ({regionName})
+                              No Officer Available ({regionName})
                             </span>
                           </div>
                         );

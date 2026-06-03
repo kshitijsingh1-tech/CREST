@@ -927,10 +927,17 @@ async def try_update_complaint_region(db: Session, channel_name: str, customer_i
         return False
 
     # 4. Send confirmation message back on the originating channel
-    msg = (
-        f"Thank you! We have updated your nodal region to **{matched_region.name}** "
-        f"and successfully routed your ticket (Ref: {complaint.id}) to our regional branch office."
-    )
+    if assigned_employee_id:
+        msg = (
+            f"Thank you! We have updated your nodal region to **{matched_region.name}** "
+            f"and successfully routed your ticket (Ref: {complaint.id}) to our regional branch office."
+        )
+    else:
+        msg = (
+            f"Thank you! We have updated your nodal region to **{matched_region.name}**. "
+            f"Currently, all regional officers are occupied or offline, but your ticket (Ref: {complaint.id}) "
+            f"has been queued at our {matched_region.name} branch and will be assigned to the next available representative."
+        )
     try:
         if channel_name == "discord":
             from integrations.discord.sender import send_discord_dm
