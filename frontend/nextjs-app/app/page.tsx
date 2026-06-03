@@ -110,10 +110,10 @@ export default function RootLandingPage() {
               dark:bg-black/85 dark:backdrop-blur-xl dark:border-white/10 dark:shadow-2xl dark:hover:border-blue-500/40
               bg-white/70 backdrop-blur-xl border-gray-200/60 shadow-xl hover:border-blue-500/40">
               <div>
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-8 border
+                <div className="w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center mb-8 border p-2.5
                   dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400
                   bg-blue-50 border-blue-200 text-blue-600">
-                  <User size={28} />
+                  <img src="/crest_logo.png" alt="CREST" className="w-full h-full object-contain rounded-md" />
                 </div>
                 <h3 className="text-xl md:text-2xl font-black uppercase tracking-wider mb-3 dark:text-white text-gray-900">Customer Portal</h3>
                 <p className="text-xs md:text-sm font-semibold leading-relaxed dark:text-slate-400 text-gray-500">

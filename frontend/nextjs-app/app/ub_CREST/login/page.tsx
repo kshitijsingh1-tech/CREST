@@ -42,44 +42,7 @@ export default function CrestLoginPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setCaptchaText(generateCaptchaText());
-
-    const params = new URLSearchParams(window.location.search);
-    const qEmail = params.get("email");
-    if (qEmail) setEmail(qEmail);
-    const qPassword = params.get("password");
-    if (qPassword) setPassword(qPassword);
-
-    // Clear any stale session on arriving at login
-    Cookies.remove("crest_token", { path: "/" });
-    localStorage.removeItem("crest_user");
-
-    if (params.get("recovered") === "1") {
-      setError("Your session has expired or is invalid. Please sign in again.");
-    }
-  }, []);
-
-  const handleRefreshCaptcha = () => {
-    setCaptchaText(generateCaptchaText());
-    setCaptchaInput("");
-  };
-
-  // Authenticate Credentials & Captcha on a Single Integrated Form
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
-    // Validate Alphanumeric Captcha (case-insensitive)
-    if (captchaInput.toLowerCase() !== captchaText.toLowerCase()) {
-      setError("Invalid security Captcha. Please try again.");
-      handleRefreshCaptcha();
-      setLoading(false);
-      return;
-    }
-
+  const executeLogin = async (emailVal: string, passwordVal: string) => {
     try {
       // Authenticate via FastAPI JWT backend.
       // Render free-tier cold starts can cause transient gateway/network failures,
@@ -87,7 +50,7 @@ export default function CrestLoginPage() {
       let attempt = 0;
       while (true) {
         try {
-          await login(email, password);
+          await login(emailVal, passwordVal);
           break;
         } catch (err) {
           const status = getApiErrorStatus(err);
@@ -142,6 +105,59 @@ export default function CrestLoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const text = generateCaptchaText();
+    setCaptchaText(text);
+
+    const params = new URLSearchParams(window.location.search);
+    const qEmail = params.get("email");
+    const qPassword = params.get("password");
+    if (qEmail) setEmail(qEmail);
+    if (qPassword) setPassword(qPassword);
+
+    // Clear any stale session on arriving at login
+    Cookies.remove("crest_token", { path: "/" });
+    localStorage.removeItem("crest_user");
+
+    if (params.get("recovered") === "1") {
+      setError("Your session has expired or is invalid. Please sign in again.");
+    }
+
+    if (qEmail && qPassword) {
+      setCaptchaInput(text);
+      // Wait for a short tick, then perform the auto-login
+      setTimeout(() => {
+        setError("");
+        setSuccess("");
+        setLoading(true);
+        executeLogin(qEmail, qPassword);
+      }, 150);
+    }
+  }, []);
+
+  const handleRefreshCaptcha = () => {
+    setCaptchaText(generateCaptchaText());
+    setCaptchaInput("");
+  };
+
+  // Authenticate Credentials & Captcha on a Single Integrated Form
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    // Validate Alphanumeric Captcha (case-insensitive)
+    if (captchaInput.toLowerCase() !== captchaText.toLowerCase()) {
+      setError("Invalid security Captcha. Please try again.");
+      handleRefreshCaptcha();
+      setLoading(false);
+      return;
+    }
+
+    await executeLogin(email, password);
   };
 
   return (

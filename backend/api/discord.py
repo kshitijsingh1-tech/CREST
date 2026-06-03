@@ -8,7 +8,7 @@ Endpoint: POST /api/integrations/discord/webhook
 import hmac
 import hashlib
 import os
-from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi import APIRouter, Request, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from backend.utils.db import get_db_optional
@@ -70,10 +70,56 @@ def _verify_discord_signature(body: bytes, signature: str, timestamp: str) -> bo
         return False
 
 
+async def process_discord_webhook_in_background(
+    user_id: str,
+    username: str,
+    content: str,
+    message_id: str,
+):
+    from backend.utils.db import SessionLocal
+    db = SessionLocal()
+    try:
+        # Check if they are responding to a nodal region request
+        from backend.api.complaints import try_update_complaint_region
+        if await try_update_complaint_region(db, "discord", user_id, content):
+            logger.info(f"Discord user {user_id} updated region to {content}")
+            return
+
+        # Classify intent (COMPLAINT vs CONVERSATION)
+        from ai.utils.intent import classify_message_intent, get_cresty_response
+        intent = classify_message_intent(content)
+        if intent == "CONVERSATION":
+            logger.info(f"Discord message from {user_id} classified as CONVERSATION: {content[:50]}...")
+            try:
+                from integrations.discord.sender import send_discord_dm
+                cresty_reply = get_cresty_response(content)
+                send_discord_dm(recipient_user_id=str(user_id), reply_text=cresty_reply)
+            except Exception as send_err:
+                logger.error(f"Failed to send Cresty response to Discord: {send_err}")
+            return
+        
+        # Create complaint payload
+        complaint_data = {
+            "channel": "discord",
+            "customer_id": user_id,
+            "customer_name": username,
+            "body": content,
+            "subject": f"Discord DM from {username}",
+            "external_ref": message_id,
+        }
+        
+        await ingest_complaint_logic(complaint_data, db)
+        logger.info(f"Discord DM ingested from user {username} ({user_id})")
+    except Exception as e:
+        logger.error(f"Discord background processing failed for user {user_id}: {e}", exc_info=True)
+    finally:
+        db.close()
+
+
 @router.post("/webhook")
 async def discord_webhook(
     request: Request,
-    db: Session = Depends(get_db_optional)
+    background_tasks: BackgroundTasks,
 ):
     """
     Handles Discord interactions (slash commands, message components, DMs).
@@ -135,42 +181,17 @@ async def discord_webhook(
         # Extract user info
         user_id = author.get("id", "unknown")
         username = author.get("username", "unknown")
+        message_id = message.get("id", f"discord:{user_id}")
 
-        # Check if they are responding to a nodal region request
-        from backend.api.complaints import try_update_complaint_region
-        if await try_update_complaint_region(db, "discord", user_id, content):
-            return {"status": "region_updated"}
-
-        # Classify intent (COMPLAINT vs CONVERSATION)
-        from ai.utils.intent import classify_message_intent, get_cresty_response
-        intent = classify_message_intent(content)
-        if intent == "CONVERSATION":
-            logger.info(f"Discord message from {user_id} classified as CONVERSATION: {content[:50]}...")
-            try:
-                from integrations.discord.sender import send_discord_dm
-                cresty_reply = get_cresty_response(content)
-                send_discord_dm(recipient_user_id=str(user_id), reply_text=cresty_reply)
-            except Exception as send_err:
-                logger.error(f"Failed to send Cresty response to Discord: {send_err}")
-            return {"status": "replied_via_cresty"}
-        
-        # Create complaint payload
-        complaint_data = {
-            "channel": "discord",
-            "customer_id": user_id,
-            "customer_name": username,
-            "body": content,
-            "subject": f"Discord DM from {username}",
-            "external_ref": message.get("id", f"discord:{user_id}"),
-        }
-        
-        try:
-            await ingest_complaint_logic(complaint_data, db)
-            logger.info(f"Discord DM ingested from user {username} ({user_id})")
-            return {"status": "accepted"}
-        except Exception as ingest_err:
-            logger.error(f"Discord DM ingest failed for user {user_id}: {ingest_err}", exc_info=True)
-            return {"status": "error", "detail": str(ingest_err)}
+        # Schedule DM processing in background
+        background_tasks.add_task(
+            process_discord_webhook_in_background,
+            user_id,
+            username,
+            content,
+            message_id
+        )
+        return {"status": "accepted"}
     
     logger.info(f"Unknown Discord interaction type: {interaction_type}")
     return {"status": "ignored"}

@@ -5,8 +5,8 @@ from __future__ import annotations
 import os
 from urllib.parse import quote
 
-# Current production UI (override via CREST_PORTAL_URL on Render)
-DEFAULT_PORTAL_URL = "https://crest-ui-6zh6.onrender.com"
+# Current production UI (override via CREST_PORTAL_URL on Railway)
+DEFAULT_PORTAL_URL = "https://crest-ui.up.railway.app"
 
 
 def get_portal_url() -> str:

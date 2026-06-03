@@ -109,7 +109,7 @@ class SetRegionRequest(BaseModel):
 
 
 @router.post("/set-region")
-def set_complaint_region(req: SetRegionRequest, db: Session = Depends(get_db_optional)):
+async def set_complaint_region(req: SetRegionRequest, db: Session = Depends(get_db_optional)):
     try:
         complaint_id = uuid.UUID(req.reference_token)
     except ValueError:
@@ -137,11 +137,7 @@ def set_complaint_region(req: SetRegionRequest, db: Session = Depends(get_db_opt
     # Broadcast change to dashboard clients
     try:
         from backend.utils.socket import broadcast_queue_update
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(broadcast_queue_update())
-        loop.close()
+        await broadcast_queue_update()
     except Exception:
         pass
         
