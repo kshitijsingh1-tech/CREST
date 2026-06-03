@@ -127,13 +127,6 @@ export default function CrestLoginPage() {
 
     if (qEmail && qPassword) {
       setCaptchaInput(text);
-      // Wait for a short tick, then perform the auto-login
-      setTimeout(() => {
-        setError("");
-        setSuccess("");
-        setLoading(true);
-        executeLogin(qEmail, qPassword);
-      }, 150);
     }
   }, []);
 
