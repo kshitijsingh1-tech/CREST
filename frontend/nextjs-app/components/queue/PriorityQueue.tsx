@@ -507,22 +507,50 @@ export default function PriorityQueue({ regionId }: { regionId?: number }) {
                       if (c.region_id) {
                         const matchedRegion = regions.find(r => r.id === c.region_id);
                         const regionName = matchedRegion ? matchedRegion.name : `Region ${c.region_id}`;
+                        
+                        const hasLoadedUsers = users && users.length > 0;
+                        const regionalEmployees = hasLoadedUsers ? users.filter(u => u.region_id === c.region_id && u.role === "EMPLOYEE" && u.is_active !== false) : [];
+                        const hasOfficersInRegion = !hasLoadedUsers || regionalEmployees.length > 0;
+
+                        if (!hasOfficersInRegion) {
+                          return (
+                            <div className="flex items-center gap-1.5" title={`Unassigned: No active officers registered in the ${regionName} region. Please update employee regions or assign manually.`}>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-600 border border-rose-500/20 dark:bg-rose-500/25 dark:text-rose-400 dark:border-rose-500/30 shadow-sm animate-pulse cursor-help">
+                                <svg className="w-3.5 h-3.5 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                No Officer Registered ({regionName})
+                              </span>
+                            </div>
+                          );
+                        }
+
                         return (
-                          <div className="flex items-center gap-1.5" title={`Routed to ${regionName}`}>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30">
-                              No Officer Available ({regionName})
+                          <div className="flex items-center gap-1.5" title={`Routed to ${regionName}. Waiting for regional officer assignment.`}>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30">
+                              Unassigned ({regionName})
                             </span>
                           </div>
                         );
                       }
                       return (
-                        <span className="inline-flex items-center gap-1 text-amber-500 dark:text-amber-400 italic text-[11px]">
-                          <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                          </svg>
-                          Auto-Routing...
-                        </span>
+                        <div className="flex flex-col gap-1 w-full max-w-[100px] py-1">
+                          <span className="inline-flex items-center gap-1 text-amber-500 dark:text-amber-400 font-black text-[10px] uppercase tracking-wider animate-pulse">
+                            Auto-Routing
+                          </span>
+                          <div className="relative w-full h-[3px] bg-amber-100 dark:bg-amber-950/40 rounded-full overflow-hidden">
+                            <div className="absolute top-0 bottom-0 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 w-[40%] rounded-full animate-google-slide" />
+                          </div>
+                          <style>{`
+                            @keyframes googleSlide {
+                              0% { left: -40%; }
+                              100% { left: 100%; }
+                            }
+                            .animate-google-slide {
+                              animation: googleSlide 1.2s infinite linear;
+                            }
+                          `}</style>
+                        </div>
                       );
                     })()}
                   </td>
